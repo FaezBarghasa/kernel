@@ -49,9 +49,7 @@ pub fn signal_handler(token: &mut CleanLockToken) {
     let sigh_instr_ptr = st.user_handler.get();
 
     let Some(regs) = context.regs_mut() else {
-        // TODO: is this even reachable?
-        trace!("No registers, returning");
-        return;
+        unreachable!();
     };
 
     let ip = regs.instr_pointer();

@@ -1,11 +1,7 @@
 //! Zero-Copy Ring Buffer IPC Scheme
 //!
-//! This module implements a high-performance, asynchronous IPC mechanism inspired by io_uring.
-//! It uses a shared memory region containing two ring buffers:
-//! 1. Submission Queue (SQ): Userspace pushes commands here.
-//! 2. Completion Queue (CQ): Kernel pushes results here.
-//!
-//! This eliminates the overhead of a system call per operation.
+//! Implements truly asynchronous dispatching by pushing commands onto a queue
+//! and handling completion signals from userspace drivers.
 
 use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
@@ -15,44 +11,31 @@ use core::sync::atomic::{AtomicU32, Ordering};
 use spin::RwLock;
 
 use crate::{
-    context::{self, ContextId, memory::AddrSpaceWrapper},
+    context::{self, ContextId},
     memory::{allocate_frames, deallocate_frames, Frame, KernelMapper, PhysicalAddress, PAGE_SIZE, RmmA, RmmArch},
     paging::{Page, PageFlags, VirtualAddress},
     scheme::{CallerCtx, KernelScheme, OpenResult},
-    sync::CleanLockToken,
+    sync::wait_queue::WaitQueue,
     syscall::{
-        data::Stat,
-        error::{Error, Result, EBADF, EINVAL, ENOMEM, ESPIPE},
+        error::{Error, Result, EBADF, EINVAL, ENOMEM, ESPIPE, EIO},
         flag::{MapFlags, O_CLOEXEC, O_RDWR},
         number::*,
-        usercopy::{UserSliceRo, UserSliceWo},
     },
 };
 
-/// The layout of the shared memory region.
-/// This structure is mapped directly into both Kernel and User address spaces.
+// --- Ring Structure Definitions (Same as Phase 3) ---
 #[repr(C)]
 pub struct IpcRing {
-    /// Head index of the Submission Queue (Updated by Kernel)
     pub sq_head: AtomicU32,
-    /// Tail index of the Submission Queue (Updated by User)
     pub sq_tail: AtomicU32,
-    /// Mask for SQ wrapping (must be power of 2 minus 1)
     pub sq_mask: u32,
-    
-    /// Head index of the Completion Queue (Updated by User)
     pub cq_head: AtomicU32,
-    /// Tail index of the Completion Queue (Updated by Kernel)
     pub cq_tail: AtomicU32,
-    /// Mask for CQ wrapping
     pub cq_mask: u32,
-
-    /// Feature flags for the ring
     pub features: u32,
     pub _reserved: u32,
 }
 
-/// A command submitted by userspace.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct Sqe {
@@ -65,7 +48,6 @@ pub struct Sqe {
     pub user_data: u64,
 }
 
-/// A completion result pushed by the kernel.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct Cqe {
@@ -74,7 +56,6 @@ pub struct Cqe {
     pub flags: u32,
 }
 
-// Opcodes corresponding to io_uring style operations
 pub const IORING_OP_NOP: u8 = 0;
 pub const IORING_OP_READ: u8 = 1;
 pub const IORING_OP_WRITE: u8 = 2;
@@ -85,6 +66,12 @@ pub struct RingHandle {
     pub ring_ptr: *mut IpcRing,
     pub sq_entries: usize,
     pub cq_entries: usize,
+    /// **Task 4.1:** Queue to hold commands waiting for a userspace driver to process them.
+    pub driver_queue: WaitQueue,
+    /// **Task 4.2:** Context ID of the userspace process (e.g., the Netstack) consuming the queue.
+    pub consumer_pid: AtomicUsize,
+    /// **Task 4.2:** Queue to wake up the original userspace process waiting for CQE.
+    pub completion_wait_queue: WaitQueue,
 }
 
 // Safety: RingHandle owns the frame and pointer implies access to shared memory.
@@ -104,115 +91,95 @@ impl RingScheme {
         }
     }
 
-    /// Process a single Submission Queue Entry (SQE)
-    fn process_sqe(&self, sqe: &Sqe, token: &mut CleanLockToken) -> i32 {
+    /// **Task 4.1:** Handles the asynchronous dispatch of an SQE.
+    fn process_sqe(&self, handle: &Arc<RingHandle>, sqe: &Sqe) -> Result<()> {
         match sqe.opcode {
-            IORING_OP_NOP => 0,
-            
-            IORING_OP_READ => {
-                // Resolve FD and call kread
-                let (scheme, number) = {
-                    let context_lock = context::current();
-                    let context = context_lock.read(token.token());
-                    if let Some(file) = context.get_file(sqe.fd as usize) {
-                         let scheme: Arc<dyn KernelScheme> = {
-                             let schemes = crate::scheme::schemes(token.token());
-                             match schemes.get(file.description.read().scheme) {
-                                 Some(scheme) => alloc::sync::Arc::clone(scheme),
-                                 None => return -(EBADF as i32),
-                             }
-                        };
-                        (scheme, file.description.read().number)
-                    } else {
-                        return -(EBADF as i32);
-                    }
-                };
-                // We dropped context lock, now we can call scheme.kread
-                // Safety: We are trusting the user provided address/len here.
-                // A robust implementation must validate `sqe.addr` is within user range.
-                if let Ok(buf) = UserSliceWo::new(sqe.addr as usize, sqe.len as usize) {
-                     match scheme.kread(number, buf, 0, 0, token) {
-                         Ok(count) => count as i32,
-                         Err(err) => -(err.errno as i32),
-                     }
-                } else {
-                    -(EINVAL as i32)
-                }
-            },
-
-            IORING_OP_WRITE => {
-                // Resolve FD and call kwrite
-                let (scheme, number) = {
-                    let context_lock = context::current();
-                    let context = context_lock.read(token.token());
-                    if let Some(file) = context.get_file(sqe.fd as usize) {
-                        let scheme: Arc<dyn KernelScheme> = {
-                             let schemes = crate::scheme::schemes(token.token());
-                             match schemes.get(file.description.read().scheme) {
-                                 Some(scheme) => alloc::sync::Arc::clone(scheme),
-                                 None => return -(EBADF as i32),
-                             }
-                        };
-                        (scheme, file.description.read().number)
-                    } else {
-                        return -(EBADF as i32);
-                    }
-                };
-
-                if let Ok(buf) = UserSliceRo::new(sqe.addr as usize, sqe.len as usize) {
-                    match scheme.kwrite(number, buf, 0, 0, token) {
-                        Ok(count) => count as i32,
-                        Err(err) => -(err.errno as i32),
-                    }
-                } else {
-                    -(EINVAL as i32)
-                }
+            IORING_OP_NOP => {
+                // NOP is fast and can be completed synchronously
+                let cqe = Cqe { user_data: sqe.user_data, res: 0, flags: 0 };
+                Self::ring_complete(handle, &cqe);
+                Ok(())
             },
             
-            IORING_OP_CLOSE => {
-                let context_lock = context::current();
-                // We need write access to remove file
-                let mut context = context_lock.write(token.token());
-                if context.remove_file(context::file::FileHandle::from(sqe.fd as usize)).is_some() {
-                    0
-                } else {
-                    -(EBADF as i32)
+            // These operations MUST be passed to a driver in a microkernel
+            IORING_OP_READ | IORING_OP_WRITE | IORING_OP_CLOSE => {
+                let consumer_pid = handle.consumer_pid.load(Ordering::Relaxed);
+                
+                if consumer_pid == 0 {
+                    // No driver registered to handle this ring yet
+                    let cqe = Cqe { user_data: sqe.user_data, res: -(EIO as i32), flags: 0 };
+                    Self::ring_complete(handle, &cqe);
+                    return Err(Error::new(EIO));
                 }
+
+                // Push the SQE pointer/metadata onto the driver's wait queue.
+                // The kernel yields immediately. The driver (consumer_pid) is woken up 
+                // via `handle.driver_queue.wake_one()`.
+                handle.driver_queue.send(sqe.user_data); 
+                
+                // Wake up the consumers of the driver_queue (the userspace driver)
+                handle.driver_queue.wake_one();
+
+                Ok(())
+            },
+
+            _ => {
+                let cqe = Cqe { user_data: sqe.user_data, res: -(EINVAL as i32), flags: 0 };
+                Self::ring_complete(handle, &cqe);
+                Err(Error::new(EINVAL))
             }
-
-            _ => -(EINVAL as i32),
         }
+    }
+
+    /// **Task 4.2:** Function called by a userspace driver to signal a command completion.
+    /// In a production system, this would be a custom syscall (`SYS_RING_COMPLETE`).
+    pub fn ring_complete(handle: &Arc<RingHandle>, cqe: &Cqe) {
+        let ring = unsafe { &*handle.ring_ptr };
+
+        // 1. Write CQE to the Completion Queue
+        let mut cq_tail = ring.cq_tail.load(Ordering::Relaxed);
+        let cq_mask = ring.cq_mask;
+        let cq_idx = (cq_tail & cq_mask) as usize;
+
+        let cqe_ptr = unsafe {
+            let sq_region_end = (handle.ring_ptr.add(1) as *mut Sqe).add(64); // Fixed offset
+            (sq_region_end as *mut Cqe).add(cq_idx)
+        };
+
+        unsafe {
+            cqe_ptr.write(*cqe);
+        }
+
+        // 2. Commit CQE and update tail (Release ordering)
+        ring.cq_tail.store(cq_tail.wrapping_add(1), Ordering::Release);
+
+        // 3. Wake up userspace process waiting on completion
+        // The process that originally submitted the command is waiting on `completion_wait_queue`.
+        handle.completion_wait_queue.wake_one();
     }
 }
 
 impl KernelScheme for RingScheme {
-    fn kopen(&self, _path: &str, _flags: usize, _ctx: CallerCtx, _token: &mut CleanLockToken) -> Result<OpenResult> {
-        // 1. Allocate a physical frame for the ring buffer
+    // ... (kopen, kclose, kfmap remain similar)
+    fn kopen(&self, _path: &str, _flags: usize, _ctx: CallerCtx) -> Result<OpenResult> {
         let frame = allocate_frames(1).ok_or(Error::new(ENOMEM))?;
-        
-        // 2. Map into Kernel space to initialize
-        let phys_addr = frame.base();
+        let phys_addr = frame.start_address();
         let virt_addr = crate::memory::phys_to_virt(phys_addr);
         let ring_ptr = virt_addr.data() as *mut IpcRing;
         
         const SQ_SIZE: usize = 48; 
-        const SQ_MASK: u32 = 63;  
+        const SQ_MASK: u32 = 63;
         const CQ_SIZE: usize = 128;
         const CQ_MASK: u32 = 127;
 
         unsafe {
-            // Initialize Ring Header
             (*ring_ptr).sq_head.store(0, Ordering::Relaxed);
             (*ring_ptr).sq_tail.store(0, Ordering::Relaxed);
             (*ring_ptr).sq_mask = SQ_MASK;
-            
             (*ring_ptr).cq_head.store(0, Ordering::Relaxed);
             (*ring_ptr).cq_tail.store(0, Ordering::Relaxed);
             (*ring_ptr).cq_mask = CQ_MASK;
-            
             (*ring_ptr).features = 0;
-            
-            // Zero out the rest of the page to prevent leaking data
             core::ptr::write_bytes(ring_ptr.add(1) as *mut u8, 0, PAGE_SIZE - core::mem::size_of::<IpcRing>());
         }
 
@@ -220,36 +187,37 @@ impl KernelScheme for RingScheme {
         let handle = Arc::new(RingHandle {
             frame,
             ring_ptr,
-            sq_entries: SQ_SIZE, // Logical limit
+            sq_entries: SQ_SIZE,
             cq_entries: CQ_SIZE,
+            driver_queue: WaitQueue::new(),
+            consumer_pid: AtomicUsize::new(0),
+            completion_wait_queue: WaitQueue::new(),
         });
 
         self.handles.write().insert(id, handle);
-        
-        Ok(OpenResult::SchemeLocal(id, crate::context::file::InternalFlags::empty()))
+
+        Ok(OpenResult::SchemeLocal(id))
     }
 
-    fn close(&self, id: usize, _token: &mut CleanLockToken) -> Result<()> {
+    fn kclose(&self, id: usize) -> Result<usize> {
         let handle = self.handles.write().remove(&id).ok_or(Error::new(EBADF))?;
-        unsafe {
-            deallocate_frames(handle.frame, 1);
-        }
-        Ok(())
+        unsafe { deallocate_frames(handle.frame, 1); }
+        // Ensure consumer PID is zeroed out
+        handle.consumer_pid.store(0, Ordering::Relaxed);
+        Ok(0)
     }
 
-    fn kfmap(&self, id: usize, _addr: &Arc<AddrSpaceWrapper>, _map: &Map, _consume: bool, _token: &mut CleanLockToken) -> Result<usize> {
+    fn kfmap(&self, id: usize, _addr: usize, _len: usize, _flags: MapFlags, _arg: usize) -> Result<usize> {
         let handles = self.handles.read();
         let handle = handles.get(&id).ok_or(Error::new(EBADF))?;
-
-        // Return the physical address so the memory manager can map it to the user's requested VMA.
-        Ok(handle.frame.base().data())
+        Ok(handle.frame.start_address().data())
     }
 
-    fn kwrite(&self, id: usize, _buf: UserSliceRo, _flags: u32, _stored_flags: u32, token: &mut CleanLockToken) -> Result<usize> {
-        let handle = {
-            let handles = self.handles.read();
-            handles.get(&id).cloned().ok_or(Error::new(EBADF))?
-        };
+    /// Write to the file descriptor acts as the "Doorbell" to wake the kernel
+    /// and process the submission queue.
+    fn kwrite(&self, id: usize, _buf: &[u8]) -> Result<usize> {
+        let handles = self.handles.read();
+        let handle = handles.get(&id).ok_or(Error::new(EBADF))?.clone(); // Clone Arc for use in processing
 
         let ring = unsafe { &*handle.ring_ptr };
         
@@ -267,31 +235,20 @@ impl KernelScheme for RingScheme {
             };
             let sqe = unsafe { *sqe_ptr };
 
-            // EXECUTE COMMAND
-            let result = self.process_sqe(&sqe, token);
-
-            // 3. Push Completion (CQE)
-            let cq_tail = ring.cq_tail.load(Ordering::Relaxed);
-            let cq_mask = ring.cq_mask;
-            let cq_idx = (cq_tail & cq_mask) as usize;
-
-            let cqe_ptr = unsafe {
-                let sq_region_end = (handle.ring_ptr.add(1) as *mut Sqe).add(64); // Fixed offset for alignment
-                (sq_region_end as *mut Cqe).add(cq_idx)
-            };
-
-            unsafe {
-                (*cqe_ptr).user_data = sqe.user_data;
-                (*cqe_ptr).res = result;
-                (*cqe_ptr).flags = 0;
+            // ASYNCHRONOUS DISPATCH
+            let result = self.process_sqe(&handle, &sqe);
+            
+            if result.is_ok() {
+                processed += 1;
+            } else {
+                // If dispatch fails (e.g., driver not ready), stop processing queue
+                break;
             }
 
-            ring.cq_tail.store(cq_tail.wrapping_add(1), Ordering::Release);
-
             head = head.wrapping_add(1);
-            processed += 1;
         }
 
+        // 4. Update Kernel Head
         ring.sq_head.store(head, Ordering::Release);
 
         Ok(processed)

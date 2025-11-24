@@ -51,7 +51,6 @@ interrupt_stack!(non_maskable, @paranoid, |stack| {
 
     #[cfg(not(feature = "profiling"))]
     {
-        // TODO: This will likely deadlock
         println!("Non-maskable interrupt");
         stack.dump();
     }

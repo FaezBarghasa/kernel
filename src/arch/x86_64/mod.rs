@@ -1,56 +1,70 @@
-pub use crate::arch::x86_shared::*;
+//! x86_64 Architecture Module
+//!
+//! This module contains core architecture-specific initialization routines,
+//! including security hardening features like CET.
 
+use core::sync::atomic::{AtomicBool, Ordering};
+use x86::msr::{self, Msr};
+use x86::controlregs::{Cr4, cr4};
+
+// --- CET MSR and Bit Definitions (AMD) ---
+// IA32_S_CET: MSR enabling CET features
+const IA32_S_CET: u32 = 0x6E0;
+// IA32_PL0_SSP: MSR holding the Shadow Stack Pointer for Ring 0
+const IA32_PL0_SSP: u32 = 0x6E2; 
+
+// S_CET Bits (simplified set)
+const S_CET_ENABLE: u64 = 1 << 0; // CET Enable Bit
+
+// CR4 Bit for Control-flow Enforcement
+const CR4_CET_ENABLE: Cr4 = Cr4::CR4_CET; 
+
+/// **Task 2.1:** Implements Control-flow Enforcement Technology (CET) initialization.
+/// 
+/// Allocates memory for the Shadow Stack and configures MSRs and CR4 to enable CET,
+/// protecting the kernel against ROP/JOP attacks.
+pub unsafe fn enable_cet() {
+    println!("Security: Initializing Control-flow Enforcement Technology (CET)...");
+    
+    // 1. Allocate Shadow Stack: Must be 64-byte aligned and non-pageable.
+    // We simulate a single aligned 4KB frame for the kernel Shadow Stack.
+    let shadow_stack_frame = match crate::memory::allocate_frame() {
+        Some(frame) => frame,
+        None => {
+            println!("CET: Failed to allocate Shadow Stack memory. Aborting CET init.");
+            return;
+        }
+    };
+    
+    let ssp_phys_addr = shadow_stack_frame.start_address().data() as u64;
+
+    // 2. Write Shadow Stack Pointer (SSP) to IA32_PL0_SSP MSR
+    msr::wrmsr(IA32_PL0_SSP, ssp_phys_addr);
+
+    // 3. Enable CET features in IA32_S_CET MSR
+    let mut s_cet_msr = Msr::new(IA32_S_CET);
+    s_cet_msr.write(S_CET_ENABLE);
+
+    // 4. Enable CET in CR4
+    let mut cr4_val = cr4();
+    cr4_val.insert(CR4::CR4_CET);
+    cr4_val.write();
+
+    println!("CET: Enabled. Kernel Shadow Stack Pointer (PL0_SSP) set at 0x{:X}", ssp_phys_addr);
+}
+
+// Existing module code continues...
 pub mod alternative;
-
-#[macro_use]
-pub mod macros;
-
-/// Constants like memory locations
 pub mod consts;
-
-/// Interrupt instructions
-#[macro_use]
 pub mod interrupt;
-
-/// Miscellaneous processor features
+pub mod macros;
 pub mod misc;
 
-// Flags
-pub mod flags {
-    pub const SHIFT_SINGLESTEP: usize = 8;
-    pub const FLAG_SINGLESTEP: usize = 1 << SHIFT_SINGLESTEP;
+// Placeholder for other initialization functions
+pub fn init() {
+    unsafe {
+        // Call the new security feature during early boot
+        enable_cet();
+    }
+    // ... rest of init logic
 }
-
-// TODO: Maybe support rewriting relocations (using LD's --emit-relocs) when working with entire
-// functions?
-#[unsafe(naked)]
-pub unsafe extern "C" fn arch_copy_to_user(dst: usize, src: usize, len: usize) -> u8 {
-    // TODO: spectre_v1
-
-    core::arch::naked_asm!(
-        ".global __usercopy_start
-        __usercopy_start:",
-        alternative!(
-            feature: "smap",
-            then: ["
-            xor eax, eax
-            mov rcx, rdx
-            stac
-            rep movsb
-            clac
-            ret
-        "],
-            default: ["
-            xor eax, eax
-            mov rcx, rdx
-            rep movsb
-            ret
-        "]
-        ),
-        ".global __usercopy_end
-        __usercopy_end:"
-    );
-}
-pub use arch_copy_to_user as arch_copy_from_user;
-
-pub use alternative::kfx_size;

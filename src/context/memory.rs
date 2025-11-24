@@ -24,7 +24,7 @@ use crate::{
     sync::CleanLockToken,
 };
 
-use super::{context::HardBlockedReason, file::FileDescription};
+use super::{context::{HardBlockedReason, Capabilities}, file::FileDescription};
 
 pub const MMAP_MIN_DEFAULT: usize = PAGE_SIZE;
 
@@ -33,7 +33,7 @@ pub fn page_flags(flags: MapFlags) -> PageFlags<RmmA> {
         .user(true)
         .execute(flags.contains(MapFlags::PROT_EXEC))
         .write(flags.contains(MapFlags::PROT_WRITE))
-    //TODO: PROT_READ
+        .read(flags.contains(MapFlags::PROT_READ))
 }
 pub fn map_flags(page_flags: PageFlags<RmmA>) -> MapFlags {
     let mut flags = MapFlags::PROT_READ;
@@ -286,9 +286,16 @@ impl AddrSpaceWrapper {
             let new_flags = grant
                 .info
                 .flags()
-                // TODO: Require a capability in order to map executable memory?
                 .execute(flags.contains(MapFlags::PROT_EXEC))
                 .write(flags.contains(MapFlags::PROT_WRITE));
+
+            if new_flags.has_execute() {
+                let context = crate::context::current();
+                let context = context.read(unsafe { CleanLockToken::new() }.token());
+                if !context.has_capability(Capabilities::CAP_SYS_ADMIN) {
+                    return Err(Error::new(EPERM));
+                }
+            }
 
             // TODO: Allow enabling/disabling read access on architectures which allow it. On
             // x86_64 with protection keys (although only enforced by userspace), and AArch64 (I
@@ -2231,23 +2238,14 @@ pub struct Table {
 
 impl Drop for AddrSpace {
     fn drop(&mut self) {
-        //TODO: DANGER: unmap requires a CleanLockToken, this cheats!
-        let mut token = unsafe { CleanLockToken::new() };
-
+        let mut reap_queue = crate::context::reap::REAP_QUEUE.lock();
         for mut grant in core::mem::take(&mut self.grants).into_iter() {
             // Unpinning the grant is allowed, because pinning only occurs in UserScheme calls to
             // prevent unmapping the mapped range twice (which would corrupt only the scheme
             // provider), but it won't be able to double free any range after this address space
             // has been dropped!
             grant.info.unpin();
-
-            // TODO: Optimize away clearing the actual page tables? Since this address space is no
-            // longer arc-rwlock wrapped, it cannot be referenced `External`ly by borrowing grants,
-            // so it should suffice to iterate over PageInfos and decrement and maybe deallocate
-            // the underlying pages (and send some funmaps).
-            let res = grant.unmap(&mut self.table.utable, &mut NopFlusher);
-
-            let _ = res.unmap(&mut token);
+            reap_queue.push_back(grant);
         }
     }
 }

@@ -174,6 +174,16 @@ struct Bootstrap {
 }
 static BOOTSTRAP: spin::Once<Bootstrap> = spin::Once::new();
 
+extern "C" fn kmain_reaper() {
+    loop {
+        context::reap::reap_grants();
+        unsafe {
+            // TODO: Let the scheduler handle this instead
+            context::switch::switch(&mut CleanLockToken::new());
+        }
+    }
+}
+
 /// This is the kernel entry point for the primary CPU. The arch crate is responsible for calling this
 fn kmain(bootstrap: Bootstrap) -> ! {
     let mut token = unsafe { CleanLockToken::new() };
@@ -192,6 +202,17 @@ fn kmain(bootstrap: Bootstrap) -> ! {
     profiling::ready_for_profiling();
 
     let owner = None; // kmain not owned by any fd
+    match context::spawn(false, owner, kmain_reaper, &mut token) {
+        Ok(context_lock) => {
+            let mut context = context_lock.write(token.token());
+            context.status = context::Status::Runnable;
+            context.name.clear();
+            context.name.push_str("[kmain_reaper]");
+        }
+        Err(err) => {
+            panic!("failed to spawn kmain_reaper: {:?}", err);
+        }
+    }
     match context::spawn(true, owner, userspace_init, &mut token) {
         Ok(context_lock) => {
             let mut context = context_lock.write(token.token());

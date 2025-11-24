@@ -23,6 +23,8 @@ use crate::{
 pub struct PercpuBlock {
     /// A unique immutable number that identifies the current CPU - used for scheduling
     pub cpu_id: LogicalCpuId,
+    
+    pub context_id: Cell<usize>,
 
     /// Context management
     pub switch_internals: ContextSwitchPercpu,
@@ -171,6 +173,7 @@ impl PercpuBlock {
     pub const fn init(cpu_id: LogicalCpuId) -> Self {
         Self {
             cpu_id,
+            context_id: Cell::new(0),
             switch_internals: ContextSwitchPercpu::default(),
             current_addrsp: RefCell::new(None),
             new_addrsp_tmp: Cell::new(None),

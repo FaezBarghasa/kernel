@@ -71,7 +71,7 @@ impl EventQueue {
 
             let flags = sync(RegKey { scheme, number }, token)?;
             if !flags.is_empty() {
-                trigger(scheme, number, flags);
+                trigger(scheme, number, flags, token);
             }
         }
 
@@ -107,13 +107,13 @@ pub fn queues_mut(token: LockToken<'_, L0>) -> RwLockWriteGuard<'_, L1, EventQue
     QUEUES.call_once(init_queues).write(token)
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct RegKey {
     pub scheme: SchemeId,
     pub number: usize,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct QueueKey {
     pub queue: EventQueueId,
     pub id: usize,
@@ -178,10 +178,13 @@ pub fn unregister_file(scheme: SchemeId, number: usize) {
     registry.remove(&RegKey { scheme, number });
 }
 
-//TODO: Implement unregister_queue
-// pub fn unregister_queue(scheme: SchemeId, number: usize) {
-//
-// }
+pub fn unregister_queue(queue_id: EventQueueId) {
+    let mut registry = registry_mut();
+    registry.retain(|_reg_key, queue_list| {
+        queue_list.retain(|key, _flags| key.queue != queue_id);
+        !queue_list.is_empty()
+    });
+}
 
 fn trigger_inner(
     scheme: SchemeId,
@@ -215,16 +218,12 @@ fn trigger_inner(
     }
 }
 
-pub fn trigger(scheme: SchemeId, number: usize, flags: EventFlags) {
-    //TODO: propogate this lock token
-    let mut token = unsafe { CleanLockToken::new() };
-
+pub fn trigger(scheme: SchemeId, number: usize, flags: EventFlags, token: &mut CleanLockToken) {
     // First trigger with the original file
     let mut todo = Vec::new();
-    trigger_inner(scheme, number, flags, &mut todo, &mut token);
+    trigger_inner(scheme, number, flags, &mut todo, token);
 
     // Handle triggers on queues
-    //TODO: can this be done with limited allocations?
     let mut done = HashSet::new();
     while let Some(queue_id) = todo.pop() {
         if !done.contains(&queue_id) {
@@ -233,7 +232,7 @@ pub fn trigger(scheme: SchemeId, number: usize, flags: EventFlags) {
                 queue_id.into(),
                 EventFlags::EVENT_READ,
                 &mut todo,
-                &mut token,
+                token,
             );
             done.insert(queue_id);
         }

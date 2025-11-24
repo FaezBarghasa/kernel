@@ -79,6 +79,12 @@ pub enum SyscallFrame {
     Dummy,
 }
 
+bitflags! {
+    pub struct Capabilities: u64 {
+        const CAP_SYS_ADMIN = 1 << 0;
+    }
+}
+
 /// A context, which is typically mapped to a userspace thread
 #[derive(Debug)]
 pub struct Context {
@@ -143,6 +149,7 @@ pub struct Context {
     pub euid: u32,
     pub egid: u32,
     pub pid: usize,
+    pub capabilities: Capabilities,
 }
 
 #[derive(Debug)]
@@ -194,6 +201,7 @@ impl Context {
             euid: 0,
             egid: 0,
             pid: 0,
+            capabilities: Capabilities::empty(),
 
             #[cfg(feature = "syscall_debug")]
             syscall_debug_info: crate::syscall::debug::SyscallDebugInfo::default(),
@@ -423,6 +431,9 @@ impl Context {
             gid: self.egid,
             pid: self.pid,
         }
+    }
+    pub fn has_capability(&self, cap: Capabilities) -> bool {
+        self.capabilities.contains(cap)
     }
 }
 

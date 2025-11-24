@@ -245,6 +245,7 @@ pub fn switch(token: &mut CleanLockToken) -> SwitchResult {
             } else {
                 percpu.stats.set_state(cpu_stats::CpuState::Kernel);
             }
+            percpu.context_id.set(next_context.id);
             unsafe {
                 percpu.switch_internals.set_current_context(Arc::clone(
                     ArcContextLockWriteGuard::rwlock(&next_context_guard),
@@ -367,14 +368,7 @@ impl ContextSwitchPercpu {
     /// # Parameters
     /// - `f`: A closure that receives a reference to the current context and returns a value.
     ///
-    /// # Returns
-    /// The result of applying `f` to the current context if any.
-    pub fn try_with_context<T>(&self, f: impl FnOnce(Option<&Arc<ContextLock>>) -> T) -> T {
-        f(self.current_ctxt.borrow().as_ref())
-    }
-
-    /// Sets the current context to a new value.
-    ///
+    ...
     /// # Safety
     /// This function is unsafe as it modifies the context state directly.
     ///
