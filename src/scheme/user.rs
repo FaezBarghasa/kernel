@@ -114,7 +114,6 @@ enum ParsedCqe {
         base_addr: VirtualAddress,
         page_count: usize,
     },
-    NoOp, // TODO: remove
 }
 impl ParsedCqe {
     fn parse_packet(packet: &Packet, token: &mut CleanLockToken) -> Result<Self> {
@@ -134,7 +133,7 @@ impl ParsedCqe {
                     // Some schemes don't implement cancellation properly yet, so we temporarily
                     // ignore their responses to the cancellation message, rather than EINVAL.
                     if packet.a == Error::mux(Err(Error::new(ENOSYS))) {
-                        return Ok(Self::NoOp);
+                        return Err(Error::new(ENOSYS));
                     }
 
                     return Err(Error::new(EINVAL));
@@ -1087,7 +1086,6 @@ impl UserInner {
             ParsedCqe::TriggerFevent { number, flags } => {
                 event::trigger(self.scheme_id, number, flags)
             }
-            ParsedCqe::NoOp => (),
         }
         Ok(())
     }

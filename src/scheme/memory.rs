@@ -27,7 +27,7 @@ use super::{CallerCtx, KernelScheme, OpenResult};
 
 pub struct MemoryScheme;
 
-// TODO: Use crate that autogenerates conversion functions.
+// FIXME: Use crate that autogenerates conversion functions.
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum HandleTy {
@@ -85,7 +85,7 @@ impl MemoryScheme {
         let mut notify_files = Vec::new();
 
         if is_phys_contiguous && map.flags.contains(MapFlags::MAP_SHARED) {
-            // TODO: Should this be supported?
+            // FIXME: Should this be supported?
             return Err(Error::new(EOPNOTSUPP));
         }
 
@@ -121,7 +121,7 @@ impl MemoryScheme {
         flags: MapFlags,
         memory_type: MemoryType,
     ) -> Result<usize> {
-        // TODO: Check physical_address against the real MAXPHYADDR.
+        // FIXME: Check physical_address against the real MAXPHYADDR.
         let end = 1 << 52;
         if (physical_address.saturating_add(size) as u64) > end || physical_address % PAGE_SIZE != 0
         {
@@ -148,7 +148,7 @@ impl MemoryScheme {
                     // Default
                     MemoryType::Writeback => (),
 
-                    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))] // TODO: AARCH64
+                    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))] // FIXME: AARCH64
                     MemoryType::WriteCombining => {
                         page_flags = page_flags.custom_flag(EntryFlags::HUGE_PAGE.bits(), true)
                     }
@@ -222,7 +222,7 @@ impl KernelScheme for MemoryScheme {
             .collect::<Option<HandleFlags>>()
             .ok_or(Error::new(ENOENT))?;
 
-        // TODO: Support arches with other default memory types?
+        // FIXME: Support arches with other default memory types?
         if ctx.uid != 0
             && (!flags.is_empty()
                 || !matches!(
