@@ -55,7 +55,7 @@ pub struct UserInner {
     context: Weak<ContextLock>,
     todo: WaitQueue<Sqe>,
 
-    // TODO: custom packed radix tree data structure
+    // FIXME: Use a more efficient data structure than a slab for states.
     states: Mutex<Slab<State>>,
 
     unmounting: AtomicBool,
