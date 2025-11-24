@@ -102,7 +102,6 @@ impl Session {
 
 /// Remove the session from the list of open sessions and notify any
 /// waiting processes
-// TODO
 pub fn close_session(session: &Session, token: &mut CleanLockToken) {
     session.tracer.notify(token);
     session.tracee.notify(token);
@@ -200,7 +199,6 @@ pub fn breakpoint_callback(
     loop {
         let percpu = PercpuBlock::current();
 
-        // TODO: Some or all flags?
         // Only stop if the tracer have asked for this breakpoint
         if percpu.ptrace_flags.get().contains(match_flags) {
             return None;
