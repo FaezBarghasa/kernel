@@ -39,6 +39,8 @@ pub fn debug_notify(token: &mut CleanLockToken) {
 
 pub struct DebugScheme;
 
+const DEBUG_SCHEME_PATH: &[u8] = b"debug:";
+
 #[repr(usize)]
 enum SpecialFds {
     Default = !0,
@@ -220,12 +222,10 @@ impl KernelScheme for DebugScheme {
             return Err(Error::new(EINVAL));
         }
 
-        // TODO: Copy elsewhere in the kernel?
-        const SRC: &[u8] = b"debug:";
-        let byte_count = core::cmp::min(buf.len(), SRC.len());
+        let byte_count = core::cmp::min(buf.len(), DEBUG_SCHEME_PATH.len());
         buf.limit(byte_count)
             .expect("must succeed")
-            .copy_from_slice(&SRC[..byte_count])?;
+            .copy_from_slice(&DEBUG_SCHEME_PATH[..byte_count])?;
 
         Ok(byte_count)
     }

@@ -38,7 +38,6 @@ pub struct AcpiScheme;
 #[derive(Clone, Copy)]
 struct Handle {
     kind: HandleKind,
-    stat: bool,
 }
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum HandleKind {
@@ -157,24 +156,13 @@ impl KernelScheme for AcpiScheme {
         let fd = NEXT_FD.fetch_add(1, atomic::Ordering::Relaxed);
         let mut handles_guard = HANDLES.write(token.token());
 
-        let _ = handles_guard.insert(
-            fd,
-            Handle {
-                kind: handle_kind,
-                // TODO: Redundant
-                stat: flags & O_STAT == O_STAT,
-            },
-        );
+        let _ = handles_guard.insert(fd, Handle { kind: handle_kind });
 
         Ok(OpenResult::SchemeLocal(fd, int_flags))
     }
     fn fsize(&self, id: usize, token: &mut CleanLockToken) -> Result<u64> {
         let mut handles = HANDLES.write(token.token());
         let handle = handles.get_mut(&id).ok_or(Error::new(EBADF))?;
-
-        if handle.stat {
-            return Err(Error::new(EBADF));
-        }
 
         Ok(match handle.kind {
             HandleKind::Rxsdt => DATA.get().ok_or(Error::new(EBADFD))?.len() as u64,
@@ -190,11 +178,7 @@ impl KernelScheme for AcpiScheme {
         token: &mut CleanLockToken,
     ) -> Result<EventFlags> {
         let handles = HANDLES.read(token.token());
-        let handle = handles.get(&id).ok_or(Error::new(EBADF))?;
-
-        if handle.stat {
-            return Err(Error::new(EBADF));
-        }
+        let _ = handles.get(&id).ok_or(Error::new(EBADF))?;
 
         Ok(EventFlags::empty())
     }
@@ -221,10 +205,6 @@ impl KernelScheme for AcpiScheme {
             let handles = HANDLES.read(token.token());
             *handles.get(&id).ok_or(Error::new(EBADF))?
         };
-
-        if handle.stat {
-            return Err(Error::new(EBADF));
-        }
 
         let data = match handle.kind {
             HandleKind::ShutdownPipe => {
@@ -291,8 +271,16 @@ impl KernelScheme for AcpiScheme {
         Ok(buf.finalize())
     }
     fn kfpath(&self, id: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
-        //TODO: construct useful path?
-        buf.copy_common_bytes_from_slice("/scheme/kernel.acpi/".as_bytes())
+        let handles = HANDLES.read(token.token());
+        let handle = handles.get(&id).ok_or(Error::new(EBADF))?;
+
+        let path = match handle.kind {
+            HandleKind::TopLevel => "acpi:",
+            HandleKind::Rxsdt => "acpi:rxsdt",
+            HandleKind::ShutdownPipe => "acpi:kstop",
+        };
+
+        buf.copy_common_bytes_from_slice(path.as_bytes())
     }
     fn kfstat(&self, id: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<()> {
         let handles = HANDLES.read(token.token());

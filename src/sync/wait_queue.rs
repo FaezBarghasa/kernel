@@ -1,6 +1,6 @@
 use alloc::collections::VecDeque;
 use spin::Mutex;
-use syscall::{EAGAIN, EINTR};
+use syscall::{EAGAIN, EINTR, EWOULDBLOCK};
 
 use crate::{
     sync::{CleanLockToken, WaitCondition},
@@ -75,8 +75,7 @@ impl<T> WaitQueue<T> {
                 } else if buf.len() < core::mem::size_of::<T>() {
                     return Err(Error::new(EINVAL));
                 } else {
-                    // TODO: EWOULDBLOCK?
-                    return Err(Error::new(EAGAIN));
+                    return Err(Error::new(EWOULDBLOCK));
                 }
             }
 

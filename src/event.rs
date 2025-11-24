@@ -1,4 +1,7 @@
-use alloc::{sync::Arc, vec::Vec};
+use alloc::{
+    collections::VecDeque,
+    sync::Arc,
+};
 use core::sync::atomic::{AtomicUsize, Ordering};
 use hashbrown::{HashMap, HashSet};
 use spin::Once;
@@ -190,7 +193,7 @@ fn trigger_inner(
     scheme: SchemeId,
     number: usize,
     flags: EventFlags,
-    todo: &mut Vec<EventQueueId>,
+    todo: &mut VecDeque<EventQueueId>,
     token: &mut CleanLockToken,
 ) {
     let registry = registry();
@@ -211,7 +214,9 @@ fn trigger_inner(
                         },
                         token,
                     );
-                    todo.push(queue_key.queue);
+                    if !todo.contains(&queue_key.queue) {
+                        todo.push_back(queue_key.queue);
+                    }
                 }
             }
         }
@@ -220,21 +225,17 @@ fn trigger_inner(
 
 pub fn trigger(scheme: SchemeId, number: usize, flags: EventFlags, token: &mut CleanLockToken) {
     // First trigger with the original file
-    let mut todo = Vec::new();
+    let mut todo = VecDeque::new();
     trigger_inner(scheme, number, flags, &mut todo, token);
 
     // Handle triggers on queues
-    let mut done = HashSet::new();
-    while let Some(queue_id) = todo.pop() {
-        if !done.contains(&queue_id) {
-            trigger_inner(
-                GlobalSchemes::Event.scheme_id(),
-                queue_id.into(),
-                EventFlags::EVENT_READ,
-                &mut todo,
-                token,
-            );
-            done.insert(queue_id);
-        }
+    while let Some(queue_id) = todo.pop_front() {
+        trigger_inner(
+            GlobalSchemes::Event.scheme_id(),
+            queue_id.into(),
+            EventFlags::EVENT_READ,
+            &mut todo,
+            token,
+        );
     }
 }

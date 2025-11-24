@@ -73,18 +73,18 @@ impl WaitCondition {
 
         {
             let mut contexts = self.contexts.lock(token.token());
-
-            // TODO: retain
-            let mut i = 0;
-            while i < contexts.len() {
-                if Weak::as_ptr(&contexts[i]) == Arc::as_ptr(&current_context_ref) {
-                    contexts.remove(i);
-                    waited = false;
-                    break;
+            contexts.retain(|w| {
+                if let Some(s) = w.upgrade() {
+                    if Arc::ptr_eq(&s, &current_context_ref) {
+                        waited = false;
+                        false
+                    } else {
+                        true
+                    }
                 } else {
-                    i += 1;
+                    false
                 }
-            }
+            });
         }
 
         waited
