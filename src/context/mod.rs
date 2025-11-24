@@ -38,6 +38,15 @@ pub struct Context {
 }
 
 impl Context {
+    /// Returns the effective priority of the context.
+    pub fn effective_priority(&self) -> u8 {
+        if self.priority_ceiling > 0 {
+            self.priority_ceiling
+        } else {
+            self.priority
+        }
+    }
+
     /// Placeholder for fetching the current context's data
     pub fn current() -> Result<Arc<RwLock<Context>>> {
         // In a real kernel, this would pull from the per-CPU data structure

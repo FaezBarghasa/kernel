@@ -58,7 +58,6 @@ impl ScratchRegisters {
 #[derive(Default)]
 #[repr(C, packed)]
 pub struct PreservedRegisters {
-    //TODO: is X30 a preserved register?
     pub x19: usize,
     pub x20: usize,
     pub x21: usize,
@@ -154,13 +153,11 @@ impl InterruptStack {
     /// Saves all registers to a struct used by the proc:
     /// scheme to read/write registers.
     pub fn save(&self, all: &mut IntRegisters) {
-        /*TODO: aarch64 registers
         all.elr_el1 = self.iret.elr_el1;
         all.spsr_el1 = self.iret.spsr_el1;
         all.esr_el1 = self.iret.esr_el1;
         all.sp_el0 = self.iret.sp_el0;
         all.padding = 0;
-        */
         all.x30 = self.preserved.x30;
         all.x29 = self.preserved.x29;
         all.x28 = self.preserved.x28;
@@ -197,12 +194,10 @@ impl InterruptStack {
     /// Loads all registers from a struct used by the proc:
     /// scheme to read/write registers.
     pub fn load(&mut self, all: &IntRegisters) {
-        /*TODO: aarch64 registers
         self.iret.elr_el1 = all.elr_el1;
         self.iret.spsr_el1 = all.spsr_el1;
         self.iret.esr_el1 = all.esr_el1;
         self.iret.sp_el0 = all.sp_el0;
-        */
         self.preserved.x30 = all.x30;
         self.preserved.x29 = all.x29;
         self.preserved.x28 = all.x28;
@@ -274,8 +269,13 @@ impl InterruptStack {
         }
     }
 
-    //TODO
-    pub fn set_singlestep(&mut self, _singlestep: bool) {}
+    pub fn set_singlestep(&mut self, singlestep: bool) {
+        if singlestep {
+            self.iret.spsr_el1 |= 1 << 21;
+        } else {
+            self.iret.spsr_el1 &= !(1 << 21);
+        }
+    }
 }
 
 #[macro_export]

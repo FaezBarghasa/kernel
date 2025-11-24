@@ -11,17 +11,6 @@ const WORD_SIZE: usize = mem::size_of::<usize>();
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn memcpy(dest: *mut u8, src: *const u8, len: usize) -> *mut u8 {
     unsafe {
-        // TODO: Alignment? Some sources claim that even on relatively modern µ-arches, unaligned
-        // accesses spanning two pages, can take dozens of cycles. That means chunk-based memcpy can
-        // even be slower for small lengths if alignment is not taken into account.
-        //
-        // TODO: Optimize out smaller loops by first checking if len < WORD_SIZE, and possibly if
-        // dest + WORD_SIZE spans two pages, then doing one unaligned copy, then aligning up, and then
-        // doing one last unaligned copy?
-        //
-        // TODO: While we use the -fno-builtin equivalent, can we guarantee LLVM won't insert memcpy
-        // call inside here? Maybe write it in assembly?
-
         let mut i = 0_usize;
 
         // First we copy len / WORD_SIZE chunks...
@@ -56,7 +45,6 @@ pub unsafe extern "C" fn memmove(dest: *mut u8, src: *const u8, len: usize) -> *
     unsafe {
         let chunks = len / WORD_SIZE;
 
-        // TODO: also require dest - src < len before choosing to copy backwards?
         if src < dest as *const u8 {
             // We have to copy backwards if copying upwards.
 
@@ -150,7 +138,6 @@ pub unsafe extern "C" fn memcmp(s1: *const u8, s2: *const u8, len: usize) -> i32
                 // movbe. AArch64 has the REV instruction, which I think is universally available.
                 let diff = usize::from_be(a).wrapping_sub(usize::from_be(b)) as isize;
 
-                // TODO: If chunk size == 32 bits, diff can be returned directly.
                 return diff.signum() as i32;
             }
             i += WORD_SIZE;

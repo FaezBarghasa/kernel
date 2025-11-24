@@ -33,8 +33,6 @@ pub struct PercpuBlock {
     pub new_addrsp_tmp: Cell<Option<Arc<AddrSpaceWrapper>>>,
     pub wants_tlb_shootdown: AtomicBool,
 
-    // TODO: Put mailbox queues here, e.g. for TLB shootdown? Just be sure to 128-byte align it
-    // first to avoid cache invalidation.
     pub profiling: Option<&'static crate::profiling::RingBuffer>,
 
     pub ptrace_flags: Cell<PtraceFlags>,
@@ -104,8 +102,6 @@ pub fn shootdown_tlb_ipi(target: Option<LogicalCpuId>) {
         crate::ipi::ipi_single(crate::ipi::IpiKind::Tlb, percpublock);
     } else {
         for id in 0..crate::cpu_count() {
-            // TODO: Optimize: use global counter and percpu ack counters, send IPI using
-            // destination shorthand "all CPUs".
             shootdown_tlb_ipi(Some(LogicalCpuId::new(id)));
         }
     }
@@ -117,7 +113,6 @@ impl PercpuBlock {
             return;
         }
 
-        // TODO: Finer-grained flush
         unsafe {
             crate::paging::RmmA::invalidate_all();
         }
