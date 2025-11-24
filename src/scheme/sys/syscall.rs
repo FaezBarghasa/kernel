@@ -11,7 +11,7 @@ pub fn resource(token: &mut CleanLockToken) -> Result<Vec<u8>> {
         {
             let mut contexts = context::contexts(token.token());
             let (contexts, mut token) = contexts.token_split();
-            for context_ref in contexts.iter().filter_map(|r| r.upgrade()) {
+            for context_ref in contexts.values() {
                 let context = context_ref.read(token.token());
                 rows.push((context.pid, context.name, context.current_syscall()));
             }

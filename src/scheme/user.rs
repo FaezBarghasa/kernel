@@ -682,9 +682,10 @@ impl UserInner {
             let frame = array.frame();
 
             if READ {
-                let (to_copy, to_zero) = array.buf_mut().split_at_mut(tail_size);
+                let buf: &mut [u8] = array.buf_mut();
+                let (to_copy, to_zero) = buf.split_at_mut(tail_size);
 
-                to_zero.fill(0_u8);
+                for b in to_zero.iter_mut() { *b = 0u8; }
 
                 // FIXME: remove reinterpret_unchecked
                 tail_part_of_buf
@@ -1478,7 +1479,8 @@ impl UserInner {
             .ok_or(Error::new(EMFILE))?;
         let payload_chunks = payload.in_exact_chunks(size_of::<usize>());
         for (handle, chunk) in handles.iter().zip(payload_chunks) {
-            chunk.copy_from_slice(&handle.get().to_ne_bytes())?;
+            let bytes = (handle.get() as usize).to_ne_bytes();
+            chunk.copy_from_slice(&bytes)?;
         }
         Ok(handles.len())
     }
@@ -1515,7 +1517,8 @@ impl UserInner {
                 .ok_or(Error::new(EMFILE))?;
             let payload_chunks = payload.in_exact_chunks(size_of::<usize>());
             for (handle, chunk) in handles.iter().zip(payload_chunks) {
-                chunk.copy_from_slice(&handle.get().to_ne_bytes())?;
+                let bytes = (handle.get() as usize).to_ne_bytes();
+                chunk.copy_from_slice(&bytes)?;
             }
             Ok(handles.len())
         } else {

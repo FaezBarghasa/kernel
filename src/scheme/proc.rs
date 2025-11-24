@@ -855,6 +855,7 @@ impl ContextHandle {
 
                         let (scheme, number) = extract_scheme_number(fd, token)?;
 
+                        let scheme: Arc<dyn KernelScheme> = scheme;
                         scheme.kfmap(
                             number,
                             &addrspace,

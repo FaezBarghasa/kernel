@@ -750,7 +750,7 @@ impl FdTbl {
 
         let max_index = handles
             .iter()
-            .map(|h| Self::strip_tags(h.get()))
+            .map(|h: &FileHandle| Self::strip_tags(h.get()))
             .max()
             .unwrap_or(0);
         if self.upper_fdtbl.len() <= max_index {

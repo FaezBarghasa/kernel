@@ -76,9 +76,8 @@ fn get_contexts_stats(token: &mut CleanLockToken) -> (u64, u64) {
     let mut contexts = contexts(token.token());
     let (contexts, mut token) = contexts.token_split();
     let statuses = contexts
-        .iter()
-        .filter_map(ContextRef::upgrade)
-        .map(|context| context.read(token.token()).status.clone())
+        .values()
+        .map(|context: &Arc<crate::context::ContextLock>| context.read(token.token()).status.clone())
         .collect::<Vec<_>>();
 
     for status in statuses {

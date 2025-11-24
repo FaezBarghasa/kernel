@@ -15,15 +15,17 @@ use core::sync::atomic::{AtomicU32, Ordering};
 use spin::RwLock;
 
 use crate::{
-    context::{self, ContextId},
+    context::{self, ContextId, memory::AddrSpaceWrapper},
     memory::{allocate_frames, deallocate_frames, Frame, KernelMapper, PhysicalAddress, PAGE_SIZE, RmmA, RmmArch},
     paging::{Page, PageFlags, VirtualAddress},
     scheme::{CallerCtx, KernelScheme, OpenResult},
+    sync::CleanLockToken,
     syscall::{
         data::Stat,
         error::{Error, Result, EBADF, EINVAL, ENOMEM, ESPIPE},
         flag::{MapFlags, O_CLOEXEC, O_RDWR},
         number::*,
+        usercopy::{UserSliceRo, UserSliceWo},
     },
 };
 
@@ -103,66 +105,78 @@ impl RingScheme {
     }
 
     /// Process a single Submission Queue Entry (SQE)
-    fn process_sqe(&self, sqe: &Sqe) -> i32 {
+    fn process_sqe(&self, sqe: &Sqe, token: &mut CleanLockToken) -> i32 {
         match sqe.opcode {
             IORING_OP_NOP => 0,
             
             IORING_OP_READ => {
                 // Resolve FD and call kread
-                // Note: In a true async impl, this would queue a task. 
-                // For Phase 3, we execute synchronously to demonstrate the plumbing.
-                if let Ok(context) = context::current() {
-                    let context = context.read();
+                let (scheme, number) = {
+                    let context_lock = context::current();
+                    let context = context_lock.read(token.token());
                     if let Some(file) = context.get_file(sqe.fd as usize) {
-                        // Safety: We are trusting the user provided address/len here.
-                        // A robust implementation must validate `sqe.addr` is within user range.
-                        let buf = unsafe { 
-                            slice::from_raw_parts_mut(sqe.addr as *mut u8, sqe.len as usize) 
+                         let scheme: Arc<dyn KernelScheme> = {
+                             let schemes = crate::scheme::schemes(token.token());
+                             match schemes.get(file.description.read().scheme) {
+                                 Some(scheme) => alloc::sync::Arc::clone(scheme),
+                                 None => return -(EBADF as i32),
+                             }
                         };
-                        
-                        match file.read(buf) {
-                            Ok(count) => count as i32,
-                            Err(err) => -(err.errno as i32),
-                        }
+                        (scheme, file.description.read().number)
                     } else {
-                        -(EBADF as i32)
+                        return -(EBADF as i32);
                     }
+                };
+                // We dropped context lock, now we can call scheme.kread
+                // Safety: We are trusting the user provided address/len here.
+                // A robust implementation must validate `sqe.addr` is within user range.
+                if let Ok(buf) = UserSliceWo::new(sqe.addr as usize, sqe.len as usize) {
+                     match scheme.kread(number, buf, 0, 0, token) {
+                         Ok(count) => count as i32,
+                         Err(err) => -(err.errno as i32),
+                     }
                 } else {
-                    -(ESPIPE as i32)
+                    -(EINVAL as i32)
                 }
             },
 
             IORING_OP_WRITE => {
                 // Resolve FD and call kwrite
-                if let Ok(context) = context::current() {
-                    let context = context.read();
+                let (scheme, number) = {
+                    let context_lock = context::current();
+                    let context = context_lock.read(token.token());
                     if let Some(file) = context.get_file(sqe.fd as usize) {
-                        let buf = unsafe { 
-                            slice::from_raw_parts(sqe.addr as *const u8, sqe.len as usize) 
+                        let scheme: Arc<dyn KernelScheme> = {
+                             let schemes = crate::scheme::schemes(token.token());
+                             match schemes.get(file.description.read().scheme) {
+                                 Some(scheme) => alloc::sync::Arc::clone(scheme),
+                                 None => return -(EBADF as i32),
+                             }
                         };
-                        
-                        match file.write(buf) {
-                            Ok(count) => count as i32,
-                            Err(err) => -(err.errno as i32),
-                        }
+                        (scheme, file.description.read().number)
                     } else {
-                        -(EBADF as i32)
+                        return -(EBADF as i32);
+                    }
+                };
+
+                if let Ok(buf) = UserSliceRo::new(sqe.addr as usize, sqe.len as usize) {
+                    match scheme.kwrite(number, buf, 0, 0, token) {
+                        Ok(count) => count as i32,
+                        Err(err) => -(err.errno as i32),
                     }
                 } else {
-                    -(ESPIPE as i32)
+                    -(EINVAL as i32)
                 }
             },
             
             IORING_OP_CLOSE => {
-                if let Ok(context) = context::current() {
-                    let mut context = context.write();
-                    if context.remove_file(sqe.fd as usize).is_some() {
-                        0
-                    } else {
-                        -(EBADF as i32)
-                    }
+                let context_lock = context::current();
+                // We need write access to remove file
+                let mut context = context_lock.write(token.token());
+                if context.remove_file(context::file::FileHandle::from(sqe.fd as usize)).is_some() {
+                    0
                 } else {
-                    -(ESPIPE as i32)
+                    -(EBADF as i32)
                 }
             }
 
@@ -172,29 +186,17 @@ impl RingScheme {
 }
 
 impl KernelScheme for RingScheme {
-    fn kopen(&self, _path: &str, _flags: usize, _ctx: CallerCtx) -> Result<OpenResult> {
+    fn kopen(&self, _path: &str, _flags: usize, _ctx: CallerCtx, _token: &mut CleanLockToken) -> Result<OpenResult> {
         // 1. Allocate a physical frame for the ring buffer
-        // For simplicity, we allocate one 4KB page.
-        // Layout:
-        // [Header (64 bytes)]
-        // [SQEs (64 * 32 bytes = 2048 bytes)]
-        // [CQEs (128 * 16 bytes = 2048 bytes)] (Overfills 4KB, need adjustment or larger alloc)
-        // Adjusted for 4KB page: 
-        // Header: 64 bytes
-        // SQE: 48 * 32 = 1536
-        // CQE: 128 * 16 = 2048
-        // Total: 3648 bytes < 4096 bytes. Safe.
-
         let frame = allocate_frames(1).ok_or(Error::new(ENOMEM))?;
         
         // 2. Map into Kernel space to initialize
-        // Use RmmA::phys_to_virt to get the kernel logical address of the frame
-        let phys_addr = frame.start_address();
+        let phys_addr = frame.base();
         let virt_addr = crate::memory::phys_to_virt(phys_addr);
         let ring_ptr = virt_addr.data() as *mut IpcRing;
         
-        const SQ_SIZE: usize = 48; // Power of 2 approximation handled by mask logic below, simplified for fit
-        const SQ_MASK: u32 = 63;   // Logical mask, bounds checking required if size != mask+1
+        const SQ_SIZE: usize = 48; 
+        const SQ_MASK: u32 = 63;  
         const CQ_SIZE: usize = 128;
         const CQ_MASK: u32 = 127;
 
@@ -223,68 +225,56 @@ impl KernelScheme for RingScheme {
         });
 
         self.handles.write().insert(id, handle);
-
-        Ok(OpenResult::SchemeLocal(id))
+        
+        Ok(OpenResult::SchemeLocal(id, crate::context::file::InternalFlags::empty()))
     }
 
-    fn kclose(&self, id: usize) -> Result<usize> {
+    fn close(&self, id: usize, _token: &mut CleanLockToken) -> Result<()> {
         let handle = self.handles.write().remove(&id).ok_or(Error::new(EBADF))?;
-        // Deallocate frame when handle is dropped
         unsafe {
             deallocate_frames(handle.frame, 1);
         }
-        Ok(0)
+        Ok(())
     }
 
-    /// Memory Map the Ring Buffer into Userspace
-    /// Returns the physical address. The memory manager handles the page table update.
-    fn kfmap(&self, id: usize, _addr: usize, _len: usize, _flags: MapFlags, _arg: usize) -> Result<usize> {
+    fn kfmap(&self, id: usize, _addr: &Arc<AddrSpaceWrapper>, _map: &Map, _consume: bool, _token: &mut CleanLockToken) -> Result<usize> {
         let handles = self.handles.read();
         let handle = handles.get(&id).ok_or(Error::new(EBADF))?;
 
         // Return the physical address so the memory manager can map it to the user's requested VMA.
-        Ok(handle.frame.start_address().data())
+        Ok(handle.frame.base().data())
     }
 
-    /// Write to the file descriptor acts as the "Doorbell" to wake the kernel
-    /// and process the submission queue.
-    /// 
-    /// The buffer passed to write is ignored (or could contain metadata).
-    /// The existence of the syscall call is the signal.
-    fn kwrite(&self, id: usize, _buf: &[u8]) -> Result<usize> {
-        let handles = self.handles.read();
-        let handle = handles.get(&id).ok_or(Error::new(EBADF))?;
+    fn kwrite(&self, id: usize, _buf: UserSliceRo, _flags: u32, _stored_flags: u32, token: &mut CleanLockToken) -> Result<usize> {
+        let handle = {
+            let handles = self.handles.read();
+            handles.get(&id).cloned().ok_or(Error::new(EBADF))?
+        };
 
         let ring = unsafe { &*handle.ring_ptr };
         
-        // 1. Read Kernel Head and User Tail
-        // Load Acquire ensures we see the writes to the SQE slots performed by userspace
         let mut head = ring.sq_head.load(Ordering::Acquire);
         let tail = ring.sq_tail.load(Ordering::Acquire);
         let mask = ring.sq_mask;
 
         let mut processed = 0;
 
-        // 2. Process Loop
         while head < tail {
             let idx = (head & mask) as usize;
             
-            // Calculate SQE offset
-            // Layout: Header -> SQEs -> CQEs
             let sqe_ptr = unsafe {
                 (handle.ring_ptr.add(1) as *const Sqe).add(idx)
             };
             let sqe = unsafe { *sqe_ptr };
 
             // EXECUTE COMMAND
-            let result = self.process_sqe(&sqe);
+            let result = self.process_sqe(&sqe, token);
 
             // 3. Push Completion (CQE)
-            let mut cq_tail = ring.cq_tail.load(Ordering::Relaxed);
+            let cq_tail = ring.cq_tail.load(Ordering::Relaxed);
             let cq_mask = ring.cq_mask;
             let cq_idx = (cq_tail & cq_mask) as usize;
 
-            // Calculate CQE offset
             let cqe_ptr = unsafe {
                 let sq_region_end = (handle.ring_ptr.add(1) as *mut Sqe).add(64); // Fixed offset for alignment
                 (sq_region_end as *mut Cqe).add(cq_idx)
@@ -296,16 +286,12 @@ impl KernelScheme for RingScheme {
                 (*cqe_ptr).flags = 0;
             }
 
-            // Commit CQE
-            // Store Release ensures userspace sees the CQE data before seeing the updated tail
             ring.cq_tail.store(cq_tail.wrapping_add(1), Ordering::Release);
 
             head = head.wrapping_add(1);
             processed += 1;
         }
 
-        // 4. Update Kernel Head
-        // Store Release ensures userspace sees we've consumed the SQEs
         ring.sq_head.store(head, Ordering::Release);
 
         Ok(processed)

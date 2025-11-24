@@ -24,7 +24,7 @@ fn inner(fpath_user: UserSliceRw, token: &mut CleanLockToken) -> Result<Vec<u8>>
         {
             let mut contexts = context::contexts(token.token());
             let (contexts, mut token) = contexts.token_split();
-            for context_ref in contexts.iter().filter_map(|r| r.upgrade()) {
+            for context_ref in contexts.values() {
                 let context = context_ref.read(token.token());
                 rows.push((context.pid, context.name, context.files.read().clone()));
             }
@@ -35,7 +35,7 @@ fn inner(fpath_user: UserSliceRw, token: &mut CleanLockToken) -> Result<Vec<u8>>
             let _ = writeln!(string, "{}: {}", id, name);
 
             for (fd, f) in fs.enumerate() {
-                let file = match *f {
+                let file: crate::context::file::FileDescriptor = match *f {
                     None => continue,
                     Some(ref file) => file.clone(),
                 };
@@ -56,10 +56,10 @@ fn inner(fpath_user: UserSliceRw, token: &mut CleanLockToken) -> Result<Vec<u8>>
                     description.flags
                 );
 
-                let scheme = {
+                let scheme: Arc<dyn scheme::KernelScheme> = {
                     let schemes = scheme::schemes(token.token());
                     match schemes.get(description.scheme) {
-                        Some(scheme) => scheme.clone(),
+                        Some(scheme) => Arc::clone(scheme),
                         None => {
                             let _ = writeln!(string, "no scheme",);
                             continue;

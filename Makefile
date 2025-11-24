@@ -30,12 +30,11 @@ $(BUILD)/kernel.all: $(LD_SCRIPT) $(LOCKFILE) $(MANIFEST) $(TARGET_SPEC) $(shell
 	cargo rustc \
 		--bin kernel \
 		--manifest-path "$(MANIFEST)" \
-		--target "$(TARGET_SPEC)" \
+		--target "$(ARCH)-unknown-kernel" \
 		--release \
-		-Z build-std=core,alloc \
+		-Z build-std=core,alloc,compiler_builtins \
 		-- \
-		-C link-arg=-T -Clink-arg="$(LD_SCRIPT)" \
-		-C link-arg=-z -Clink-arg=max-page-size=0x1000 \
+		-C link-arg=-T$(LD_SCRIPT) \
 		--emit link="$(BUILD)/kernel.all"
 
 $(BUILD)/kernel.sym: $(BUILD)/kernel.all

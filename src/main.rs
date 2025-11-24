@@ -182,7 +182,7 @@ fn kmain(bootstrap: Bootstrap) -> ! {
     context::init(&mut token);
 
     //Initialize global schemes, such as `acpi:`.
-    scheme::init_globals();
+    scheme::init_schemes();
 
     info!("BSP: {} CPUs", cpu_count());
     debug!("Env: {:?}", ::core::str::from_utf8(bootstrap.env));

@@ -9,8 +9,9 @@ pub fn resource(token: &mut CleanLockToken) -> Result<Vec<u8>> {
 
     let schemes = scheme::schemes(token.token());
     for (name, &scheme_id) in schemes.iter_name(scheme_ns) {
-        data.extend_from_slice(format!("{:>4}: ", scheme_id.get()).as_bytes());
-        data.extend_from_slice(name.as_bytes());
+        let id_bytes = format!("{:>4}: ", scheme_id.get());
+        data.extend_from_slice(id_bytes.as_bytes());
+        data.extend_from_slice((*name).as_bytes());
         data.push(b'\n');
     }
 

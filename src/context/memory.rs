@@ -69,7 +69,7 @@ impl UnmapResult {
         let scheme_opt = scheme::schemes(token.token()).get(scheme_id).cloned();
         let funmap_result = scheme_opt
             .ok_or(Error::new(ENODEV))
-            .and_then(|scheme| scheme.kfunmap(number, base_offset, self.size, self.flags, token));
+            .and_then(|scheme: Arc<dyn crate::scheme::KernelScheme>| scheme.kfunmap(number, base_offset, self.size, self.flags, token));
 
         if let Ok(fd) = Arc::try_unwrap(description) {
             fd.into_inner().try_close(token)?;

@@ -16,7 +16,7 @@ pub fn resource(token: &mut CleanLockToken) -> Result<Vec<u8>> {
     {
         let mut contexts = context::contexts(token.token());
         let (contexts, mut token) = contexts.token_split();
-        for context_ref in contexts.iter().filter_map(|r| r.upgrade()) {
+        for context_ref in contexts.values() {
             let context = context_ref.read(token.token());
 
             let mut stat_string = String::new();
@@ -71,7 +71,7 @@ pub fn resource(token: &mut CleanLockToken) -> Result<Vec<u8>> {
                 cpu_time_ns / 10_000_000
             );
 
-            let mut memory = context.kfx.len();
+            let mut memory: usize = context.kfx.len();
             if let Some(ref kstack) = context.kstack {
                 memory += kstack.len();
             }
