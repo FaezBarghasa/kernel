@@ -35,11 +35,8 @@ pub(crate) static AREAS: SyncUnsafeCell<[rmm::MemoryArea; 512]> = SyncUnsafeCell
 );
 pub(crate) static AREA_COUNT: SyncUnsafeCell<u16> = SyncUnsafeCell::new(0);
 
-// TODO: Share code
 pub(crate) fn areas() -> &'static [rmm::MemoryArea] {
     // SAFETY: Both AREAS and AREA_COUNT are initialized once and then never changed.
-    //
-    // TODO: Memory hotplug?
     unsafe { &(&*AREAS.get())[..AREA_COUNT.get().read().into()] }
 }
 
@@ -108,14 +105,10 @@ pub fn allocate_p2frame_complex(
     debug_assert_eq!(next_free.order(), frame_order);
     freelist.for_orders[frame_order as usize] = next_free.frame();
 
-    // TODO: Is this LIFO cache optimal?
-    //info!("MIN{min_order}FRAMEORD{frame_order}");
     for order in (min_order..frame_order).rev() {
-        //info!("SPLIT ORDER {order}");
         let order_page_count = 1 << order;
 
         let hi = frame.next_by(order_page_count);
-        //info!("SPLIT INTO {frame:?}:{hi:?} ORDER {order}");
 
         debug_assert_eq!(freelist.for_orders[order as usize], None);
 
@@ -219,7 +212,6 @@ pub unsafe fn deallocate_p2frame(orig_frame: Frame, order: u32) {
     debug_assert!(new_head.is_aligned_to_order(largest_order));
 
     if let Some(old_head) = freelist.for_orders[largest_order as usize].replace(new_head) {
-        //info!("HEAD {:p} FREED {:p} BARRIER {:p}", get_page_info(old_head).unwrap(), get_page_info(frame).unwrap(), unsafe { ALLOCATOR_DATA.abs_off as *const u8 });
         let old_head_info = get_free_alloc_page_info(old_head);
         let new_head_info = get_free_alloc_page_info(new_head);
 
@@ -228,7 +220,6 @@ pub unsafe fn deallocate_p2frame(orig_frame: Frame, order: u32) {
         old_head_info.set_prev(P2Frame::new(Some(new_head), largest_order));
     }
 
-    //info!("FREED {frame:?}+2^{order}");
     freelist.used_frames -= 1 << order;
 }
 
@@ -319,8 +310,7 @@ impl Frame {
         PhysicalAddress::new(self.physaddr.get())
     }
 
-    //TODO: Set private
-    pub fn range_inclusive(start: Frame, end: Frame) -> impl Iterator<Item = Frame> {
+    fn range_inclusive(start: Frame, end: Frame) -> impl Iterator<Item = Frame> {
         (start.physaddr.get()..=end.physaddr.get())
             .step_by(PAGE_SIZE)
             .map(|number| Frame {
@@ -480,7 +470,6 @@ static mut ALLOCATOR_DATA: AllocatorData = AllocatorData {
 };
 
 struct AllocatorData {
-    // TODO: Memory hotplugging?
     sections: &'static [Section],
     abs_off: usize,
 }
@@ -962,7 +951,7 @@ pub fn get_page_info(frame: Frame) -> Option<&'static PageInfo> {
 
     // binary_search_by_key returns either Ok(where it was found) or Err(where it would have been
     // inserted). The base obviously cannot have been exactly matched from an entry at an
-    // out-of-bounds index, so the only Err(i) where i - 1 is out of bounds, is for i=0. That
+    -    // out-of-bounds index, so the only Err(i) where i - 1 is out of bounds, is for i=0. That
     // has already been checked.
     let section = &sections[idx_res.unwrap_or_else(|e| e - 1)];
 

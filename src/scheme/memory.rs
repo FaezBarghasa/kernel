@@ -46,7 +46,6 @@ pub enum MemoryType {
 
 bitflags! {
     struct HandleFlags: u16 {
-        // TODO: below 32 bits?
         const PHYS_CONTIGUOUS = 1;
     }
 }
@@ -295,9 +294,33 @@ impl KernelScheme for MemoryScheme {
             HandleTy::Translation => Err(Error::new(EOPNOTSUPP)),
         }
     }
-    fn kfpath(&self, id: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
-        //TODO: construct useful path?
-        buf.copy_common_bytes_from_slice("/scheme/memory/".as_bytes())
+    fn kfpath(&self, id: usize, buf: UserSliceWo, _token: &mut CleanLockToken) -> Result<usize> {
+        let (handle_ty, mem_ty, flags) = u32::try_from(id)
+            .ok()
+            .and_then(from_raw)
+            .ok_or(Error::new(EBADF))?;
+
+        let mut path = Vec::new();
+        path.extend_from_slice(b"memory:");
+
+        match handle_ty {
+            HandleTy::Allocated => path.extend_from_slice(b"zeroed"),
+            HandleTy::PhysBorrow => path.extend_from_slice(b"physical"),
+            HandleTy::Translation => path.extend_from_slice(b"translation"),
+        }
+
+        match mem_ty {
+            MemoryType::Writeback => (),
+            MemoryType::Uncacheable => path.extend_from_slice(b"@uc"),
+            MemoryType::WriteCombining => path.extend_from_slice(b"@wc"),
+            MemoryType::DeviceMemory => path.extend_from_slice(b"@dev"),
+        }
+
+        if flags.contains(HandleFlags::PHYS_CONTIGUOUS) {
+            path.extend_from_slice(b"?phys_contiguous");
+        }
+
+        buf.copy_common_bytes_from_slice(&path)
     }
     fn kfstatvfs(&self, _file: usize, dst: UserSliceWo, _token: &mut CleanLockToken) -> Result<()> {
         let used = used_frames() as u64;

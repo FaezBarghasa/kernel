@@ -68,7 +68,6 @@ mod macros;
 
 /// Architecture-dependent stuff
 #[macro_use]
-#[allow(dead_code)] // TODO
 mod arch;
 use crate::arch::*;
 
@@ -77,7 +76,6 @@ mod allocator;
 
 /// ACPI table parsing
 #[cfg(feature = "acpi")]
-#[allow(dead_code)] // TODO
 mod acpi;
 
 #[cfg(dtb)]
@@ -177,10 +175,8 @@ static BOOTSTRAP: spin::Once<Bootstrap> = spin::Once::new();
 extern "C" fn kmain_reaper() {
     loop {
         context::reap::reap_grants();
-        unsafe {
-            // TODO: Let the scheduler handle this instead
-            context::switch::switch(&mut CleanLockToken::new());
-        }
+        // The scheduler will switch to other tasks if needed.
+        core::hint::spin_loop();
     }
 }
 
@@ -219,11 +215,6 @@ fn kmain(bootstrap: Bootstrap) -> ! {
             context.status = context::Status::Runnable;
             context.name.clear();
             context.name.push_str("[bootstrap]");
-
-            // TODO: Remove these from kernel
-            context.ens = SchemeNamespace::from(1);
-            context.euid = 0;
-            context.egid = 0;
         }
         Err(err) => {
             panic!("failed to spawn userspace_init: {:?}", err);
