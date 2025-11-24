@@ -19,8 +19,7 @@ pub(crate) fn new_irqchip(ic_str: &str) -> Option<Box<dyn InterruptController>> 
         Some(Box::new(irq_bcm2835::Bcm2835ArmInterruptController::new()))
     } else {
         warn!("no driver for interrupt controller {:?}", ic_str);
-        //TODO: return None and handle it properly
-        Some(Box::new(null::Null))
+        None
     }
 }
 
