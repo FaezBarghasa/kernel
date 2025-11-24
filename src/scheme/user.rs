@@ -234,7 +234,8 @@ impl UserInner {
         // Tell the scheme handler to read
         event::trigger(self.root_id, self.handle_id, EVENT_READ);
 
-        //TODO: wait for all todo and done to be processed?
+        // FIXME: Wait for all todo and done to be processed. This is important to prevent race
+        // conditions and ensure that all outstanding requests are handled before unmounting.
         Ok(())
     }
 
@@ -244,7 +245,7 @@ impl UserInner {
             states.insert(State::Placeholder)
         };
 
-        // TODO: implement blocking?
+        // FIXME: Implement blocking behavior when the slab is full.
         u32::try_from(idx).map_err(|_| Error::new(EAGAIN))
     }
 
