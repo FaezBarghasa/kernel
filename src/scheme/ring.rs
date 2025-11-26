@@ -104,7 +104,12 @@ impl RingScheme {
     }
 
     /// **Task 4.1:** Handles the asynchronous dispatch of an SQE.
-    fn process_sqe(&self, handle: &Arc<RingHandle>, sqe: &Sqe) -> Result<()> {
+    fn process_sqe(
+        &self,
+        handle: &Arc<RingHandle>,
+        sqe: &Sqe,
+        token: &mut CleanLockToken,
+    ) -> Result<()> {
         match sqe.opcode {
             IORING_OP_NOP => {
                 // NOP is fast and can be completed synchronously
@@ -303,7 +308,7 @@ impl KernelScheme for RingScheme {
             let sqe = unsafe { *sqe_ptr };
 
             // ASYNCHRONOUS DISPATCH
-            let result = self.process_sqe(&handle, &sqe);
+            let result = self.process_sqe(&handle, &sqe, _token);
 
             if result.is_ok() {
                 processed += 1;
