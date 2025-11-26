@@ -82,6 +82,6 @@ pub fn trigger(token: &mut CleanLockToken) {
         } else {
             break;
         };
-        event::trigger(timeout.scheme_id, timeout.event_id, EVENT_READ);
+        event::trigger(timeout.scheme_id, timeout.event_id, EVENT_READ, token);
     }
 }

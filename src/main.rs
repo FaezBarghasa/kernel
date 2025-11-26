@@ -207,7 +207,7 @@ fn kmain(bootstrap: Bootstrap) -> ! {
     profiling::ready_for_profiling();
 
     let owner = None; // kmain not owned by any fd
-    match context::spawn(false, owner, kmain_reaper, &mut token) {
+    match context::spawn(false, owner.clone(), kmain_reaper, &mut token) {
         Ok(context_lock) => {
             let mut context = context_lock.write();
             context.status = context::Status::Runnable;

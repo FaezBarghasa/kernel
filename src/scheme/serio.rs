@@ -37,8 +37,9 @@ pub fn serio_input(index: usize, data: u8, token: &mut CleanLockToken) {
 
     INPUT[index].send(data, token);
 
-    for (id, _handle) in HANDLES.read(token.token()).iter() {
-        event::trigger(GlobalSchemes::Serio.scheme_id(), *id, EVENT_READ, token);
+    let ids: Vec<usize> = HANDLES.read(token.token()).keys().copied().collect();
+    for id in ids {
+        event::trigger(GlobalSchemes::Serio.scheme_id(), id, EVENT_READ, token);
     }
 }
 
