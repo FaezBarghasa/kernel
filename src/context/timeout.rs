@@ -4,7 +4,7 @@ use spin::Once;
 use crate::{
     event,
     scheme::SchemeId,
-    sync::{CleanLockToken, LockToken, Mutex, MutexGuard, L0, L1},
+    sync::{CleanLockToken, LockToken, OrderedMutex, OrderedMutexGuard, L0, L1},
     syscall::{
         data::TimeSpec,
         flag::{CLOCK_MONOTONIC, CLOCK_REALTIME, EVENT_READ},
@@ -22,15 +22,15 @@ struct Timeout {
 
 type Registry = VecDeque<Timeout>;
 
-static REGISTRY: Once<Mutex<L1, Registry>> = Once::new();
+static REGISTRY: Once<OrderedMutex<L1, Registry>> = Once::new();
 
 /// Initialize registry, called if needed
-fn init_registry() -> Mutex<L1, Registry> {
-    Mutex::new(Registry::new())
+fn init_registry() -> OrderedMutex<L1, Registry> {
+    OrderedMutex::new(Registry::new())
 }
 
 /// Get the global timeouts list
-fn registry(token: LockToken<'_, L0>) -> MutexGuard<'_, L1, Registry> {
+fn registry(token: LockToken<'_, L0>) -> OrderedMutexGuard<'_, L1, Registry> {
     REGISTRY.call_once(init_registry).lock(token)
 }
 

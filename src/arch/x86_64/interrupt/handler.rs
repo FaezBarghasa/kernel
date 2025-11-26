@@ -262,6 +262,7 @@ macro_rules! pop_preserved {
     "
     };
 }
+#[macro_export]
 macro_rules! swapgs_iff_ring3_fast {
     // TODO: Spectre V1: LFENCE?
     () => {
@@ -275,6 +276,7 @@ macro_rules! swapgs_iff_ring3_fast {
     "
     };
 }
+#[macro_export]
 macro_rules! swapgs_iff_ring3_fast_errorcode {
     // TODO: Spectre V1: LFENCE?
     () => {
@@ -287,6 +289,7 @@ macro_rules! swapgs_iff_ring3_fast_errorcode {
     };
 }
 
+#[macro_export]
 macro_rules! conditional_swapgs_paranoid {
     // For regular interrupt handlers and the syscall handler, managing IA32_GS_BASE and
     // IA32_KERNEL_GS_BASE (the "GSBASE registers") is more or less trivial when using the SWAPGS
@@ -327,7 +330,7 @@ macro_rules! conditional_swapgs_paranoid {
         "sub rdi, {PCR_GDT_OFFSET};",
 
         // Read the current IA32_GS_BASE value into RDX.
-        alternative!(
+        $crate::alternative!(
             feature: "fsgsbase",
             then: ["rdgsbase rdx"],
             default: ["
@@ -351,6 +354,7 @@ macro_rules! conditional_swapgs_paranoid {
         ",
     ) }
 }
+#[macro_export]
 macro_rules! conditional_swapgs_back_paranoid {
     () => {
         "
@@ -361,6 +365,7 @@ macro_rules! conditional_swapgs_back_paranoid {
     "
     };
 }
+#[macro_export]
 macro_rules! nop {
     () => {
         "
@@ -386,8 +391,8 @@ macro_rules! interrupt_stack {
                 // Backup all userspace registers to stack
                 $save1!(),
                 "push rax\n",
-                push_scratch!(),
-                push_preserved!(),
+                $crate::push_scratch!(),
+                $crate::push_preserved!(),
 
                 $save2!(),
 
@@ -406,8 +411,8 @@ macro_rules! interrupt_stack {
                 $rstor2!(),
 
                 // Restore all userspace registers
-                pop_preserved!(),
-                pop_scratch!(),
+                $crate::pop_preserved!(),
+                $crate::pop_scratch!(),
 
                 $rstor1!(),
                 "iretq\n",
@@ -420,8 +425,8 @@ macro_rules! interrupt_stack {
             );
         }
     };
-    ($name:ident, |$stack:ident| $code:block) => { interrupt_stack!($name, swapgs_iff_ring3_fast!, nop!, nop!, swapgs_iff_ring3_fast!, is_paranoid: false, |$stack| $code); };
-    ($name:ident, @paranoid, |$stack:ident| $code:block) => { interrupt_stack!($name, nop!, conditional_swapgs_paranoid!, conditional_swapgs_back_paranoid!, nop!, is_paranoid: true, |$stack| $code); }
+    ($name:ident, |$stack:ident| $code:block) => { $crate::interrupt_stack!($name, swapgs_iff_ring3_fast!, nop!, nop!, swapgs_iff_ring3_fast!, is_paranoid: false, |$stack| $code); };
+    ($name:ident, @paranoid, |$stack:ident| $code:block) => { $crate::interrupt_stack!($name, nop!, conditional_swapgs_paranoid!, conditional_swapgs_back_paranoid!, nop!, is_paranoid: true, |$stack| $code); }
 }
 
 #[macro_export]
@@ -438,9 +443,9 @@ macro_rules! interrupt {
                 "cld;",
 
                 // Backup all userspace registers to stack
-                swapgs_iff_ring3_fast!(),
+                $crate::swapgs_iff_ring3_fast!(),
                 "push rax\n",
-                push_scratch!(),
+                $crate::push_scratch!(),
 
                 // TODO: Map PTI
                 // $crate::arch::x86_64::pti::map();
@@ -452,9 +457,9 @@ macro_rules! interrupt {
                 // $crate::arch::x86_64::pti::unmap();
 
                 // Restore all userspace registers
-                pop_scratch!(),
+                $crate::pop_scratch!(),
 
-                swapgs_iff_ring3_fast!(),
+                $crate::swapgs_iff_ring3_fast!(),
                 "iretq\n",
             ),
 
@@ -477,13 +482,13 @@ macro_rules! interrupt_error {
                 // Clear direction flag, required by ABI when running any Rust code in the kernel.
                 "cld;",
 
-                swapgs_iff_ring3_fast_errorcode!(),
+                $crate::swapgs_iff_ring3_fast_errorcode!(),
 
                 // Don't push RAX yet, as the error code is already stored in RAX's position.
 
                 // Push all userspace registers
-                push_scratch!(),
-                push_preserved!(),
+                $crate::push_scratch!(),
+                $crate::push_preserved!(),
 
                 // Now that we have a couple of usable registers, put the error code in the second
                 // argument register for the inner function, and save RAX where it would normally
@@ -502,11 +507,11 @@ macro_rules! interrupt_error {
                 // $crate::arch::x86_64::pti::unmap();
 
                 // Restore all userspace registers
-                pop_preserved!(),
-                pop_scratch!(),
+                $crate::pop_preserved!(),
+                $crate::pop_scratch!(),
 
                 // The error code has already been popped, so use the regular macro.
-                swapgs_iff_ring3_fast!(),
+                $crate::swapgs_iff_ring3_fast!(),
                 "iretq;",
             ),
 

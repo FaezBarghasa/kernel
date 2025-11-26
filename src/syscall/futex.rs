@@ -19,7 +19,7 @@ use crate::{
     },
     memory::PhysicalAddress,
     paging::{Page, VirtualAddress},
-    sync::{CleanLockToken, Mutex, L1},
+    sync::{CleanLockToken, OrderedMutex, L1},
     time,
 };
 
@@ -50,8 +50,8 @@ pub struct FutexEntry {
 // implement that fully in userspace. Although futex is probably the best API for process-shared
 // POSIX synchronization primitives, a local hash table and wait-for-thread kernel APIs (e.g.
 // lwp_park/lwp_unpark from NetBSD) could be a simpler replacement.
-static FUTEXES: Mutex<L1, FutexList> =
-    Mutex::new(FutexList::with_hasher(DefaultHashBuilder::new()));
+static FUTEXES: OrderedMutex<L1, FutexList> =
+    OrderedMutex::new(FutexList::with_hasher(DefaultHashBuilder::new()));
 
 fn validate_and_translate_virt(space: &AddrSpace, addr: VirtualAddress) -> Option<PhysicalAddress> {
     // TODO: Move this elsewhere!

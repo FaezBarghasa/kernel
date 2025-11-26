@@ -1,3 +1,4 @@
+#[macro_export]
 macro_rules! expand_bool(
     ($value:expr_2021) => {
         concat!($value)
@@ -8,11 +9,13 @@ macro_rules! expand_bool(
 ///
 /// This macro is used to generate code that can be patched at runtime to use a more efficient
 /// instruction sequence if a certain CPU feature is present.
+#[macro_export]
 macro_rules! alternative(
     (feature: $feature:literal, then: [$($then:expr_2021),*], default: [$($default:expr_2021),*]) => {
-        alternative2!(feature1: $feature, then1: [$($then),*], feature2: "", then2: [""], default: [$($default),*])
+        $crate::alternative2!(feature1: $feature, then1: [$($then),*], feature2: "", then2: [""], default: [$($default),*])
     }
 );
+#[macro_export]
 macro_rules! saturating_sub(
     ($lhs:literal, $rhs:literal) => { concat!(
         "((", $lhs, ")>(", $rhs, "))*((", $lhs, ")-(", $rhs, "))",
@@ -23,25 +26,26 @@ macro_rules! saturating_sub(
 /// This macro is used to generate code that can be patched at runtime to use a more efficient
 /// instruction sequence if a certain CPU feature is present. If the feature is not present, a
 /// fallback implementation is used.
+#[macro_export]
 macro_rules! alternative2(
     (feature1: $feature1:literal, then1: [$($then1:expr_2021),*], feature2: $feature2:literal, then2: [$($then2:expr_2021),*], default: [$($default:expr_2021),*]) => {
         concat!("
             .set true, 1
             .set false, 0
             40:
-            .if ", expand_bool!(cfg!(cpu_feature_always = $feature1)), "
+            .if ", $crate::expand_bool!(cfg!(cpu_feature_always = $feature1)), "
             ", $($then1,)* "
-            .elseif ", expand_bool!(cfg!(cpu_feature_always = $feature2)), "
+            .elseif ", $crate::expand_bool!(cfg!(cpu_feature_always = $feature2)), "
             ", $($then2,)* "
             .else
             ", $($default,)* "
             .endif
             42:
-            .if ", expand_bool!(cfg!(cpu_feature_auto = $feature1)), "
-            .skip -", saturating_sub!("51f - 50f", "42b - 40b"), ", 0x90
+            .if ", $crate::expand_bool!(cfg!(cpu_feature_auto = $feature1)), "
+            .skip -", $crate::saturating_sub!("51f - 50f", "42b - 40b"), ", 0x90
             .endif
-            .if ", expand_bool!(cfg!(cpu_feature_auto = $feature2)), "
-            .skip -", saturating_sub!("61f - 60f", "42b - 40b"), ", 0x90
+            .if ", $crate::expand_bool!(cfg!(cpu_feature_auto = $feature2)), "
+            .skip -", $crate::saturating_sub!("61f - 60f", "42b - 40b"), ", 0x90
             .endif
             41:
             ",
@@ -49,14 +53,15 @@ macro_rules! alternative2(
             // quite obvious what saturating_sub does.
 
             // Declare them in reverse order. Last relocation wins!
-            alternative_auto!("6", $feature2, [$($then2),*]),
-            alternative_auto!("5", $feature1, [$($then1),*]),
+            $crate::alternative_auto!("6", $feature2, [$($then2),*]),
+            $crate::alternative_auto!("5", $feature1, [$($then1),*]),
         )
     };
 );
+#[macro_export]
 macro_rules! alternative_auto(
     ($first_digit:literal, $feature:literal, [$($then:expr_2021),*]) => { concat!(
-        ".if ", expand_bool!(cfg!(cpu_feature_auto = $feature)), "
+        ".if ", $crate::expand_bool!(cfg!(cpu_feature_auto = $feature)), "
         .pushsection .altcode.", $feature, ",\"a\"
         ", $first_digit, "0:
         ", $($then,)* "

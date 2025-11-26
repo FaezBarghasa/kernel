@@ -2,8 +2,12 @@ use syscall::Exception;
 use x86::irq::PageFaultError;
 
 use crate::{
-    arch::x86_shared::interrupt, context::signal::excp_handler, memory::GenericPfFlags,
-    paging::VirtualAddress, ptrace, sync::CleanLockToken, syscall::flag::*,
+    alternative, alternative2, alternative_auto, arch::x86_shared::interrupt,
+    conditional_swapgs_back_paranoid, conditional_swapgs_paranoid, context::signal::excp_handler,
+    expand_bool, interrupt_error, interrupt_stack, memory::GenericPfFlags, nop,
+    paging::VirtualAddress, pop_preserved, pop_scratch, ptrace, push_preserved, push_scratch,
+    saturating_sub, swapgs_iff_ring3_fast, swapgs_iff_ring3_fast_errorcode, sync::CleanLockToken,
+    syscall::flag::*,
 };
 
 interrupt_stack!(divide_by_zero, |stack| {

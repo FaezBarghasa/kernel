@@ -137,6 +137,9 @@ mod syscall;
 /// Time
 mod time;
 
+/// Topology
+mod topology;
+
 #[cfg_attr(not(test), global_allocator)]
 static ALLOCATOR: allocator::Allocator = allocator::Allocator;
 
@@ -206,7 +209,7 @@ fn kmain(bootstrap: Bootstrap) -> ! {
     let owner = None; // kmain not owned by any fd
     match context::spawn(false, owner, kmain_reaper, &mut token) {
         Ok(context_lock) => {
-            let mut context = context_lock.write(token.token());
+            let mut context = context_lock.write();
             context.status = context::Status::Runnable;
             context.name.clear();
             context.name.push_str("[kmain_reaper]");
@@ -217,7 +220,7 @@ fn kmain(bootstrap: Bootstrap) -> ! {
     }
     match context::spawn(true, owner, userspace_init, &mut token) {
         Ok(context_lock) => {
-            let mut context = context_lock.write(token.token());
+            let mut context = context_lock.write();
             context.status = context::Status::Runnable;
             context.name.clear();
             context.name.push_str("[bootstrap]");

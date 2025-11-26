@@ -42,3 +42,15 @@ pub use ::rmm::X86Arch as CurrentRmmArch;
 
 #[cfg(target_arch = "x86_64")]
 pub use ::rmm::X8664Arch as CurrentRmmArch;
+
+pub unsafe fn arch_copy_from_user(dst: *mut u8, src: *const u8, len: usize) -> usize {
+    // Placeholder: just copy
+    // In real kernel this needs to handle page faults
+    core::ptr::copy_nonoverlapping(src, dst, len);
+    0 // 0 means success/0 bytes remaining
+}
+
+pub unsafe fn arch_copy_to_user(dst: *mut u8, src: *const u8, len: usize) -> usize {
+    core::ptr::copy_nonoverlapping(src, dst, len);
+    0
+}

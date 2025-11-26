@@ -5,18 +5,18 @@ use alloc::{
 
 use crate::{
     context::{self, ContextLock},
-    sync::{CleanLockToken, Mutex, L1},
+    sync::{CleanLockToken, OrderedMutex, L1},
 };
 
 #[derive(Debug)]
 pub struct WaitCondition {
-    contexts: Mutex<L1, Vec<Weak<ContextLock>>>,
+    contexts: OrderedMutex<L1, Vec<Weak<ContextLock>>>,
 }
 
 impl WaitCondition {
     pub const fn new() -> WaitCondition {
         WaitCondition {
-            contexts: Mutex::new(Vec::new()),
+            contexts: OrderedMutex::new(Vec::new()),
         }
     }
 

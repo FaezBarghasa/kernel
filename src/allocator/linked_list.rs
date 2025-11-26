@@ -13,7 +13,7 @@ pub struct Allocator;
 impl Allocator {
     pub unsafe fn init(offset: usize, size: usize) {
         unsafe {
-            *HEAP.lock() = Some(Heap::new(offset, size));
+            *HEAP.lock() = Some(Heap::new(offset as *mut u8, size));
         }
     }
 }

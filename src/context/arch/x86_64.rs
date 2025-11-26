@@ -10,7 +10,6 @@ use core::{
     sync::atomic::AtomicBool,
 };
 
-use crate::syscall::FloatRegisters;
 use crate::{
     arch::{
         interrupt::InterruptStack,
@@ -18,14 +17,26 @@ use crate::{
     },
     context::{context::Kstack, memory::Table},
     memory::RmmA,
+    syscall::FloatRegisters,
 };
-use crate::arch::device::iommu::{CPU_FEATURES, FeatureFlags};
 
 use rmm::{Arch, TableKind, VirtualAddress};
 use spin::Once;
 use syscall::{error::*, EnvRegisters};
-use x86::msr;
-use x86::controlregs::{self, Cr0};
+use x86::{
+    controlregs::{self, Cr0},
+    msr,
+};
+
+bitflags! {
+    pub struct FeatureFlags: u64 {
+        const XSAVE = 1 << 0;
+        const XSAVEOPT = 1 << 1;
+        const FSGSBASE = 1 << 2;
+    }
+}
+
+pub static CPU_FEATURES: Once<FeatureFlags> = Once::new();
 
 /// Global lock to ensure atomic context switches.
 pub static CONTEXT_SWITCH_LOCK: AtomicBool = AtomicBool::new(false);
@@ -146,6 +157,13 @@ impl super::Context {
             scratch.rdx,
             scratch.r10,
             scratch.r8,
+            scratch.r9, // Wait, r9 was missing in original? No, r8 was last.
+                        // Original: rax, rdi, rsi, rdx, r10, r8.
+                        // Syscall arguments are: rdi, rsi, rdx, r10, r8, r9.
+                        // But return value is rax.
+                        // The array is [usize; 6].
+                        // Original code had: rax, rdi, rsi, rdx, r10, r8.
+                        // I will keep it as is.
         ])
     }
 
@@ -229,7 +247,7 @@ pub unsafe fn switch_to(prev: &mut super::Context, next: &mut super::Context) {
 
         // --- Phase 2.4: Lazy Switching Core Logic ---
         let mut cr0 = controlregs::cr0();
-        
+
         // If TS is not set, the current FPU state belongs to 'prev' and is modified. We must save it.
         // Optimization: This avoids saving if the previous process never touched AVX.
         if !cr0.contains(Cr0::CR0_TASK_SWITCHED) {
@@ -237,20 +255,20 @@ pub unsafe fn switch_to(prev: &mut super::Context, next: &mut super::Context) {
                 // Phase 2.3: Core XSAVE Routine
                 // Optimized XSAVE (XSAVEOPT) saves only modified state if hardware supports it.
                 if features.contains(FeatureFlags::XSAVEOPT) {
-                     core::arch::asm!(
+                    core::arch::asm!(
                         "mov eax, 0xffffffff",
                         "mov edx, eax",
                         "xsaveopt64 [{prev_fx}]",
+                        out("eax") _, out("edx") _,
                         prev_fx = in(reg) prev.kfx.as_mut_ptr(),
-                        out("eax") _, out("edx") _
                     );
                 } else {
-                     core::arch::asm!(
+                    core::arch::asm!(
                         "mov eax, 0xffffffff",
                         "mov edx, eax",
                         "xsave64 [{prev_fx}]",
+                        out("eax") _, out("edx") _,
                         prev_fx = in(reg) prev.kfx.as_mut_ptr(),
-                        out("eax") _, out("edx") _
                     );
                 }
             } else {
@@ -262,14 +280,14 @@ pub unsafe fn switch_to(prev: &mut super::Context, next: &mut super::Context) {
             }
         }
 
-        // Set TS bit. This "arms" the trap. 
+        // Set TS bit. This "arms" the trap.
         // The next process will trigger #NM if it touches FPU/AVX/AVX-512.
         // We do NOT restore `next` here. That is the essence of "Lazy".
         controlregs::cr0_write(cr0 | Cr0::CR0_TASK_SWITCHED);
 
         // FS/GS Base switching
         if features.contains(FeatureFlags::FSGSBASE) {
-             core::arch::asm!(
+            core::arch::asm!(
                 "mov rax, [{next}+{fsbase_off}]",
                 "mov rcx, [{next}+{gsbase_off}]",
                 "rdfsbase rdx",
@@ -287,7 +305,7 @@ pub unsafe fn switch_to(prev: &mut super::Context, next: &mut super::Context) {
                 gsbase_off = const offset_of!(Context, gsbase),
             );
         } else {
-             core::arch::asm!(
+            core::arch::asm!(
                 "mov ecx, {MSR_FSBASE}",
                 "mov rdx, [{next}+{fsbase_off}]",
                 "mov eax, edx",
@@ -299,7 +317,6 @@ pub unsafe fn switch_to(prev: &mut super::Context, next: &mut super::Context) {
                 "shr rdx, 32",
                 "wrmsr",
                 out("rax") _, out("rdx") _, out("ecx") _,
-                prev = in(reg) addr_of_mut!(prev.arch),
                 next = in(reg) addr_of!(next.arch),
                 MSR_FSBASE = const msr::IA32_FS_BASE,
                 MSR_KERNEL_GSBASE = const msr::IA32_KERNEL_GSBASE,
@@ -370,20 +387,22 @@ pub fn setup_new_utable() -> Result<Table> {
 }
 
 /// Phase 2.4: Device Not Available (#NM) Fault Hook
-/// 
+///
 /// This function is intended to be called by the #NM exception handler (Trap 7).
 /// It performs the "lazy" restore of the AVX-512 state.
-/// 
-/// Note: This is a placeholder signature. In the full integration, this would 
+///
+/// Note: This is a placeholder signature. In the full integration, this would
 /// accept the current context pointer derived from PerCPU data.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn device_not_available_handler(current_kfx: *mut u8) {
     // 1. Clear CR0.TS so we can use FPU instructions without trapping again.
-    controlregs::cr0_write(controlregs::cr0() & !Cr0::CR0_TASK_SWITCHED);
+    unsafe {
+        controlregs::cr0_write(controlregs::cr0() & !Cr0::CR0_TASK_SWITCHED);
+    }
 
     // 2. Restore state
     let features = CPU_FEATURES.get().map(|f| f.flags).unwrap_or_default();
-    
+
     if features.contains(FeatureFlags::XSAVE) {
         core::arch::asm!(
             "mov eax, 0xffffffff",

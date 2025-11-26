@@ -2,15 +2,33 @@
 //!
 //! This module contains synchronization types essential for thread safety and real-time guarantees.
 
-use core::cell::UnsafeCell;
-use core::ops::{Deref, DerefMut};
+use core::{
+    cell::UnsafeCell,
+    ops::{Deref, DerefMut},
+};
 use spin::{Mutex as SpinMutex, MutexGuard as SpinMutexGuard};
 
 use crate::context::Context;
 
+// Declare submodules
+mod ordered;
+mod wait_condition;
+mod wait_queue;
+
+// Re-export ordered lock types
+pub use ordered::{
+    check_no_locks, ArcRwLockWriteGuard, CleanLockToken, Higher, Level, LockToken, Lower,
+    Mutex as OrderedMutex, MutexGuard as OrderedMutexGuard, RwLock, RwLockReadGuard,
+    RwLockWriteGuard, L0, L1, L2, L3, L4, L5,
+};
+
+// Re-export wait queue types
+pub use wait_condition::WaitCondition;
+pub use wait_queue::WaitQueue;
+
 /// A Mutex wrapper implementing a placeholder for the Priority Inheritance Protocol (PIP).
-/// 
-/// In a full PIP implementation, the `priority_ceiling` would automatically be raised 
+///
+/// In a full PIP implementation, the `priority_ceiling` would automatically be raised
 /// to the priority of the highest-priority waiting task upon contention.
 pub struct Mutex<T: ?Sized> {
     inner: SpinMutex<T>,
@@ -36,9 +54,9 @@ impl<T> Mutex<T> {
         // 3. If contention occurs:
         //    a. Check if P_current > self.priority_ceiling.
         //    b. If so, raise the current task's effective priority to the higher ceiling.
-        
+
         let guard = self.inner.lock();
-        
+
         // For demonstration, we simply update the ceiling placeholder on lock acquisition.
         unsafe {
             // Assume the current task has a priority to inherit, e.g., 255 (highest).
@@ -46,10 +64,10 @@ impl<T> Mutex<T> {
             *self.priority_ceiling.get() = 255;
         }
         // --- PRIORITY INHERITANCE SIMULATION END ---
-        
+
         MutexGuard { mutex: self, guard }
     }
-    
+
     // Other Mutex methods (try_lock, etc.) omitted for brevity.
 }
 

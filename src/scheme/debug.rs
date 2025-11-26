@@ -1,16 +1,19 @@
 use core::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::{
+    context::file::InternalFlags,
     devices::graphical_debug,
     event,
     log::Writer,
     scheme::*,
     sync::{CleanLockToken, RwLock, WaitQueue, L1},
     syscall::{
+        error::{EBADF, EINVAL, ENOENT, EPERM},
         flag::{EventFlags, EVENT_READ, O_NONBLOCK},
         usercopy::{UserSliceRo, UserSliceWo},
     },
 };
+use hashbrown::{hash_map::DefaultHashBuilder, HashMap};
 
 static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
 
@@ -33,7 +36,7 @@ pub fn debug_input(data: u8, token: &mut CleanLockToken) {
 // Notify readers of input updates
 pub fn debug_notify(token: &mut CleanLockToken) {
     for (id, _handle) in HANDLES.read(token.token()).iter() {
-        event::trigger(GlobalSchemes::Debug.scheme_id(), *id, EVENT_READ);
+        event::trigger(GlobalSchemes::Debug.scheme_id(), *id, EVENT_READ, token);
     }
 }
 

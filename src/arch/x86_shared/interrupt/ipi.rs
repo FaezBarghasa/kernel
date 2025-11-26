@@ -1,5 +1,6 @@
 use crate::{
-    context, device::local_apic::the_local_apic, percpu::PercpuBlock, sync::CleanLockToken,
+    context, device::local_apic::the_local_apic, interrupt, percpu::PercpuBlock,
+    sync::CleanLockToken,
 };
 
 interrupt!(wakeup, || {

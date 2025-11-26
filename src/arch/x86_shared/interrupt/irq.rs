@@ -8,11 +8,17 @@ use crate::{
         ioapic, local_apic, pic, pit,
         serial::{COM1, COM2},
     },
+    interrupt,
     ipi::{ipi, IpiKind, IpiTarget},
     percpu::PercpuBlock,
     scheme::{irq::irq_trigger, serio::serio_input},
     sync::CleanLockToken,
     time,
+};
+
+#[cfg(target_arch = "x86_64")]
+use crate::{
+    conditional_swapgs_back_paranoid, conditional_swapgs_paranoid, nop, swapgs_iff_ring3_fast,
 };
 
 #[repr(u8)]
@@ -164,7 +170,7 @@ unsafe fn ioapic_unmask(irq: usize) {
     }
 }
 
-interrupt_stack!(pit_stack, |_stack| {
+crate::interrupt_stack!(pit_stack, |_stack| {
     // Saves CPU time by not sending IRQ event irq_trigger(0);
 
     {
@@ -185,7 +191,7 @@ interrupt_stack!(pit_stack, |_stack| {
     context::switch::tick(&mut token);
 });
 
-interrupt!(keyboard, || {
+crate::interrupt!(keyboard, || {
     let data: u8;
     unsafe { core::arch::asm!("in al, 0x60", out("al") data) };
 
@@ -195,38 +201,38 @@ interrupt!(keyboard, || {
     serio_input(0, data, &mut token);
 });
 
-interrupt!(cascade, || {
+crate::interrupt!(cascade, || {
     // No need to do any operations on cascade
     unsafe { eoi(2) };
 });
 
-interrupt!(com2, || {
+crate::interrupt!(com2, || {
     let mut token = unsafe { CleanLockToken::new() };
     COM2.lock().receive(&mut token);
     unsafe { eoi(3) };
 });
 
-interrupt!(com1, || {
+crate::interrupt!(com1, || {
     let mut token = unsafe { CleanLockToken::new() };
     COM1.lock().receive(&mut token);
     unsafe { eoi(4) };
 });
 
-interrupt!(lpt2, || {
+crate::interrupt!(lpt2, || {
     unsafe {
         trigger(5);
         eoi(5);
     }
 });
 
-interrupt!(floppy, || {
+crate::interrupt!(floppy, || {
     unsafe {
         trigger(6);
         eoi(6);
     }
 });
 
-interrupt!(lpt1, || {
+crate::interrupt!(lpt1, || {
     unsafe {
         if irq_method() == IrqMethod::Pic && pic::master().isr() & (1 << 7) == 0 {
             // the IRQ was spurious, ignore it but increment a counter.
@@ -238,35 +244,35 @@ interrupt!(lpt1, || {
     }
 });
 
-interrupt!(rtc, || {
+crate::interrupt!(rtc, || {
     unsafe {
         trigger(8);
         eoi(8);
     }
 });
 
-interrupt!(pci1, || {
+crate::interrupt!(pci1, || {
     unsafe {
         trigger(9);
         eoi(9);
     }
 });
 
-interrupt!(pci2, || {
+crate::interrupt!(pci2, || {
     unsafe {
         trigger(10);
         eoi(10);
     }
 });
 
-interrupt!(pci3, || {
+crate::interrupt!(pci3, || {
     unsafe {
         trigger(11);
         eoi(11);
     }
 });
 
-interrupt!(mouse, || {
+crate::interrupt!(mouse, || {
     let data: u8;
     unsafe { core::arch::asm!("in al, 0x60", out("al") data) };
 
@@ -276,21 +282,21 @@ interrupt!(mouse, || {
     serio_input(1, data, &mut token);
 });
 
-interrupt!(fpu, || {
+crate::interrupt!(fpu, || {
     unsafe {
         trigger(13);
         eoi(13);
     }
 });
 
-interrupt!(ata1, || {
+crate::interrupt!(ata1, || {
     unsafe {
         trigger(14);
         eoi(14);
     }
 });
 
-interrupt!(ata2, || {
+crate::interrupt!(ata2, || {
     unsafe {
         if irq_method() == IrqMethod::Pic && pic::slave().isr() & (1 << 7) == 0 {
             SPURIOUS_COUNT_IRQ15.fetch_add(1, Ordering::Relaxed);
@@ -302,24 +308,24 @@ interrupt!(ata2, || {
     }
 });
 
-interrupt!(lapic_timer, || {
+crate::interrupt!(lapic_timer, || {
     println!("Local apic timer interrupt");
     unsafe { lapic_eoi() };
 });
 #[cfg(feature = "profiling")]
-interrupt!(aux_timer, || {
+crate::interrupt!(aux_timer, || {
     unsafe { lapic_eoi() };
     crate::ipi::ipi(IpiKind::Profile, IpiTarget::Other);
 });
 
-interrupt!(lapic_error, || {
+crate::interrupt!(lapic_error, || {
     error!("Local apic internal error: ESR={:#0x}", unsafe {
         local_apic::the_local_apic().esr()
     });
     unsafe { lapic_eoi() };
 });
 
-interrupt_error!(generic_irq, |_stack, code| {
+crate::interrupt_error!(generic_irq, |_stack, code| {
     let mut token = unsafe { CleanLockToken::new() };
 
     // The reason why 128 is subtracted and added from the code, is that PUSH imm8 sign-extends the

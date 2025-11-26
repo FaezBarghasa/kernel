@@ -6,8 +6,8 @@ use spin::Once;
 
 use super::{CallerCtx, KernelScheme, OpenResult};
 use crate::{
+    context::file::InternalFlags,
     dtb::DTB_BINARY,
-    scheme::InternalFlags,
     sync::{CleanLockToken, RwLock, L1},
     syscall::{
         data::Stat,
