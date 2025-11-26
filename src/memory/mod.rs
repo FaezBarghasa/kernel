@@ -559,11 +559,13 @@ fn init_sections(mut allocator: BumpAllocator<RmmA>) {
 
         // TODO: Should RMM do this?
 
-        while let Some(next_area) = iter.peek()
-            && next_area.base == memory_map_area.base.add(memory_map_area.size)
-        {
-            memory_map_area.size += next_area.size;
-            let _ = iter.next();
+        while let Some(next_area) = iter.peek() {
+            if next_area.base == memory_map_area.base.add(memory_map_area.size) {
+                memory_map_area.size += next_area.size;
+                let _ = iter.next();
+            } else {
+                break;
+            }
         }
 
         assert_eq!(
@@ -733,13 +735,12 @@ fn init_sections(mut allocator: BumpAllocator<RmmA>) {
         //info!("SECTION from {:?}, {} pages, array at {:p}", section.base, section.frames.len(), section.frames);
     }
     for (order, tuple_opt) in last_pages.iter().enumerate() {
-        let Some((frame, info)) = tuple_opt else {
-            continue;
-        };
-        debug_assert!(frame.is_aligned_to_order(order as u32));
-        let free = info.as_free().unwrap();
-        debug_assert_eq!(free.prev().order(), order as u32);
-        free.set_next(P2Frame::new(None, order as u32));
+        if let Some((frame, info)) = tuple_opt {
+            debug_assert!(frame.is_aligned_to_order(order as u32));
+            let free = info.as_free().unwrap();
+            debug_assert_eq!(free.prev().order(), order as u32);
+            free.set_next(P2Frame::new(None, order as u32));
+        }
     }
 
     FREELIST.lock().for_orders = first_pages.map(|pair| pair.map(|(frame, _)| frame));
