@@ -20,10 +20,14 @@ use spin::Mutex;
 //  ___) |  __/\__ \__ \ | (_) | | | \__ \
 // |____/ \___||___/___/_|\___/|_| |_|___/
 
+/// A ptrace session.
 #[derive(Debug)]
 pub struct SessionData {
+    /// The current breakpoint.
     pub(crate) breakpoint: Option<Breakpoint>,
+    /// The queue of ptrace events.
     events: VecDeque<PtraceEvent>,
+    /// The file descriptor of the tracee.
     file_id: usize,
 }
 impl SessionData {
@@ -73,13 +77,18 @@ impl SessionData {
     }
 }
 
+/// A ptrace session.
 #[derive(Debug)]
 pub struct Session {
+    /// The data of the session.
     pub data: Mutex<SessionData>,
+    /// The wait condition for the tracee.
     pub tracee: WaitCondition,
+    /// The wait condition for the tracer.
     pub tracer: WaitCondition,
 }
 impl Session {
+    /// Returns the current ptrace session.
     pub fn current() -> Option<Arc<Session>> {
         PercpuBlock::current()
             .ptrace_session
@@ -87,6 +96,7 @@ impl Session {
             .as_ref()?
             .upgrade()
     }
+    /// Creates a new ptrace session.
     pub fn new(file_id: usize) -> Arc<Session> {
         Arc::new(Session {
             data: Mutex::new(SessionData {
@@ -235,6 +245,8 @@ pub fn breakpoint_callback(
 /// detecting whether or not the tracer decided to use sysemu mode.
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 pub fn next_breakpoint() -> Option<PtraceFlags> {
+    //  TODO: Make this function arch-independent (probably requires moving
+    //  some stuff from the syscall handler)
     let session = Session::current()?;
     let data = session.data.lock();
     let breakpoint = data.breakpoint?;

@@ -6,6 +6,7 @@ use crate::{
     syscall::io::{Io, Pio},
 };
 
+/// Resets the system.
 pub unsafe fn kreset() -> ! {
     unsafe {
         info!("kreset");
@@ -22,6 +23,7 @@ pub unsafe fn kreset() -> ! {
     }
 }
 
+/// Performs an emergency reset of the system.
 #[cfg(target_arch = "x86")]
 pub unsafe fn emergency_reset() -> ! {
     unsafe {
@@ -40,6 +42,7 @@ pub unsafe fn emergency_reset() -> ! {
     }
 }
 
+/// Performs an emergency reset of the system.
 #[cfg(target_arch = "x86_64")]
 pub unsafe fn emergency_reset() -> ! {
     unsafe {
@@ -89,6 +92,7 @@ fn userspace_acpi_shutdown(token: &mut CleanLockToken) {
     }
 }
 
+/// Stops the system.
 pub unsafe fn kstop(token: &mut CleanLockToken) -> ! {
     unsafe {
         info!("Running kstop()");

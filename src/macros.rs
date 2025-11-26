@@ -16,6 +16,7 @@ macro_rules! println {
     });
 }
 
+/// Prints an error message.
 #[macro_export]
 macro_rules! error {
     ($($arg:tt)*) => {
@@ -23,6 +24,7 @@ macro_rules! error {
     };
 }
 
+/// Prints a warning message.
 #[macro_export]
 macro_rules! warn {
     ($($arg:tt)*) => {
@@ -30,6 +32,7 @@ macro_rules! warn {
     };
 }
 
+/// Prints an info message.
 #[macro_export]
 macro_rules! info {
     ($($arg:tt)*) => {
@@ -37,6 +40,7 @@ macro_rules! info {
     };
 }
 
+/// Prints a debug message.
 #[macro_export]
 macro_rules! debug {
     ($($arg:tt)*) => {
@@ -46,6 +50,7 @@ macro_rules! debug {
     };
 }
 
+/// Prints a trace message.
 #[macro_export]
 macro_rules! trace {
     ($($arg:tt)*) => {

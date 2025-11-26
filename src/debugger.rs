@@ -7,7 +7,16 @@ use crate::{
 use alloc::sync::Arc;
 use hashbrown::{HashMap, HashSet};
 
-/// Super unsafe due to page table switching and raw pointers!
+/// The main debugger function.
+///
+/// This function is incredibly unsafe due to page table switching and raw pointers. It should only be
+/// called when the system is in a debug state.
+///
+/// # Arguments
+///
+/// * `target_id` - An optional pointer to a `ContextLock` to debug a specific context. If `None`, all
+/// contexts will be debugged.
+/// * `token` - A clean lock token.
 pub unsafe fn debugger(target_id: Option<*const ContextLock>, token: &mut CleanLockToken) {
     println!("DEBUGGER START");
     println!();
@@ -166,6 +175,12 @@ pub unsafe fn debugger(target_id: Option<*const ContextLock>, token: &mut CleanL
     println!("DEBUGGER END");
 }
 
+/// Dumps the stack of a context.
+///
+/// # Arguments
+///
+/// * `context` - The context to dump the stack of.
+/// * `sp` - The stack pointer to start dumping from.
 fn dump_stack(context: &Context, mut sp: usize) {
     let width = size_of::<usize>();
 

@@ -5,11 +5,13 @@ use crate::{
 };
 
 impl PercpuBlock {
+    /// Returns the current per-CPU block.
     pub fn current() -> &'static Self {
         unsafe { &*(crate::device::cpu::registers::control_regs::tpidr_el1() as *const Self) }
     }
 }
 
+/// Initializes the per-CPU block for the current CPU.
 #[cold]
 pub unsafe fn init(cpu_id: LogicalCpuId) {
     unsafe {

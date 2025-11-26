@@ -2,12 +2,21 @@ use core::mem;
 
 const WORD_SIZE: usize = mem::size_of::<usize>();
 
-/// Memcpy
+/// Copies `len` bytes from `src` to `dest`.
 ///
-/// Copy N bytes of memory from one location to another.
+/// The memory areas may not overlap.
 ///
-/// This faster implementation works by copying bytes not one-by-one, but in
-/// groups of 8 bytes (or 4 bytes in the case of 32-bit architectures).
+/// This implementation is optimized to copy bytes in chunks of `usize`.
+///
+/// # Arguments
+///
+/// * `dest` - The destination buffer.
+/// * `src` - The source buffer.
+/// * `len` - The number of bytes to copy.
+///
+/// # Returns
+///
+/// A pointer to the destination buffer.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn memcpy(dest: *mut u8, src: *const u8, len: usize) -> *mut u8 {
     unsafe {
@@ -34,12 +43,21 @@ pub unsafe extern "C" fn memcpy(dest: *mut u8, src: *const u8, len: usize) -> *m
     }
 }
 
-/// Memmove
+/// Copies `len` bytes from `src` to `dest`.
 ///
-/// Copy N bytes of memory from src to dest. The memory areas may overlap.
+/// The memory areas may overlap.
 ///
-/// This faster implementation works by copying bytes not one-by-one, but in
-/// groups of 8 bytes (or 4 bytes in the case of 32-bit architectures).
+/// This implementation is optimized to copy bytes in chunks of `usize`.
+///
+/// # Arguments
+///
+/// * `dest` - The destination buffer.
+/// * `src` - The source buffer.
+/// * `len` - The number of bytes to copy.
+///
+/// # Returns
+///
+/// A pointer to the destination buffer.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn memmove(dest: *mut u8, src: *const u8, len: usize) -> *mut u8 {
     unsafe {
@@ -85,12 +103,19 @@ pub unsafe extern "C" fn memmove(dest: *mut u8, src: *const u8, len: usize) -> *
     }
 }
 
-/// Memset
+/// Fills the first `len` bytes of the memory area pointed to by `dest` with the constant byte `byte`.
 ///
-/// Fill a block of memory with a specified value.
+/// This implementation is optimized to set bytes in chunks of `usize`.
 ///
-/// This faster implementation works by setting bytes not one-by-one, but in
-/// groups of 8 bytes (or 4 bytes in the case of 32-bit architectures).
+/// # Arguments
+///
+/// * `dest` - The buffer to fill.
+/// * `byte` - The byte to fill with.
+/// * `len` - The number of bytes to fill.
+///
+/// # Returns
+///
+/// A pointer to the destination buffer.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn memset(dest: *mut u8, byte: i32, len: usize) -> *mut u8 {
     unsafe {
@@ -115,12 +140,21 @@ pub unsafe extern "C" fn memset(dest: *mut u8, byte: i32, len: usize) -> *mut u8
     }
 }
 
-/// Memcmp
+/// Compares the first `len` bytes of the memory areas `s1` and `s2`.
 ///
-/// Compare two blocks of memory.
+/// This implementation is optimized to compare bytes in chunks of `usize`.
 ///
-/// This faster implementation works by comparing bytes not one-by-one, but in
-/// groups of 8 bytes (or 4 bytes in the case of 32-bit architectures).
+/// # Arguments
+///
+/// * `s1` - The first buffer to compare.
+/// * `s2` - The second buffer to compare.
+/// * `len` - The number of bytes to compare.
+///
+/// # Returns
+///
+/// An integer less than, equal to, or greater than zero if the first `len` bytes of `s1` is
+/// found, respectively, to be less than, to match, or be greater than the first `len` bytes of
+/// `s2`.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn memcmp(s1: *const u8, s2: *const u8, len: usize) -> i32 {
     unsafe {

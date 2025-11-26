@@ -78,7 +78,10 @@ global_asm!("
     start = sym start,
 );
 
-/// The entry to Rust, all things must be initialized
+/// The entry point for the kernel.
+///
+/// This function is called from the assembly code in `kstart`, and is responsible for initializing
+/// the kernel.
 unsafe extern "C" fn start(args_ptr: *const KernelArgs) -> ! {
     unsafe {
         let bootstrap = {

@@ -6,6 +6,7 @@ use crate::{
     percpu::PercpuBlock,
 };
 
+/// The architecture-specific per-CPU block.
 #[repr(C)]
 pub struct ArchPercpu {
     // These fields must be kept first and in this order. Assembly in exception.rs depends on it
@@ -16,6 +17,7 @@ pub struct ArchPercpu {
 }
 
 impl PercpuBlock {
+    /// Returns the current per-CPU block.
     pub fn current() -> &'static Self {
         unsafe {
             let tp: *const ArchPercpu;
@@ -26,6 +28,7 @@ impl PercpuBlock {
     }
 }
 
+/// Initializes the per-CPU block for the current CPU.
 #[cold]
 pub unsafe fn init(cpu_id: LogicalCpuId) {
     unsafe {

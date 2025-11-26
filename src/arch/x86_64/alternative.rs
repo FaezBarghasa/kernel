@@ -15,6 +15,10 @@ use crate::{
 #[cfg(all(cpu_feature_never = "xsave", not(cpu_feature_never = "xsaveopt")))]
 compile_error!("cannot force-disable xsave without force-disabling xsaveopt");
 
+/// An alternative relocation.
+///
+/// This struct is used to store information about an alternative code sequence that can be used if a
+/// certain CPU feature is present.
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct AltReloc {
@@ -36,6 +40,9 @@ pub struct AltReloc {
     pub altcode_len: usize,
 }
 
+/// Early CPU initialization.
+///
+/// This function is called on each CPU to perform early initialization of CPU features.
 #[cold]
 pub unsafe fn early_init(bsp: bool) {
     unsafe {

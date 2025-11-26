@@ -1,3 +1,5 @@
+// This file contains the exception vector stubs for AArch64.
+// These stubs are responsible for handling exceptions and interrupts.
 core::arch::global_asm!(
     "
     //  Exception vector stubs

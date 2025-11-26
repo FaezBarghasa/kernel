@@ -1,18 +1,22 @@
 use rmm::{Arch, PageFlags, VirtualAddress};
 
+/// A kernel page mapper.
 pub struct KernelMapper {
     mapper: crate::paging::PageMapper,
     ro: bool,
 }
 impl KernelMapper {
+    /// Locks the kernel page mapper.
     pub fn lock() -> Self {
         unimplemented!()
     }
+    /// Returns a mutable reference to the inner page mapper.
     pub fn get_mut(&mut self) -> Option<&mut crate::paging::PageMapper> {
         unimplemented!()
     }
 }
 
+/// Returns the page flags for a given virtual address.
 pub unsafe fn page_flags<A: Arch>(virt: VirtualAddress) -> PageFlags<A> {
     use crate::kernel_executable_offsets::*;
     let virt_addr = virt.data();

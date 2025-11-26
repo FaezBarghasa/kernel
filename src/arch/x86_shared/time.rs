@@ -2,6 +2,7 @@
 use super::device::hpet;
 use super::device::pit;
 
+/// Returns the monotonic time in nanoseconds.
 pub fn monotonic_absolute() -> u128 {
     // The paravirtualized TSC is already guaranteed to be monotonic, and thus doesn't need to be
     // readjusted.
@@ -12,6 +13,7 @@ pub fn monotonic_absolute() -> u128 {
 
     *crate::time::OFFSET.lock() + hpet_or_pit()
 }
+/// Returns the time from the HPET or PIT.
 fn hpet_or_pit() -> u128 {
     #[cfg(feature = "acpi")]
     if let Some(ref hpet) = *crate::acpi::ACPI_TABLE.hpet.read() {

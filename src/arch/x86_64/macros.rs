@@ -4,6 +4,10 @@ macro_rules! expand_bool(
     }
 );
 
+/// A macro for generating alternative code sequences.
+///
+/// This macro is used to generate code that can be patched at runtime to use a more efficient
+/// instruction sequence if a certain CPU feature is present.
 macro_rules! alternative(
     (feature: $feature:literal, then: [$($then:expr_2021),*], default: [$($default:expr_2021),*]) => {
         alternative2!(feature1: $feature, then1: [$($then),*], feature2: "", then2: [""], default: [$($default),*])
@@ -14,13 +18,11 @@ macro_rules! saturating_sub(
         "((", $lhs, ")>(", $rhs, "))*((", $lhs, ")-(", $rhs, "))",
     ) }
 );
-// Use feature1 if present, otherwise try using feature2, otherwise use default.
-//
-// cpu_feature_always simply means it is always enabled. Thus, if feature2, which has lower
-// priority, is "always" but feature1 is "auto", feature2 will still be checked for, and feature2
-// will become the fallback code.
-//
-// An empty string as feature is equivalent with "never".
+/// A macro for generating alternative code sequences with a fallback.
+///
+/// This macro is used to generate code that can be patched at runtime to use a more efficient
+/// instruction sequence if a certain CPU feature is present. If the feature is not present, a
+/// fallback implementation is used.
 macro_rules! alternative2(
     (feature1: $feature1:literal, then1: [$($then1:expr_2021),*], feature2: $feature2:literal, then2: [$($then2:expr_2021),*], default: [$($default:expr_2021),*]) => {
         concat!("

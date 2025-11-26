@@ -10,7 +10,7 @@ use x86::controlregs::{Cr4, cr4};
 pub static KPTI_ENABLED: AtomicBool = AtomicBool::new(false);
 
 /// Initializes the system for Kernel Page Table Isolation.
-/// 
+///
 /// This function simulates the configuration required for KPTI, primarily setting
 /// the necessary control register bits.
 pub fn kpti_init() {

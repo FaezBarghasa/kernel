@@ -1,5 +1,6 @@
 use raw_cpuid::{CpuId, CpuIdResult, ExtendedFeatures, FeatureInfo};
 
+/// Returns a `CpuId` instance that can be used to query CPU features.
 pub fn cpuid() -> CpuId {
     // FIXME check for cpuid availability during early boot and error out if it doesn't exist.
     CpuId::with_cpuid_fn(|a, c| {
@@ -16,6 +17,7 @@ pub fn cpuid() -> CpuId {
     })
 }
 
+/// Returns the CPU's feature information.
 #[cfg_attr(not(target_arch = "x86_64"), expect(dead_code))]
 pub fn feature_info() -> FeatureInfo {
     cpuid()
@@ -23,6 +25,7 @@ pub fn feature_info() -> FeatureInfo {
         .expect("x86_64 requires CPUID leaf=0x01 to be present")
 }
 
+/// Returns true if the CPU has the specified extended feature.
 #[cfg_attr(not(target_arch = "x86_64"), expect(dead_code))]
 pub fn has_ext_feat(feat: impl FnOnce(ExtendedFeatures) -> bool) -> bool {
     cpuid().get_extended_feature_info().is_some_and(feat)

@@ -61,6 +61,7 @@ pub mod macros;
 pub mod misc;
 
 // Placeholder for other initialization functions
+/// Initializes the x86_64 architecture.
 pub fn init() {
     unsafe {
         // Call the new security feature during early boot

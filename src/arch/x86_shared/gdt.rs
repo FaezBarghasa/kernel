@@ -147,6 +147,9 @@ const BASE_GDT: [GdtEntry; SEGMENT_COUNT] = [
 #[repr(C, align(16))]
 struct Align([u64; 2]);
 
+/// The Processor Control Region.
+///
+/// This struct stores per-CPU data, including the GDT, TSS, and other CPU-specific information.
 #[repr(C, align(4096))]
 pub struct ProcessorControlRegion {
     // TODO: When both KASLR and KPTI are implemented, the PCR may need to be split into two pages,
@@ -192,6 +195,7 @@ impl ProcessorControlRegion {
     }
 }
 
+/// Returns a pointer to the current Processor Control Region.
 pub unsafe fn pcr() -> *mut ProcessorControlRegion {
     unsafe {
         // Primitive benchmarking of RDFSBASE and RDGSBASE in userspace, appears to indicate that
@@ -203,6 +207,7 @@ pub unsafe fn pcr() -> *mut ProcessorControlRegion {
     }
 }
 
+/// Sets the TSS stack pointer.
 #[cfg(feature = "pti")]
 pub unsafe fn set_tss_stack(pcr: *mut ProcessorControlRegion, stack: usize) {
     use super::pti::{PTI_CONTEXT_STACK, PTI_CPU_STACK};
@@ -223,6 +228,7 @@ pub unsafe fn set_tss_stack(pcr: *mut ProcessorControlRegion, stack: usize) {
     unsafe { PTI_CONTEXT_STACK = stack };
 }
 
+/// Sets the TSS stack pointer.
 #[cfg(not(feature = "pti"))]
 pub unsafe fn set_tss_stack(pcr: *mut ProcessorControlRegion, stack: usize) {
     #[cfg(target_arch = "x86")]
@@ -238,6 +244,7 @@ pub unsafe fn set_tss_stack(pcr: *mut ProcessorControlRegion, stack: usize) {
     }
 }
 
+/// Sets whether userspace is allowed to use I/O ports.
 pub unsafe fn set_userspace_io_allowed(pcr: *mut ProcessorControlRegion, allowed: bool) {
     let offset = if allowed {
         u16::try_from(size_of::<TaskStateSegment>()).unwrap()
@@ -254,6 +261,7 @@ pub unsafe fn set_userspace_io_allowed(pcr: *mut ProcessorControlRegion, allowed
     }
 }
 
+/// Initializes the Processor Control Region.
 #[cold]
 fn init_pcr(pcr: &mut ProcessorControlRegion, stack_end: usize) {
     pcr.self_ref = pcr as *mut _;
@@ -296,6 +304,7 @@ fn init_pcr(pcr: &mut ProcessorControlRegion, stack_end: usize) {
     }
 }
 
+/// Installs the Processor Control Region.
 #[cold]
 pub unsafe fn install_pcr(pcr_ptr: *mut ProcessorControlRegion) {
     let pcr = unsafe { &mut *pcr_ptr };
@@ -364,6 +373,7 @@ pub unsafe fn init_bsp(stack_end: usize) {
     unsafe { install_pcr(ptr::addr_of_mut!(BSP_PCR)) };
 }
 
+/// Allocates and initializes a Processor Control Region.
 #[cold]
 pub fn allocate_and_init_pcr(
     cpu_id: LogicalCpuId,
@@ -384,6 +394,7 @@ pub fn allocate_and_init_pcr(
     pcr_ptr
 }
 
+/// A GDT entry.
 #[derive(Copy, Clone, Debug)]
 #[repr(C, packed)]
 pub struct GdtEntry {
@@ -396,6 +407,7 @@ pub struct GdtEntry {
 }
 
 impl GdtEntry {
+    /// Creates a new GDT entry.
     pub const fn new(offset: u32, limit: u32, access: u8, flags: u8) -> Self {
         GdtEntry {
             limitl: limit as u16,
@@ -407,17 +419,20 @@ impl GdtEntry {
         }
     }
 
+    /// Returns the offset of the GDT entry.
     #[cfg(target_arch = "x86")]
     pub const fn offset(&self) -> u32 {
         (self.offsetl as u32) | ((self.offsetm as u32) << 16) | ((self.offseth as u32) << 24)
     }
 
+    /// Sets the offset of the GDT entry.
     pub const fn set_offset(&mut self, offset: u32) {
         self.offsetl = offset as u16;
         self.offsetm = (offset >> 16) as u8;
         self.offseth = (offset >> 24) as u8;
     }
 
+    /// Sets the limit of the GDT entry.
     pub const fn set_limit(&mut self, limit: u32) {
         self.limitl = limit as u16;
         self.flags_limith = self.flags_limith & 0xF0 | ((limit >> 16) as u8) & 0x0F;

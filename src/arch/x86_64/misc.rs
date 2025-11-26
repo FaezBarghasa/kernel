@@ -5,6 +5,7 @@ use crate::{
     cpuid::{cpuid, has_ext_feat},
 };
 
+/// Initializes miscellaneous CPU features.
 pub unsafe fn init(cpu_id: LogicalCpuId) {
     unsafe {
         if has_ext_feat(|feat| feat.has_umip()) {

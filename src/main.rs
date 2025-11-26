@@ -155,23 +155,29 @@ fn cpu_count() -> u32 {
     CPU_COUNT.load(Ordering::Relaxed)
 }
 
+/// Initialize the environment
 fn init_env() -> &'static [u8] {
     crate::BOOTSTRAP.get().expect("BOOTSTRAP was not set").env
 }
 
+/// This function is responsible for initializing the userspace.
 extern "C" fn userspace_init() {
     let mut token = unsafe { CleanLockToken::new() };
     let bootstrap = crate::BOOTSTRAP.get().expect("BOOTSTRAP was not set");
     unsafe { crate::syscall::process::usermode_bootstrap(bootstrap, &mut token) }
 }
 
+/// The bootstrap struct, containing the base address and page count of the bootstrap
+/// ramdisk, and the environment variables.
 struct Bootstrap {
     base: crate::memory::Frame,
     page_count: usize,
     env: &'static [u8],
 }
+/// The bootstrap buffer, used to load the bootstrap ramdisk and environment variables.
 static BOOTSTRAP: spin::Once<Bootstrap> = spin::Once::new();
 
+/// The kmain reaper, which reaps dead contexts.
 extern "C" fn kmain_reaper() {
     loop {
         context::reap::reap_grants();
@@ -251,6 +257,7 @@ fn kmain_ap(cpu_id: crate::cpu_set::LogicalCpuId) -> ! {
 
     run_userspace(&mut token);
 }
+/// This function is responsible for running the userspace.
 fn run_userspace(token: &mut CleanLockToken) -> ! {
     loop {
         unsafe {

@@ -26,12 +26,18 @@ pub const HARDCODED_CPU_COUNT: u32 = 4;
 
 pub const PROFILER_CPU: LogicalCpuId = LogicalCpuId::new(HARDCODED_CPU_COUNT);
 
+/// A ring buffer for storing profiling data.
 pub struct RingBuffer {
+    /// The head of the ring buffer.
     head: AtomicUsize,
+    /// The tail of the ring buffer.
     tail: AtomicUsize,
+    /// The underlying buffer.
     buf: &'static [UnsafeCell<usize>; N],
+    /// The number of NMIs that have occurred in kernel space.
     #[cfg_attr(not(feature = "profiling"), expect(dead_code))]
     pub(crate) nmi_kcount: AtomicUsize,
+    /// The number of NMIs that have occurred in user space.
     #[cfg_attr(not(feature = "profiling"), expect(dead_code))]
     pub(crate) nmi_ucount: AtomicUsize,
 }
@@ -102,12 +108,19 @@ impl RingBuffer {
         }))
     }
 }
+/// A null pointer to a `RingBuffer`.
 const NULL: AtomicPtr<RingBuffer> = AtomicPtr::new(core::ptr::null_mut());
+/// An array of atomic pointers to the `RingBuffer`s for each CPU.
 pub static BUFS: [AtomicPtr<RingBuffer>; 4] = [NULL; 4];
 
+/// A flag indicating whether profiling can be toggled at runtime.
 pub const PROFILE_TOGGLEABLE: bool = true;
+/// A flag indicating whether profiling is currently enabled.
 pub static IS_PROFILING: AtomicBool = AtomicBool::new(false);
 
+/// Handles a serial command.
+///
+/// This function is used to toggle profiling at runtime.
 pub fn serio_command(index: usize, data: u8) {
     if cfg!(not(feature = "profiling")) {
         return;

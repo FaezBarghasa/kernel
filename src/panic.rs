@@ -70,7 +70,7 @@ fn panic_handler_inner(info: &PanicInfo) -> ! {
     }
 }
 
-/// Get a stack trace
+/// Prints a stack trace.
 #[inline(never)]
 pub unsafe fn stack_trace() {
     unsafe {
@@ -149,7 +149,7 @@ pub unsafe fn stack_trace() {
     }
 }
 
-/// Get a user stack trace
+/// Prints a user stack trace.
 #[inline(never)]
 pub unsafe fn user_stack_trace(stack: &InterruptStack) {
     let mut fp = stack.frame_pointer();

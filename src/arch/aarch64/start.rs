@@ -63,7 +63,10 @@ global_asm!("
     start = sym start,
 );
 
-/// The entry to Rust, all things must be initialized
+/// The entry point for the kernel.
+///
+/// This function is called from the assembly code in `kstart`, and is responsible for initializing
+/// the kernel.
 unsafe extern "C" fn start(args_ptr: *const KernelArgs) -> ! {
     unsafe {
         let bootstrap = {
@@ -141,6 +144,7 @@ unsafe extern "C" fn start(args_ptr: *const KernelArgs) -> ! {
     }
 }
 
+/// Arguments for starting an application processor.
 #[repr(C, packed)]
 #[allow(unused)]
 pub struct KernelArgsAp {
@@ -150,7 +154,7 @@ pub struct KernelArgsAp {
     stack_end: u64,
 }
 
-/// Entry to rust for an AP
+/// The entry point for an application processor.
 #[allow(unused)]
 pub unsafe extern "C" fn kstart_ap(_args_ptr: *const KernelArgsAp) -> ! {
     loop {}

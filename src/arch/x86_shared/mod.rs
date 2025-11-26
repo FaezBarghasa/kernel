@@ -1,3 +1,5 @@
+//! This module contains code that is shared between the x86 and x86_64 architectures.
+
 /// CPUID wrapper
 pub mod cpuid;
 

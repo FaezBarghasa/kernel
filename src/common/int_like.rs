@@ -22,18 +22,22 @@
 //! let ATOMIC_PID: AtomicPid = AtomicPid::default();
 //! ```
 
+/// A macro for creating a new type that is backed by an integer.
 #[macro_export]
 macro_rules! int_like {
     ($new_type_name:ident, $backing_type: ident) => {
+        /// A new type that is backed by an integer.
         #[derive(Default, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone, Copy)]
         pub struct $new_type_name($backing_type);
 
         impl $new_type_name {
+            /// Returns the inner integer value.
             #[allow(dead_code)]
             #[inline]
             pub const fn get(self) -> $backing_type {
                 self.0
             }
+            /// Creates a new instance of the new type from an integer value.
             #[allow(dead_code)]
             #[inline]
             pub const fn new(x: $backing_type) -> Self {

@@ -15,6 +15,7 @@ use core::arch::naked_asm;
 
 pub use arch_copy_to_user as arch_copy_from_user;
 
+/// See documentation in `src/syscall/usercopy.rs`.
 #[unsafe(naked)]
 pub unsafe extern "C" fn arch_copy_to_user(dst: usize, src: usize, len: usize) -> u8 {
     naked_asm!(

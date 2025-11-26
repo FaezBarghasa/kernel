@@ -31,6 +31,7 @@ unsafe fn switch_stack(old: usize, new: usize) {
     asm!("", out("rsp") new_rsp);
 }
 
+/// Maps the kernel heap and switches to the per-context stack.
 #[cfg(feature = "pti")]
 #[inline(always)]
 pub unsafe fn map() {
@@ -55,6 +56,7 @@ pub unsafe fn map() {
     );
 }
 
+/// Unmaps the kernel heap and switches to the per-CPU stack.
 #[cfg(feature = "pti")]
 #[inline(always)]
 pub unsafe extern "C" fn unmap() {

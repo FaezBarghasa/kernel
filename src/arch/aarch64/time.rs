@@ -1,5 +1,6 @@
 use crate::time::NANOS_PER_SEC;
 
+/// Returns the monotonic time in nanoseconds.
 pub fn monotonic_absolute() -> u128 {
     //TODO: aarch64 generic timer counter
     let ticks: usize;

@@ -20,14 +20,19 @@ use crate::{
     },
 };
 
+/// A unique identifier for an event queue.
 int_like!(EventQueueId, AtomicEventQueueId, usize, AtomicUsize);
 
+/// An event queue.
 pub struct EventQueue {
+    /// The unique identifier of the event queue.
     id: EventQueueId,
+    /// The wait queue for events.
     queue: WaitQueue<Event>,
 }
 
 impl EventQueue {
+    /// Creates a new event queue.
     pub fn new(id: EventQueueId) -> EventQueue {
         EventQueue {
             id,
@@ -35,15 +40,18 @@ impl EventQueue {
         }
     }
 
+    /// Returns true if the event queue is currently empty.
     pub fn is_currently_empty(&self) -> bool {
         self.queue.is_currently_empty()
     }
 
+    /// Reads an event from the event queue.
     pub fn read(&self, buf: UserSliceWo, block: bool, token: &mut CleanLockToken) -> Result<usize> {
         self.queue
             .receive_into_user(buf, block, "EventQueue::read", token)
     }
 
+    /// Writes an event to the event queue.
     pub fn write(&self, events: &[Event], token: &mut CleanLockToken) -> Result<usize> {
         for event in events {
             let file = {
@@ -181,6 +189,7 @@ pub fn unregister_file(scheme: SchemeId, number: usize) {
     registry.remove(&RegKey { scheme, number });
 }
 
+/// Unregisters all events for a given queue.
 pub fn unregister_queue(queue_id: EventQueueId) {
     let mut registry = registry_mut();
     registry.retain(|_reg_key, queue_list| {
@@ -189,6 +198,7 @@ pub fn unregister_queue(queue_id: EventQueueId) {
     });
 }
 
+/// Triggers an event.
 fn trigger_inner(
     scheme: SchemeId,
     number: usize,

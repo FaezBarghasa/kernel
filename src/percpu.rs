@@ -69,6 +69,11 @@ pub fn get_all_stats() -> Vec<(LogicalCpuId, CpuStatsData)> {
 
 // PercpuBlock::current() is implemented somewhere in the arch-specific modules
 
+/// Shoots down the TLB on a specific CPU or all CPUs.
+///
+/// # Arguments
+///
+/// * `target` - The CPU to shoot down the TLB on. If `None`, the TLB will be shot down on all CPUs.
 pub fn shootdown_tlb_ipi(target: Option<LogicalCpuId>) {
     if cfg!(not(feature = "multi_core")) {
         return;
@@ -107,6 +112,7 @@ pub fn shootdown_tlb_ipi(target: Option<LogicalCpuId>) {
     }
 }
 impl PercpuBlock {
+    /// Handles a TLB shootdown IPI.
     pub fn maybe_handle_tlb_shootdown(&self) {
         #[expect(clippy::bool_comparison)]
         if self.wants_tlb_shootdown.swap(false, Ordering::Relaxed) == false {
@@ -122,6 +128,7 @@ impl PercpuBlock {
         }
     }
 }
+/// The arch-specific hook for switching address spaces.
 pub unsafe fn switch_arch_hook() {
     unsafe {
         let percpu = PercpuBlock::current();

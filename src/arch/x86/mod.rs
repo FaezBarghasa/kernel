@@ -13,6 +13,7 @@ pub mod flags {
     pub const FLAG_SINGLESTEP: usize = 1 << SHIFT_SINGLESTEP;
 }
 
+/// See documentation in `src/syscall/usercopy.rs`.
 #[unsafe(naked)]
 pub unsafe extern "C" fn arch_copy_to_user(dst: usize, src: usize, len: usize) -> u8 {
     core::arch::naked_asm!(

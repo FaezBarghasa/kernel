@@ -1,5 +1,6 @@
 use rmm::{Arch, PageFlags, VirtualAddress};
 
+/// Returns the page flags for a given virtual address.
 pub unsafe fn page_flags<A: Arch>(virt: VirtualAddress) -> PageFlags<A> {
     use crate::kernel_executable_offsets::*;
     let virt_addr = virt.data();

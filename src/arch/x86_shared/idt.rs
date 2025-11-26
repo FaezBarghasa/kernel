@@ -24,6 +24,7 @@ use crate::{
 
 use spin::RwLock;
 
+/// The Interrupt Descriptor Table.
 #[repr(C)]
 pub struct Idt {
     entries: [IdtEntry; 256],
@@ -32,6 +33,7 @@ pub struct Idt {
 }
 
 impl Idt {
+    /// Creates a new IDT.
     const fn new() -> Self {
         Self {
             entries: [IdtEntry::new(); 256],
@@ -76,6 +78,7 @@ static INIT_BSP_IDT: SyncUnsafeCell<Idt> = SyncUnsafeCell::new(Idt::new());
 static IDTS: RwLock<HashMap<LogicalCpuId, &'static mut Idt>> =
     RwLock::new(HashMap::with_hasher(DefaultHashBuilder::new()));
 
+/// Returns true if the given interrupt vector is reserved.
 #[inline]
 pub fn is_reserved(cpu_id: LogicalCpuId, index: u8) -> bool {
     if cpu_id == LogicalCpuId::BSP {
@@ -85,6 +88,7 @@ pub fn is_reserved(cpu_id: LogicalCpuId, index: u8) -> bool {
     IDTS.read().get(&cpu_id).unwrap().is_reserved(index)
 }
 
+/// Reserves or unreserves the given interrupt vector.
 #[inline]
 pub fn set_reserved(cpu_id: LogicalCpuId, index: u8, reserved: bool) {
     if cpu_id == LogicalCpuId::BSP {
@@ -98,10 +102,12 @@ pub fn set_reserved(cpu_id: LogicalCpuId, index: u8, reserved: bool) {
         .set_reserved(index, reserved);
 }
 
+/// Returns an iterator over the available IRQs.
 pub fn available_irqs_iter(cpu_id: LogicalCpuId) -> impl Iterator<Item = u8> + 'static {
     (32..=254).filter(move |&index| !is_reserved(cpu_id, index))
 }
 
+/// Sets the exception handlers in the IDT.
 fn set_exceptions(idt: &mut [IdtEntry]) {
     // Set up exceptions
     idt[0].set_func(exception::divide_by_zero);
@@ -131,8 +137,7 @@ fn set_exceptions(idt: &mut [IdtEntry]) {
     // 31 reserved
 }
 
-/// Initializes a fully functional IDT for use before it be moved into the map. This is ONLY called
-/// on the BSP, since the kernel heap is ready for the APs.
+/// Initializes the IDT for the BSP.
 pub unsafe fn init_bsp() {
     #[repr(C, packed(4096))]
     struct BackupStack([u8; BACKUP_STACK_SIZE]);
@@ -151,6 +156,7 @@ pub unsafe fn init_bsp() {
     }
 }
 
+/// Allocates and initializes an IDT for the given CPU.
 pub fn allocate_and_init_idt(cpu_id: LogicalCpuId) -> *mut Idt {
     let mut idts_btree = IDTS.write();
 
@@ -282,6 +288,7 @@ pub unsafe fn install_idt(idt_ptr: *mut Idt) {
 }
 
 bitflags! {
+    /// Flags for an IDT entry.
     pub struct IdtFlags: u8 {
         const PRESENT = 1 << 7;
         const RING_0 = 0 << 5;
@@ -294,6 +301,7 @@ bitflags! {
     }
 }
 
+/// An entry in the Interrupt Descriptor Table.
 #[derive(Copy, Clone, Debug, Default)]
 #[repr(C, packed)]
 pub struct IdtEntry {
@@ -309,6 +317,7 @@ pub struct IdtEntry {
 }
 
 impl IdtEntry {
+    /// Creates a new, empty IDT entry.
     pub const fn new() -> IdtEntry {
         IdtEntry {
             offsetl: 0,
@@ -323,10 +332,12 @@ impl IdtEntry {
         }
     }
 
+    /// Sets the flags for this IDT entry.
     pub fn set_flags(&mut self, flags: IdtFlags) {
         self.attribute = flags.bits();
     }
 
+    /// Sets the Interrupt Stack Table index for this IDT entry.
     pub fn set_ist(&mut self, ist: u8) {
         assert_eq!(
             ist & 0x07,
@@ -337,6 +348,7 @@ impl IdtEntry {
         self.zero |= ist;
     }
 
+    /// Sets the offset of the interrupt handler for this IDT entry.
     pub fn set_offset(&mut self, selector: u16, base: usize) {
         self.selector = selector;
         self.offsetl = base as u16;
@@ -347,7 +359,7 @@ impl IdtEntry {
         }
     }
 
-    // A function to set the offset more easily
+    /// A helper function to set the interrupt handler function and default flags.
     pub fn set_func(&mut self, func: unsafe extern "C" fn()) {
         self.set_flags(IdtFlags::PRESENT | IdtFlags::RING_0 | IdtFlags::INTERRUPT);
         self.set_offset((crate::gdt::GDT_KERNEL_CODE as u16) << 3, func as usize);

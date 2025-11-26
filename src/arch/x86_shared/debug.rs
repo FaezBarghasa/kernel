@@ -19,6 +19,7 @@ use super::device::system76_ec::{System76Ec, SYSTEM76_EC};
 #[cfg(feature = "qemu_debug")]
 pub static QEMU: Mutex<Pio<u8>> = Mutex::new(Pio::<u8>::new(0x402));
 
+/// A writer for the serial port.
 pub struct Writer<'a> {
     lpss: MutexGuard<'a, SerialKind>,
     #[cfg(feature = "qemu_debug")]
@@ -29,6 +30,7 @@ pub struct Writer<'a> {
 }
 
 impl<'a> Writer<'a> {
+    /// Creates a new `Writer`.
     pub fn new() -> Writer<'a> {
         Writer {
             lpss: LPSS.lock(),
@@ -40,6 +42,7 @@ impl<'a> Writer<'a> {
         }
     }
 
+    /// Writes to the serial port.
     pub fn write(&mut self, buf: &[u8]) {
         self.lpss.write(buf);
 

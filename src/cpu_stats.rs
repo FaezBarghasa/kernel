@@ -15,12 +15,12 @@ static CONTEXTS_COUNT: AtomicUsize = AtomicUsize::new(0);
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Default)]
 pub enum CpuState {
-    /// Waiting for runnable context
+    /// The CPU is waiting for a runnable context.
     #[default]
     Idle = 0,
-    /// Runnnig a kernel context
+    /// The CPU is running a kernel context.
     Kernel = 1,
-    /// Running a context in the userspace
+    /// The CPU is running a context in userspace.
     User = 2,
 }
 
@@ -42,6 +42,7 @@ pub struct CpuStats {
 }
 
 impl CpuStats {
+    /// Creates a new `CpuStats` with all fields initialized to zero.
     pub const fn default() -> Self {
         Self {
             user: AtomicU64::new(0),
@@ -54,6 +55,7 @@ impl CpuStats {
     }
 }
 
+/// A snapshot of the CPU statistics.
 pub struct CpuStatsData {
     /// Number of ticks spent on userspace contexts
     pub user: u64,
@@ -108,6 +110,7 @@ impl CpuStats {
 }
 
 impl CpuStatsData {
+    /// Converts the CPU statistics to a string.
     pub fn to_string(&self, cpu_id: LogicalCpuId) -> String {
         format!(
             "cpu{} {} {} {} {} {}",

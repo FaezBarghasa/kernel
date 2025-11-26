@@ -19,7 +19,7 @@ pub const KERNEL_HEAP_OFFSET: usize = 0xE000_0000;
 /// Size of kernel heap
 pub const KERNEL_HEAP_SIZE: usize = rmm::MEGABYTE;
 
-/// Offset to kernel percpu variables (256 MiB max)
+/// Offset to kernel per-CPU variables (256 MiB max)
 pub const KERNEL_PERCPU_OFFSET: usize = 0xF000_0000;
 /// Size of kernel percpu variables
 pub const KERNEL_PERCPU_SHIFT: u8 = 16; // 2^16 = 64 KiB
