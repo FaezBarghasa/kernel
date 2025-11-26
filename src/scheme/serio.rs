@@ -5,11 +5,14 @@ use core::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
+use hashbrown::{hash_map::DefaultHashBuilder, HashMap};
+
 use crate::{
     event,
     scheme::*,
     sync::{CleanLockToken, RwLock, WaitQueue, L1},
     syscall::{
+        error::*,
         flag::{EventFlags, EVENT_READ, O_NONBLOCK},
         usercopy::UserSliceWo,
     },
@@ -35,7 +38,7 @@ pub fn serio_input(index: usize, data: u8, token: &mut CleanLockToken) {
     INPUT[index].send(data, token);
 
     for (id, _handle) in HANDLES.read(token.token()).iter() {
-        event::trigger(GlobalSchemes::Serio.scheme_id(), *id, EVENT_READ);
+        event::trigger(GlobalSchemes::Serio.scheme_id(), *id, EVENT_READ, token);
     }
 }
 

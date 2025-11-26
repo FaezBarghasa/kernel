@@ -70,9 +70,9 @@ unsafe fn update_runnable(context: &mut Context, cpu_id: LogicalCpuId) -> Update
     }
 }
 
-struct SwitchResultInner {
-    _prev_guard: ArcContextLockWriteGuard,
-    _next_guard: ArcContextLockWriteGuard,
+struct SwitchResultInner<'a> {
+    _prev_guard: ArcContextLockWriteGuard<'a>,
+    _next_guard: ArcContextLockWriteGuard<'a>,
 }
 
 /// Tick function to update PIT ticks and trigger a context switch if necessary.
@@ -324,7 +324,7 @@ pub fn switch(token: &mut CleanLockToken) -> SwitchResult {
 /// This struct contains information such as the idle context, current context, and PIT tick counts,
 /// as well as fields required for managing ptrace sessions and signals.
 pub struct ContextSwitchPercpu {
-    switch_result: Cell<Option<SwitchResultInner>>,
+    switch_result: Cell<Option<SwitchResultInner<'static>>>,
     switch_time: Cell<u128>,
     pit_ticks: Cell<usize>,
 
