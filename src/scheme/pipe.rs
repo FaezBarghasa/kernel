@@ -17,8 +17,6 @@ use crate::{
 
 use super::{CallerCtx, GlobalSchemes, KernelScheme, OpenResult, StrOrBytes};
 
-// TODO: Preallocate a number of scheme IDs, since there can only be *one* root namespace, and
-// therefore only *one* pipe scheme.
 static PIPE_NEXT_ID: AtomicUsize = AtomicUsize::new(0);
 
 // TODO: SLOB?

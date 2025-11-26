@@ -24,11 +24,8 @@ pub struct Gtdt {
     pub cnt_read_base: u64,
     pub platform_timer_count: u32,
     pub platform_timer_offset: u32,
-    /*TODO: we don't need these yet, and they cause short tables to fail parsing
     pub virtual_el2_timer_gsiv: u32,
     pub virtual_el2_timer_flags: u32,
-    */
-    //TODO: platform timer structure (at platform timer offset, with platform timer count)
 }
 
 impl Gtdt {

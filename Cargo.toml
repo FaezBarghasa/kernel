@@ -5,22 +5,22 @@ build = "build.rs"
 edition = "2024"
 
 [build-dependencies]
-cc = "1.0"
-toml = "0.8"
+cc = "1.2"
+toml = "0.9"
 
 [dependencies]
 arrayvec = { version = "0.7.4", default-features = false }
-bitfield = "0.13.2"
+bitfield = "0.19.4"
 bitflags = "2"
-hashbrown = { version = "0.14.3", default-features = false, features = ["ahash", "inline-more"] }
-linked_list_allocator = "0.9.0"
-redox-path = "0.2.0"
+hashbrown = { version = "0.14.5", default-features = false, features = ["ahash", "inline-more"] }
+linked_list_allocator = "0.10.5"
+redox-path = "0.3.1"
 redox_syscall = { git = "https://gitlab.redox-os.org/redox-os/syscall.git", branch = "master", default-features = false }
 rmm = { path = "rmm", default-features = false }
 slab = { version = "0.4", default-features = false }
-spin = { version = "0.9.8" }
+spin = { version = "0.10.0" }
 # TODO: Remove
-indexmap = { version = "2.5.0", default-features = false }
+indexmap = { version = "2.12.1", default-features = false }
 
 [dependencies.object]
 version = "0.37.1"
@@ -28,7 +28,7 @@ default-features = false
 features = ["read_core", "elf"]
 
 [dependencies.rustc-demangle]
-version = "0.1.16"
+version = "0.1.26"
 default-features = false
 
 [target.'cfg(any(target_arch = "aarch64", target_arch = "riscv64"))'.dependencies]

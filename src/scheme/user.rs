@@ -55,7 +55,7 @@ pub struct UserInner {
     context: Weak<ContextLock>,
     todo: WaitQueue<Sqe>,
 
-    // FIXME: Use a more efficient data structure than a slab for states.
+    // FIXME: custom packed radix tree data structure
     states: Mutex<Slab<State>>,
 
     unmounting: AtomicBool,
@@ -234,8 +234,7 @@ impl UserInner {
         // Tell the scheme handler to read
         event::trigger(self.root_id, self.handle_id, EVENT_READ);
 
-        // FIXME: Wait for all todo and done to be processed. This is important to prevent race
-        // conditions and ensure that all outstanding requests are handled before unmounting.
+        //TODO: wait for all todo and done to be processed?
         Ok(())
     }
 
@@ -245,7 +244,7 @@ impl UserInner {
             states.insert(State::Placeholder)
         };
 
-        // FIXME: Implement blocking behavior when the slab is full.
+        // TODO: implement blocking?
         u32::try_from(idx).map_err(|_| Error::new(EAGAIN))
     }
 
@@ -477,7 +476,7 @@ impl UserInner {
             len,
             destroyed: false,
             head: CopyInfo {
-                src: Some(tail),
+                src: None,
                 dst: None,
             },
             tail: CopyInfo {
@@ -902,12 +901,22 @@ impl UserInner {
             }
         } else {
             for chunk in buf.in_exact_chunks(size_of::<Packet>()) {
-                match ParsedCqe::parse_packet(&unsafe { chunk.read_exact::<Packet>()? }, token)
-                    .and_then(|p| self.handle_parsed(&p, token))
-                {
-                    Ok(()) => bytes_read += size_of::<Packet>(),
-                    Err(_) if bytes_read > 0 => break,
-                    Err(error) => return Err(error),
+                match ParsedCqe::parse_packet(&unsafe { chunk.read_exact::<Packet>()? }, token) {
+                    Ok(p) => match self.handle_parsed(&p, token) {
+                        Ok(()) => bytes_read += size_of::<Packet>(),
+                        Err(_) if bytes_read > 0 => break,
+                        Err(error) => return Err(error),
+                    },
+                    Err(Error { errno: ENOSYS }) => {
+                        // Ignore ENOSYS, and continue.
+                        bytes_read += size_of::<Packet>();
+                    }
+                    Err(error) => {
+                        if bytes_read > 0 {
+                            break;
+                        }
+                        return Err(error);
+                    }
                 }
             }
         }

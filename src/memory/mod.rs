@@ -951,7 +951,7 @@ pub fn get_page_info(frame: Frame) -> Option<&'static PageInfo> {
 
     // binary_search_by_key returns either Ok(where it was found) or Err(where it would have been
     // inserted). The base obviously cannot have been exactly matched from an entry at an
-    -    // out-of-bounds index, so the only Err(i) where i - 1 is out of bounds, is for i=0. That
+    // out-of-bounds index, so the only Err(i) where i - 1 is out of bounds, is for i=0. That
     // has already been checked.
     let section = &sections[idx_res.unwrap_or_else(|e| e - 1)];
 

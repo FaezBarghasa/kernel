@@ -160,8 +160,6 @@ impl MapInfo {
         assert!(self.vector >= 0x20);
         assert!(self.vector <= 0xFE);
 
-        // TODO: Check for reserved fields.
-
         (u64::from(self.dest.get()) << 56)
             | (u64::from(self.mask) << 16)
             | ((self.trigger_mode as u64) << 15)
@@ -323,7 +321,6 @@ pub unsafe fn init(active_table: &mut KernelMapper) {
         {
             let madt: &'static Madt = match madt::madt() {
                 Some(m) => m,
-                // TODO: Parse MP tables too.
                 None => return,
             };
             if madt.flags & madt::FLAG_PCAT != 0 {

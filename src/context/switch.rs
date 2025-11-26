@@ -368,7 +368,7 @@ impl ContextSwitchPercpu {
     /// # Parameters
     /// - `f`: A closure that receives a reference to the current context and returns a value.
     ///
-    ...
+    /// ...
     /// # Safety
     /// This function is unsafe as it modifies the context state directly.
     ///
