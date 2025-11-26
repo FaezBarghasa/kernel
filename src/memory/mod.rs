@@ -739,7 +739,7 @@ fn init_sections(mut allocator: BumpAllocator<RmmA>) {
         debug_assert!(frame.is_aligned_to_order(order as u32));
         let free = info.as_free().unwrap();
         debug_assert_eq!(free.prev().order(), order as u32);
-.set_next(P2Frame::new(None, order as u32));
+        free.set_next(P2Frame::new(None, order as u32));
     }
 
     FREELIST.lock().for_orders = first_pages.map(|pair| pair.map(|(frame, _)| frame));
