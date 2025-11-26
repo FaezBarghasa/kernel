@@ -56,32 +56,40 @@ pub fn trigger(token: &mut CleanLockToken) {
 
     let mut i = 0;
     loop {
-        let mut registry = registry(token.token());
-        let timeout = if i < registry.len() {
-            let trigger = match registry[i].clock {
-                CLOCK_MONOTONIC => {
-                    let time = registry[i].time;
-                    mono >= time
+        // Acquire registry lock for this iteration and possibly remove a timeout
+        let timeout_opt = {
+            let mut registry = registry(token.token());
+            if i < registry.len() {
+                let trigger = match registry[i].clock {
+                    CLOCK_MONOTONIC => {
+                        let time = registry[i].time;
+                        mono >= time
+                    }
+                    CLOCK_REALTIME => {
+                        let time = registry[i].time;
+                        real >= time
+                    }
+                    clock => {
+                        println!("timeout::trigger: unknown clock {}", clock);
+                        true
+                    }
+                };
+                if trigger {
+                    Some(registry.remove(i).unwrap())
+                } else {
+                    i += 1;
+                    None
                 }
-                CLOCK_REALTIME => {
-                    let time = registry[i].time;
-                    real >= time
-                }
-                clock => {
-                    println!("timeout::trigger: unknown clock {}", clock);
-                    true
-                }
-            };
-
-            if trigger {
-                registry.remove(i).unwrap()
             } else {
-                i += 1;
-                continue;
+                None
             }
-        } else {
-            break;
         };
-        event::trigger(timeout.scheme_id, timeout.event_id, EVENT_READ, token);
+        match timeout_opt {
+            Some(timeout) => {
+                // Registry lock is dropped, safe to use token again
+                event::trigger(timeout.scheme_id, timeout.event_id, EVENT_READ, token);
+            }
+            None => break,
+        }
     }
 }

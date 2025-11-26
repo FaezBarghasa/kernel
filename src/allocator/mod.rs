@@ -87,3 +87,9 @@ pub fn allocate_frames(_count: usize) -> Option<Frame> {
 pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, offset: usize, size: usize) {
     // TODO: Implement heap mapping
 }
+
+/// Initialize the allocator
+pub fn init() {
+    // TODO: Implement allocator initialization
+    // This is a stub to allow compilation
+}

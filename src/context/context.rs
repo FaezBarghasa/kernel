@@ -80,6 +80,7 @@ pub enum SyscallFrame {
 }
 
 bitflags! {
+    #[derive(Debug)]
     pub struct Capabilities: u64 {
         const CAP_SYS_ADMIN = 1 << 0;
     }

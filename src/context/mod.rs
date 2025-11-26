@@ -104,3 +104,15 @@ pub fn is_current(id: ContextId) -> bool {
         .with_context(|context| Ok(context.id == id))
         .unwrap_or(false)
 }
+
+/// Try to get the current context (returns None if not available)
+pub fn try_current() -> Option<ContextRef> {
+    current().ok()
+}
+
+/// Get a mutable reference to the contexts list
+pub fn contexts_mut<'a, L: Level>(
+    _token: &LockToken<'a, L>,
+) -> spin::RwLockWriteGuard<'static, BTreeMap<ContextId, ContextRef>> {
+    CONTEXTS.write()
+}
