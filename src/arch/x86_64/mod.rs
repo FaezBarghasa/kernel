@@ -4,8 +4,8 @@
 //! including security hardening features like CET.
 
 use core::sync::atomic::{AtomicBool, Ordering};
-use x86::msr::{self, Msr};
-use x86::controlregs::{Cr4, cr4};
+use x86::msr;
+use x86::controlregs::{cr4, cr4_write, Cr4};
 
 // --- CET MSR and Bit Definitions (AMD) ---
 // IA32_S_CET: MSR enabling CET features
@@ -36,19 +36,20 @@ pub unsafe fn enable_cet() {
         }
     };
     
-    let ssp_phys_addr = shadow_stack_frame.start_address().data() as u64;
+    let ssp_phys_addr = shadow_stack_frame.base().data() as u64;
 
     // 2. Write Shadow Stack Pointer (SSP) to IA32_PL0_SSP MSR
     msr::wrmsr(IA32_PL0_SSP, ssp_phys_addr);
 
     // 3. Enable CET features in IA32_S_CET MSR
-    let mut s_cet_msr = Msr::new(IA32_S_CET);
-    s_cet_msr.write(S_CET_ENABLE);
+    let mut s_cet_val = msr::rdmsr(IA32_S_CET);
+    s_cet_val |= S_CET_ENABLE;
+    msr::wrmsr(IA32_S_CET, s_cet_val);
 
     // 4. Enable CET in CR4
     let mut cr4_val = cr4();
-    cr4_val.insert(CR4::CR4_CET);
-    cr4_val.write();
+    cr4_val.insert(CR4_CET_ENABLE);
+    cr4_write(cr4_val);
 
     println!("CET: Enabled. Kernel Shadow Stack Pointer (PL0_SSP) set at 0x{:X}", ssp_phys_addr);
 }
