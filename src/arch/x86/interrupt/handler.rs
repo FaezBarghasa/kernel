@@ -152,8 +152,6 @@ impl InterruptStack {
     /// Loads all registers from a struct used by the proc:
     /// scheme to read/write registers.
     pub fn load(&mut self, all: &IntRegisters) {
-        // TODO: Which of these should be allowed to change?
-
         self.preserved.ebp = all.ebp;
         self.preserved.esi = all.esi;
         self.preserved.edi = all.edi;
@@ -289,8 +287,6 @@ macro_rules! interrupt_stack {
         #[unsafe(naked)]
         pub unsafe extern "C" fn $name() {
             unsafe extern "fastcall" fn inner($stack: &mut $crate::arch::x86::interrupt::InterruptStack) {
-                // TODO: Force the declarations to specify unsafe?
-
                 #[allow(unused_unsafe)]
                 unsafe {
                     $code
