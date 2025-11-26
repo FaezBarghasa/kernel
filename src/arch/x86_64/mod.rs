@@ -60,6 +60,9 @@ pub mod consts;
 pub mod interrupt;
 pub mod macros;
 pub mod misc;
+pub mod flags;
+
+pub use crate::arch::x86_shared::*;
 
 // Placeholder for other initialization functions
 /// Initializes the x86_64 architecture.
