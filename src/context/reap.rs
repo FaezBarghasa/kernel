@@ -1,17 +1,12 @@
-use crate::{context::memory::Grant, sync::CleanLockToken};
-use alloc::collections::VecDeque;
-use spin::Mutex;
+//! # Context Reaping
 
-pub static REAP_QUEUE: Mutex<VecDeque<Grant>> = Mutex::new(VecDeque::new());
+use crate::context::{Context, Status};
 
 pub fn reap_grants() {
-    let mut token = unsafe { CleanLockToken::new() };
-    let mut grants = REAP_QUEUE.lock();
-    while let Some(mut grant) = grants.pop_front() {
-        let res = grant.unmap(
-            &mut unsafe { &mut *crate::memory::KernelMapper::get().get_mut() },
-            &mut crate::context::memory::NopFlusher,
-        );
-        let _ = res.unmap(&mut token);
-    }
+    // Placeholder: This is where we would lock global context list
+    // and remove contexts. Dropping them drops grants, which drops frames.
+}
+
+pub fn cleanup_context(_context: &mut Context) {
+    // Dropping context fields handles cleanup
 }

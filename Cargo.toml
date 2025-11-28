@@ -1,84 +1,64 @@
 [package]
 name = "kernel"
-version = "0.5.13"
-build = "build.rs"
+version = "0.2.0"
 edition = "2024"
 
-[build-dependencies]
-cc = "1.2"
-toml = "0.9"
-
 [dependencies]
-arrayvec = { version = "0.7.4", default-features = false }
-bitfield = "0.19.4"
-bitflags = "2"
-hashbrown = { version = "0.14.5", default-features = false, features = ["ahash", "inline-more"] }
+bitflags = "2.4.1"
 linked_list_allocator = "0.10.5"
-redox-path = "0.3.1"
-redox_syscall = { git = "https://gitlab.redox-os.org/redox-os/syscall.git", branch = "master", default-features = false }
+log = "0.4.20"
 rmm = { path = "rmm", default-features = false }
-slab = { version = "0.4", default-features = false }
-spin = { version = "0.10.0" }
-# TODO: Remove
-indexmap = { version = "2.12.1", default-features = false }
+spin = "0.9.8"
+rustc-demangle = "0.1.23"
 
-[dependencies.object]
-version = "0.37.1"
+[dependencies.goblin]
+version = "0.7.1"
 default-features = false
-features = ["read_core", "elf"]
+features = ["elf32", "elf64"]
 
-[dependencies.rustc-demangle]
-version = "0.1.26"
-default-features = false
-
-[target.'cfg(any(target_arch = "aarch64", target_arch = "riscv64"))'.dependencies]
-fdt = { git = "https://github.com/repnop/fdt.git", rev = "2fb1409edd1877c714a0aa36b6a7c5351004be54" }
-
-[target.'cfg(any(target_arch = "x86", target_arch = "x86_64"))'.dependencies]
-raw-cpuid = "10.2.0"
-x86 = { version = "0.47.0", default-features = false }
+[build-dependencies]
+toml = "0.8"
 
 [target.'cfg(any(target_arch = "riscv64", target_arch = "riscv32"))'.dependencies]
-sbi-rt = "0.0.3"
+sbi-rt = "0.0.2"
+
+[target.'cfg(any(target_arch = "x86", target_arch = "x86_64"))'.dependencies]
+x86 = { version = "0.52.0", default-features = false }
 
 [features]
-default = [
-  "acpi",
-  #"debugger",
-  "multi_core",
-  "serial_debug",
-  "self_modifying",
-  "x86_kvm_pv",
-  #"syscall_debug"
-]
-
-# Activates some limited code-overwriting optimizations, based on CPU features.
-self_modifying = []
-
-acpi = []
-lpss_debug = []
-multi_core = ["acpi"]
-profiling = []
-#TODO: remove when threading issues are fixed
-pti = []
-qemu_debug = []
+default = ["multi_core", "serial_debug", "syscall_debug", "debugger"]
+multi_core = []
 serial_debug = []
-system76_ec_debug = []
-x86_kvm_pv = []
-
-debugger = ["syscall_debug"]
 syscall_debug = []
+debugger = []
+acpi = []
+graphical_debug = []
+profiling = []
 
-sys_fdstat = []
+x86 = []
+x86_64 = []
+aarch64 = []
+riscv64 = []
+i686 = []
+riscv32 = []
+arm = []
+mips = []
+powerpc = []
+s390x = []
+hexagon = []
 
 [profile.dev]
-# Avoids having to define the eh_personality lang item and reduces kernel size
+opt-level = 1
+debug = true
+debug-assertions = true
+overflow-checks = true
+lto = false
 panic = "abort"
 
 [profile.release]
-# Avoids having to define the eh_personality lang item and reduces kernel size
+opt-level = 3
+debug = false
+debug-assertions = false
+overflow-checks = false
+lto = true
 panic = "abort"
-
-#lto = true
-
-debug = "full"

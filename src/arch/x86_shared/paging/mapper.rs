@@ -1,22 +1,9 @@
-use crate::ipi::{ipi, IpiKind, IpiTarget};
+//! # x86 Shared Paging Mapper
 
-use super::RmmA;
+use crate::memory::{Frame, PAGE_SIZE, PhysicalAddress};
+use crate::paging::{Page, PageFlags, RmmA, RmmArch, VirtualAddress};
+use rmm::{Arch as RmmArchTrait, PageTable, TableKind};
 
-pub use rmm::{Flusher, PageFlush, PageFlushAll};
-
-pub struct InactiveFlusher {
-    _inner: (),
-}
-impl Flusher<RmmA> for InactiveFlusher {
-    fn consume(&mut self, flush: PageFlush<RmmA>) {
-        // TODO: Push to TLB "mailbox" or tell it to reload CR3 if there are too many entries.
-        unsafe {
-            flush.ignore();
-        }
-    }
-}
-impl Drop for InactiveFlusher {
-    fn drop(&mut self) {
-        ipi(IpiKind::Tlb, IpiTarget::Other);
-    }
+pub unsafe fn page_table_allocator() -> Option<Frame> {
+    crate::memory::allocate_frame()
 }

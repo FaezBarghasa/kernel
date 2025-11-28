@@ -1,74 +1,20 @@
-/// Constants like memory locations
-pub mod consts;
+//! # AArch64 Architecture Support
 
-/// Debugging support
 pub mod debug;
-
-/// Devices
 pub mod device;
-
-/// Interrupt instructions
 pub mod interrupt;
-
-/// Inter-processor interrupts
-pub mod ipi;
-
-/// Miscellaneous
+pub mod paging;
+pub mod start;
+pub mod stop;
+pub mod time;
+pub mod vectors;
+pub mod linker;
 pub mod misc;
 
-/// Paging
-pub mod paging;
+pub use crate::arch::aarch64::linker::*;
 
-pub mod rmm;
-
-/// Initialization and start function
-pub mod start;
-
-/// Stop function
-pub mod stop;
-
-// Interrupt vectors
-pub mod vectors;
-
-pub mod time;
-
-pub use ::rmm::AArch64Arch as CurrentRmmArch;
-
-pub use arch_copy_to_user as arch_copy_from_user;
-
-/// See documentation in `src/syscall/usercopy.rs`.
-#[unsafe(naked)]
-pub unsafe extern "C" fn arch_copy_to_user(dst: usize, src: usize, len: usize) -> u8 {
-    // x0, x1, x2
-    core::arch::naked_asm!(
-        "
-    .global __usercopy_start
-    __usercopy_start:
-        mov x4, x0
-        mov x0, 0
-    2:
-        cmp x2, 0
-        b.eq 3f
-
-        ldrb w3, [x1]
-        strb w3, [x4]
-
-        add x4, x4, 1
-        add x1, x1, 1
-        sub x2, x2, 1
-
-        b 2b
-    3:
-        ret
-    .global __usercopy_end
-    __usercopy_end:
-    "
-    );
-}
-
-pub const KFX_SIZE: usize = 1024;
-
-// This function exists as the KFX size is dynamic on x86_64.
-pub fn kfx_size() -> usize {
-    KFX_SIZE
+pub unsafe fn switch_to(prev: *mut crate::context::Context, next: *mut crate::context::Context) {
+    extern "C" {
+        fn __context_switch(prev: *mut usize, next: *const usize);
+    }
 }

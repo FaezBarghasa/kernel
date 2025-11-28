@@ -1,87 +1,25 @@
-use crate::{
-    context,
-    sync::CleanLockToken,
-    syscall::{
-        data::TimeSpec,
-        error::*,
-        flag::{CLOCK_MONOTONIC, CLOCK_REALTIME},
-    },
-    time,
-};
+//! # Time Syscalls
 
-use super::usercopy::{UserSliceRo, UserSliceWo};
+use crate::syscall::error::{Error, EINVAL, Result};
+use crate::time;
 
-pub fn clock_gettime(clock: usize, buf: UserSliceWo) -> Result<()> {
-    let arch_time = match clock {
-        CLOCK_REALTIME => time::realtime(),
-        CLOCK_MONOTONIC => time::monotonic(),
-        _ => return Err(Error::new(EINVAL)),
-    };
+pub const CLOCK_REALTIME: usize = 0;
+pub const CLOCK_MONOTONIC: usize = 1;
 
-    buf.copy_exactly(&TimeSpec {
-        tv_sec: (arch_time / time::NANOS_PER_SEC) as i64,
-        tv_nsec: (arch_time % time::NANOS_PER_SEC) as i32,
-    })
-}
-
-/// Nanosleep will sleep by switching the current context
-pub fn nanosleep(
-    req_buf: UserSliceRo,
-    rem_buf_opt: Option<UserSliceWo>,
-    token: &mut CleanLockToken,
-) -> Result<()> {
-    let req = unsafe { req_buf.read_exact::<TimeSpec>()? };
-
-    let start = time::monotonic();
-    let end = start + (req.tv_sec as u128 * time::NANOS_PER_SEC) + (req.tv_nsec as u128);
-
-    let current_context = context::current();
-    {
-        let mut context = current_context.write(token.token());
-
-        if let Some((tctl, pctl, _)) = context.sigcontrol() {
-            if tctl.currently_pending_unblocked(pctl) != 0 {
-                return Err(Error::new(EINTR));
-            }
+pub fn clock_gettime(clock_id: usize, time: &mut time::TimeSpec) -> Result<usize> {
+    match clock_id {
+        CLOCK_REALTIME => {
+            let realtime = crate::time::realtime();
+            time.tv_sec = realtime.0 as i64;
+            time.tv_nsec = realtime.1 as i32;
+            Ok(0)
         }
-
-        context.wake = Some(end);
-        context.block("nanosleep");
+        CLOCK_MONOTONIC => {
+            let monotonic = crate::time::monotonic();
+            time.tv_sec = monotonic.0 as i64;
+            time.tv_nsec = monotonic.1 as i32;
+            Ok(0)
+        }
+        _ => Err(Error::new(EINVAL)),
     }
-
-    // TODO: The previous wakeup reason was most likely signals, but is there any other possible
-    // reason?
-    context::switch(token);
-
-    let was_interrupted = current_context.write(token.token()).wake.take().is_some();
-
-    if let Some(rem_buf) = rem_buf_opt {
-        let current = time::monotonic();
-
-        rem_buf.copy_exactly(&if current < end {
-            let diff = end - current;
-            TimeSpec {
-                tv_sec: (diff / time::NANOS_PER_SEC) as i64,
-                tv_nsec: (diff % time::NANOS_PER_SEC) as i32,
-            }
-        } else {
-            TimeSpec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            }
-        })?;
-    }
-
-    if was_interrupted {
-        Err(Error::new(EINTR))
-    } else {
-        Ok(())
-    }
-}
-
-pub fn sched_yield(token: &mut CleanLockToken) -> Result<()> {
-    context::switch(token);
-    // TODO: Do this check in userspace
-    context::signal::signal_handler(token);
-    Ok(())
 }
