@@ -6,7 +6,7 @@ use crate::{
     syscall::error::Result,
     time::START,
 };
-use alloc::{string::String, vec::Vec};
+use alloc::{string::String, sync::Arc, vec::Vec};
 
 /// Get the sys:stat data as displayed to the user.
 pub fn resource(token: &mut CleanLockToken) -> Result<Vec<u8>> {
@@ -77,7 +77,9 @@ fn get_contexts_stats(token: &mut CleanLockToken) -> (u64, u64) {
     let (contexts, mut token) = contexts.token_split();
     let statuses = contexts
         .values()
-        .map(|context: &Arc<crate::context::ContextLock>| context.read(token.token()).status.clone())
+        .map(|context: &Arc<crate::context::ContextLock>| {
+            context.read(token.token()).status.clone()
+        })
         .collect::<Vec<_>>();
 
     for status in statuses {

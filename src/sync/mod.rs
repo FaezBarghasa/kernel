@@ -31,17 +31,17 @@ pub use wait_queue::WaitQueue;
 /// In a full PIP implementation, the `priority_ceiling` would automatically be raised
 /// to the priority of the highest-priority waiting task upon contention.
 pub struct Mutex<T: ?Sized> {
-    inner: SpinMutex<T>,
     /// Tracks the highest priority of any task currently waiting for this lock.
     /// Used by the scheduler to adjust the priority of the lock owner (priority inheritance).
     pub priority_ceiling: UnsafeCell<u8>,
+    inner: SpinMutex<T>,
 }
 
 impl<T> Mutex<T> {
     pub const fn new(user_data: T) -> Self {
         Mutex {
-            inner: SpinMutex::new(user_data),
             priority_ceiling: UnsafeCell::new(0),
+            inner: SpinMutex::new(user_data),
         }
     }
 

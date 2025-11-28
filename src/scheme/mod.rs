@@ -384,7 +384,7 @@ pub enum GlobalSchemes {
     Acpi,
     #[cfg(dtb)]
     Dtb,
-    Root,
+    Root(Arc<root::RootScheme>),
 }
 
 impl GlobalSchemes {
@@ -461,8 +461,8 @@ macro_rules! forward_scheme {
                 let $s = &dtb::DtbScheme;
                 $expr
             }
-            GlobalSchemes::Root => {
-                let $s = &root::RootScheme;
+            GlobalSchemes::Root(s) => {
+                let $s = s;
                 $expr
             }
         }
@@ -1078,8 +1078,16 @@ pub static SCHEMES: RwLock<SchemeList> = RwLock::new(SchemeList {
     next_id: AtomicUsize::new(1),
 });
 
-pub fn schemes<'a>(_token: &'a crate::sync::LockToken) -> spin::RwLockReadGuard<'a, SchemeList> {
+pub fn schemes<'a, L: crate::sync::Level>(
+    _token: &'a crate::sync::LockToken<'a, L>,
+) -> spin::RwLockReadGuard<'a, SchemeList> {
     SCHEMES.read()
+}
+
+pub fn schemes_mut<'a, L: crate::sync::Level>(
+    _token: &'a crate::sync::LockToken<'a, L>,
+) -> spin::RwLockWriteGuard<'a, SchemeList> {
+    SCHEMES.write()
 }
 
 pub fn init_schemes() {
@@ -1129,8 +1137,17 @@ pub fn init_schemes() {
     );
     #[cfg(dtb)]
     schemes.insert(Box::from("dtb"), KernelSchemes::Global(GlobalSchemes::Dtb));
-    schemes.insert(
-        Box::from("root"),
-        KernelSchemes::Global(GlobalSchemes::Root),
+
+    // Manually insert root scheme to get the ID
+    let root_id = SchemeId(schemes.next_id.fetch_add(1, Ordering::Relaxed));
+    let root = Arc::new(root::RootScheme::new(SchemeNamespace(0), root_id));
+    schemes.map.insert(
+        root_id,
+        Arc::new(KernelSchemes::Global(GlobalSchemes::Root(root))),
     );
+    schemes
+        .names
+        .entry(SchemeNamespace(0))
+        .or_default()
+        .insert(Box::from("root"), root_id);
 }

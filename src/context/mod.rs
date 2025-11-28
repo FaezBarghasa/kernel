@@ -1,10 +1,9 @@
 //! Context management
 
 use alloc::{collections::BTreeMap, sync::Arc};
-use spin::RwLock;
 
 use crate::{
-    sync::{CleanLockToken, LockToken},
+    sync::{CleanLockToken, LockToken, RwLock, L1},
     syscall::error::{Error, Result, ENOMEM, ESRCH},
 };
 
@@ -40,12 +39,12 @@ pub mod timeout;
 pub use self::arch::empty_cr3;
 
 pub type ContextId = usize;
-pub type ContextLock = RwLock<Context>;
+pub type ContextLock = RwLock<L1, Context>;
 pub type ContextRef = Arc<ContextLock>;
-pub type ArcContextLockWriteGuard<'a> = spin::RwLockWriteGuard<'a, Context>;
+pub type ArcContextLockWriteGuard = crate::sync::ArcRwLockWriteGuard<L1, Context>;
 
 /// Contexts list
-pub static CONTEXTS: RwLock<BTreeMap<ContextId, ContextRef>> = RwLock::new(BTreeMap::new());
+pub static CONTEXTS: RwLock<L1, BTreeMap<ContextId, ContextRef>> = RwLock::new(BTreeMap::new());
 
 /// Max files
 pub const CONTEXT_MAX_FILES: usize = 65536;
@@ -63,8 +62,8 @@ use crate::sync::Level;
 /// Get the contexts list
 pub fn contexts<'a, L: Level>(
     _token: &LockToken<'a, L>,
-) -> spin::RwLockReadGuard<'static, BTreeMap<ContextId, ContextRef>> {
-    CONTEXTS.read()
+) -> crate::sync::RwLockReadGuard<'static, L1, BTreeMap<ContextId, ContextRef>> {
+    CONTEXTS.read(_token)
 }
 
 /// Initialize context system
@@ -113,6 +112,6 @@ pub fn try_current() -> Option<ContextRef> {
 /// Get a mutable reference to the contexts list
 pub fn contexts_mut<'a, L: Level>(
     _token: &LockToken<'a, L>,
-) -> spin::RwLockWriteGuard<'static, BTreeMap<ContextId, ContextRef>> {
-    CONTEXTS.write()
+) -> crate::sync::RwLockWriteGuard<'static, L1, BTreeMap<ContextId, ContextRef>> {
+    CONTEXTS.write(_token)
 }

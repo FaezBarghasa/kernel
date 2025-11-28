@@ -188,7 +188,9 @@ impl Context {
             syscall_tail: SyscallFrame::Free(RaiiFrame::allocate()?),
             wake: None,
             arch: arch::Context::new(),
-            kfx: AlignedBox::<[u8], { arch::KFX_ALIGN }>::try_zeroed_slice(crate::arch::kfx_size())?,
+            kfx: AlignedBox::<[u8], { arch::KFX_ALIGN }>::try_zeroed_slice(
+                crate::arch::alternative::kfx_size(),
+            )?,
             kstack: None,
             addr_space: None,
             name: ArrayString::new(),
