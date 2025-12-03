@@ -3,6 +3,7 @@
 use super::pit;
 use crate::acpi::hpet::Hpet;
 use core::time::Duration;
+use spin::Mutex;
 
 const LEG_RT_CNF: u64 = 2;
 const ENABLE_CNF: u64 = 1;
@@ -22,13 +23,26 @@ pub(crate) const T0_COMPARATOR_OFFSET: usize = 0x108;
 
 const PER_INT_CAP: u64 = 0x10;
 
-pub unsafe fn init(hpet: &mut Hpet) -> bool {
+static HPET_INSTANCE: Mutex<Option<Hpet>> = Mutex::new(None);
+
+pub fn get_hpet_mut() -> &'static mut Hpet {
+    HPET_INSTANCE
+        .lock()
+        .as_mut()
+        .expect("HPET not initialized")
+}
+
+pub fn read_main_counter() -> u64 {
+    unsafe { get_hpet_mut().read_u64(MAIN_COUNTER_OFFSET) }
+}
+
+pub unsafe fn init(hpet: Hpet) -> bool {
     unsafe {
         debug!("HPET @ {:#x}", { hpet.base_address.address });
-        debug_caps(hpet);
+        debug_caps(&hpet);
 
         trace!("HPET Before Init");
-        debug_config(hpet);
+        debug_config(&hpet);
 
         // Disable HPET
         {
@@ -65,8 +79,9 @@ pub unsafe fn init(hpet: &mut Hpet) -> bool {
         }
 
         trace!("HPET After Init");
-        debug_config(hpet);
+        debug_config(&hpet);
 
+        *HPET_INSTANCE.lock() = Some(hpet);
         true
     }
 }
@@ -75,7 +90,7 @@ pub unsafe fn set_comparator(hpet: &mut Hpet, value: u64) {
     hpet.write_u64(T0_COMPARATOR_OFFSET, value);
 }
 
-unsafe fn debug_caps(hpet: &mut Hpet) {
+unsafe fn debug_caps(hpet: &Hpet) {
     unsafe {
         let capability = hpet.read_u64(CAPABILITY_OFFSET);
         trace!("  caps: {:#x}", capability);
@@ -105,7 +120,7 @@ unsafe fn debug_caps(hpet: &mut Hpet) {
     }
 }
 
-unsafe fn debug_config(hpet: &mut Hpet) {
+unsafe fn debug_config(hpet: &Hpet) {
     unsafe {
         let config_word = hpet.read_u64(GENERAL_CONFIG_OFFSET);
         trace!("  config: {:#x}", config_word);
