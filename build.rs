@@ -6,6 +6,7 @@ use toml::Table;
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=config.toml");
+    println!("cargo:rerun-if-changed=config.toml.example"); // Add rerun-if-changed for example file
     println!("cargo:rerun-if-changed=linkers");
 
     let out_dir = env::var("OUT_DIR").unwrap();
@@ -16,10 +17,22 @@ fn main() {
     println!("cargo:rustc-env=TARGET={}", target);
 
     // Config parsing
-    let config_str = fs::read_to_string("config.toml").unwrap_or_default();
+    let config_path = Path::new("config.toml");
+    let config_example_path = Path::new("config.toml.example");
+
+    let config_str = if config_path.exists() {
+        fs::read_to_string(config_path).unwrap_or_default()
+    } else if config_example_path.exists() {
+        println!("cargo:warning=config.toml not found, using config.toml.example");
+        fs::read_to_string(config_example_path).unwrap_or_default()
+    } else {
+        println!("cargo:warning=Neither config.toml nor config.toml.example found, using empty config.");
+        String::new()
+    };
+
     let root: Table = if !config_str.is_empty() {
         toml::from_str(&config_str).unwrap_or_else(|e| {
-            println!("cargo:warning=Failed to parse config.toml: {}", e);
+            println!("cargo:warning=Failed to parse config: {}", e);
             Table::new()
         })
     } else {
