@@ -176,10 +176,10 @@ pub fn try_correcting_page_tables(
     token: &mut CleanLockToken,
 ) -> Result<(), PfError> {
     let current_context_ref = crate::context::current();
-    let current_context = current_context_ref.read(token.token());
+    let current_context_guard = current_context_ref.read(token.token());
 
-    if current_context.memory_locked_count > 0 {
-        if let Some(addr_space) = current_context.addr_space.as_ref() {
+    if current_context_guard.memory_locked_count > 0 {
+        if let Some(addr_space) = current_context_guard.addr_space.as_ref() {
             let mut inner = addr_space.inner.write();
             if let Some(grant) = inner.grants.get_mut(&faulting_page) {
                 if grant.locked {
@@ -187,7 +187,8 @@ pub fn try_correcting_page_tables(
                     if grant.phys.is_none() {
                         let frame = memory::allocate_frame().ok_or(PfError::Oom)?;
                         grant.set_phys(frame);
-                        let mut mapper = Mapper;
+                        let mut kernel_mapper = crate::memory::KernelMapper::lock();
+                        let mapper = kernel_mapper.get_mut().expect("failed to lock kernel mapper");
                         unsafe {
                             mapper.map_phys(faulting_page.start_address(), frame.base(), grant.flags).ok_or(PfError::Oom)?.flush();
                         }
@@ -275,7 +276,7 @@ impl AddrSpaceWrapper {
     }
 
     pub fn current(token: &mut CleanLockToken) -> SysResult<Arc<Self>> {
-        crate::context::context::Context::current()
+        crate::context::current()
             .read(token.token())
             .addr_space
             .clone()
@@ -292,7 +293,7 @@ impl AddrSpaceWrapper {
 
     pub fn mmap(
         &self,
-        _addr_space: &Arc<AddrSpaceWrapper>,
+        _addr_space: &Arc<Self>,
         _base: Option<Page>,
         _count: core::num::NonZeroUsize,
         _flags: MapFlags,
@@ -300,8 +301,8 @@ impl AddrSpaceWrapper {
         _func: impl FnOnce(
             Page,
             crate::paging::PageFlags<RmmA>,
-            &mut Mapper,
-            &mut GenericFlusher,
+            &mut crate::memory::KernelMapper,
+            &mut crate::paging::TlbShootdownActions,
         ) -> SysResult<Grant>,
     ) -> SysResult<Grant> {
         Err(Error::new(crate::syscall::error::ENOMEM))
@@ -309,14 +310,14 @@ impl AddrSpaceWrapper {
 
     pub fn mmap_anywhere(
         &self,
-        addr_space: &Arc<AddrSpaceWrapper>,
+        addr_space: &Arc<Self>,
         count: core::num::NonZeroUsize,
         flags: MapFlags,
         func: impl FnOnce(
             Page,
             crate::paging::PageFlags<RmmA>,
-            &mut Mapper,
-            &mut GenericFlusher,
+            &mut crate::memory::KernelMapper,
+            &mut crate::paging::TlbShootdownActions,
         ) -> SysResult<Grant>,
     ) -> SysResult<Grant> {
         self.mmap(addr_space, None, count, flags, &mut Vec::new(), func)
@@ -324,7 +325,7 @@ impl AddrSpaceWrapper {
 
     pub fn r#move(
         &self,
-        _target: Option<&Arc<AddrSpaceWrapper>>,
+        _target: Option<&Arc<Self>>,
         _src: PageSpan,
         _dst: Option<Page>,
         _count: usize,
@@ -348,9 +349,13 @@ impl AddrSpaceWrapper {
 
     /// Locks a region of memory, ensuring it remains in physical RAM.
     pub fn mlock(&self, start: VirtualAddress, size: usize) -> SysResult<()> {
+        let current_context_ref = crate::context::current();
+        let mut current_context = current_context_ref.write();
+
         let mut inner = self.inner.write();
-        let mut mapper = Mapper;
-        let mut flusher = GenericFlusher;
+        let mut kernel_mapper = crate::memory::KernelMapper::lock();
+        let mapper = kernel_mapper.get_mut().expect("failed to lock kernel mapper");
+        let mut flusher = crate::paging::TlbShootdownActions::new();
 
         let start_page = Page::containing_address(start);
         let end_page = Page::containing_address(start + size - 1);
@@ -359,7 +364,6 @@ impl AddrSpaceWrapper {
             if let Some(grant) = inner.grants.get_mut(&page) {
                 if !grant.locked {
                     // Ensure the page is present in physical memory
-                    // This might involve allocating a frame and mapping it if not already present
                     if grant.phys.is_none() {
                         let frame = memory::allocate_frame().ok_or(Error::new(syscall::error::ENOMEM))?;
                         grant.set_phys(frame);
@@ -368,11 +372,9 @@ impl AddrSpaceWrapper {
                         }
                     }
                     grant.locked = true;
+                    current_context.memory_locked_count += 1;
                 }
             } else {
-                // Attempting to lock unmapped memory, or memory not managed by grants
-                // For now, return error. In a full implementation, this might trigger
-                // demand paging and then lock.
                 return Err(Error::new(syscall::error::ENOMEM));
             }
         }
@@ -381,6 +383,9 @@ impl AddrSpaceWrapper {
 
     /// Unlocks a region of memory.
     pub fn munlock(&self, start: VirtualAddress, size: usize) -> SysResult<()> {
+        let current_context_ref = crate::context::current();
+        let mut current_context = current_context_ref.write();
+
         let mut inner = self.inner.write();
 
         let start_page = Page::containing_address(start);
@@ -388,7 +393,10 @@ impl AddrSpaceWrapper {
 
         for page in Page::range_inclusive(start_page, end_page) {
             if let Some(grant) = inner.grants.get_mut(&page) {
-                grant.locked = false;
+                if grant.locked {
+                    grant.locked = false;
+                    current_context.memory_locked_count -= 1;
+                }
             }
         }
         Ok(())
@@ -449,6 +457,8 @@ impl Mapper {
 pub struct TlbShootdownActions;
 impl TlbShootdownActions {
     pub const NEW_MAPPING: Self = Self;
+    pub fn new() -> Self { Self }
+    pub fn flush(&mut self) {}
 }
 
 #[derive(Debug)]

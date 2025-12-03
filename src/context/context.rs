@@ -20,7 +20,7 @@ use crate::{
     percpu::PercpuBlock,
     scheme::{CallerCtx, FileHandle, SchemeId, SchemeNamespace},
     scheduler,
-    sync::CleanLockToken,
+    sync::{CleanLockToken, Priority},
 };
 
 use crate::syscall::error::{Error, Result, EAGAIN, EBADF, EEXIST, EINVAL, EMFILE, ESRCH};
@@ -164,6 +164,9 @@ pub struct Context {
 
     /// True if this is a hard real-time task
     pub is_realtime: bool,
+
+    /// Counter for memory locked regions
+    pub memory_locked_count: usize,
 }
 
 #[derive(Debug)]
@@ -184,6 +187,9 @@ pub struct SignalState {
 impl Context {
     pub fn new(owner_proc_id: Option<NonZeroUsize>) -> Result<Context> {
         static DEBUG_ID: AtomicU32 = AtomicU32::new(1);
+        let priority_tracker = crate::sync::PriorityTracker::default();
+        let is_realtime = priority_tracker.effective_priority() == Priority::Realtime as u8;
+
         let this = Self {
             debug_id: DEBUG_ID.fetch_add(1, Ordering::Relaxed),
             sig: None,
@@ -219,10 +225,11 @@ impl Context {
             pid: 0,
             capabilities: Capabilities::empty(),
 
-            priority: crate::sync::PriorityTracker::default(),
+            priority: priority_tracker,
             virtual_deadline: 0,
             last_cpu_id: None,
-            is_realtime: false,
+            is_realtime,
+            memory_locked_count: 0,
 
             #[cfg(feature = "syscall_debug")]
             syscall_debug_info: crate::syscall::debug::SyscallDebugInfo::default(),
@@ -769,7 +776,7 @@ impl FdTbl {
         }
 
         self.active_count += count;
-        Some(handles)
+        Ok(handles)
     }
 
     fn bulk_insert_files_upper_manual(

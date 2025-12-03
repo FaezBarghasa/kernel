@@ -12,7 +12,7 @@ use crate::{
     context::{Context, ContextRef, Status},
     cpu_set::LogicalCpuId,
     percpu::PercpuBlock,
-    sync::CleanLockToken,
+    sync::{CleanLockToken, Priority},
     time::monotonic,
 };
 
