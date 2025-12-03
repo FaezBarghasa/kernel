@@ -65,7 +65,7 @@ pub fn irq_trigger(irq: u8, token: &mut CleanLockToken) {
         .filter_map(|(fd, handle)| Some((fd, handle.as_irq_handle()?)))
         .filter(|&(_, (_, handle_irq))| handle_irq == irq)
     {
-        event::trigger(GlobalSchemes::Irq.scheme_id(), *fd, EVENT_READ);
+        event::trigger(GlobalSchemes::Irq.scheme_id(), *fd, EVENT_READ, token);
     }
 }
 

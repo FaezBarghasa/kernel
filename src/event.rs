@@ -1,14 +1,11 @@
-use alloc::{
-    collections::VecDeque,
-    sync::Arc,
-};
+use alloc::{collections::VecDeque, sync::Arc};
 use core::sync::atomic::{AtomicUsize, Ordering};
 use hashbrown::{HashMap, HashSet};
 use spin::Once;
 
 use crate::{
     context,
-    scheme::{self, GlobalSchemes, SchemeId},
+    scheme::{self, GlobalSchemes, KernelScheme, SchemeId},
     sync::{
         CleanLockToken, LockToken, RwLock, RwLockReadGuard, RwLockWriteGuard, WaitQueue, L0, L1,
     },

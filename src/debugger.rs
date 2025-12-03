@@ -28,13 +28,13 @@ pub unsafe fn debugger(target_id: Option<*const ContextLock>, token: &mut CleanL
 
     let old_table = unsafe { RmmA::table(TableKind::User) };
 
-    let mut contexts_guard = crate::context::contexts(token.token());
-    let (contexts, mut context_token) = contexts_guard.token_split();
-    for context_lock in contexts.iter() {
+    let contexts_guard = crate::context::contexts();
+    let contexts = contexts_guard.read();
+    for (id, context_lock) in contexts.iter() {
         if target_id.map_or(false, |target_id| Arc::as_ptr(&context_lock.0) != target_id) {
             continue;
         }
-        let context = context_lock.0.read(context_token.token());
+        let context = context_lock.0.read(token.token());
         println!("{:p}: {}", Arc::as_ptr(&context_lock.0), context.name);
 
         let mut mark_frame_use = |frame| {
@@ -43,12 +43,12 @@ pub unsafe fn debugger(target_id: Option<*const ContextLock>, token: &mut CleanL
 
         match &context.syscall_head {
             SyscallFrame::Free(head) => mark_frame_use(head.get()),
-            SyscallFrame::Used { _frame: head } => mark_frame_use(*head),
+            SyscallFrame::Used { _frame: head } => mark_frame_use(head.clone()),
             SyscallFrame::Dummy => {}
         }
         match &context.syscall_tail {
             SyscallFrame::Free(tail) => mark_frame_use(tail.get()),
-            SyscallFrame::Used { _frame: tail } => mark_frame_use(*tail),
+            SyscallFrame::Used { _frame: tail } => mark_frame_use(tail.clone()),
             SyscallFrame::Dummy => {}
         }
 
@@ -259,7 +259,7 @@ unsafe fn check_page_table_consistency(
 
                     let (base, grant) = match addr_space
                         .grants
-                        .contains(Page::containing_address(address))
+                        .contains_key(&Page::containing_address(address))
                     {
                         Some(g) => g,
                         None => {

@@ -120,6 +120,7 @@ impl MemoryScheme {
         size: usize,
         flags: MapFlags,
         memory_type: MemoryType,
+        token: &mut CleanLockToken,
     ) -> Result<usize> {
         // FIXME: Check physical_address against the real MAXPHYADDR.
         let end = 1 << 52;
@@ -137,7 +138,7 @@ impl MemoryScheme {
         }
         let page_count = NonZeroUsize::new(size.div_ceil(PAGE_SIZE)).ok_or(Error::new(EINVAL))?;
 
-        let current_addrsp = AddrSpace::current()?;
+        let current_addrsp = AddrSpace::current(token)?;
 
         let base_page = current_addrsp.acquire_write().mmap_anywhere(
             &current_addrsp,
@@ -244,7 +245,7 @@ impl KernelScheme for MemoryScheme {
         payload: UserSliceRw,
         _flags: syscall::CallFlags,
         _metadata: &[u64],
-        _token: &mut CleanLockToken,
+        token: &mut CleanLockToken,
     ) -> Result<usize> {
         let (handle_ty, _, _) = u32::try_from(id)
             .ok()
@@ -254,7 +255,7 @@ impl KernelScheme for MemoryScheme {
         match handle_ty {
             HandleTy::Translation => {
                 let virt = VirtualAddress::new(payload.read_usize()?);
-                let (phys, _) = AddrSpace::current()?
+                let phys = AddrSpace::current(token)?
                     .acquire_read()
                     .table
                     .utable
@@ -290,7 +291,7 @@ impl KernelScheme for MemoryScheme {
                 flags.contains(HandleFlags::PHYS_CONTIGUOUS),
                 token,
             ),
-            HandleTy::PhysBorrow => Self::physmap(map.offset, map.size, map.flags, mem_ty),
+            HandleTy::PhysBorrow => Self::physmap(map.offset, map.size, map.flags, mem_ty, token),
             HandleTy::Translation => Err(Error::new(EOPNOTSUPP)),
         }
     }

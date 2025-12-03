@@ -12,6 +12,10 @@ pub mod device;
 /// Global descriptor table
 pub mod gdt;
 
+/// Assembly macros
+#[macro_use]
+pub mod macros;
+
 /// Interrupt descriptor table
 pub mod idt;
 
@@ -37,6 +41,9 @@ pub mod stop;
 
 pub mod time;
 
+pub mod switch;
+pub use switch::switch_to;
+
 #[cfg(target_arch = "x86")]
 pub use ::rmm::X86Arch as CurrentRmmArch;
 
@@ -53,4 +60,12 @@ pub unsafe fn arch_copy_from_user(dst: *mut u8, src: *const u8, len: usize) -> u
 pub unsafe fn arch_copy_to_user(dst: *mut u8, src: *const u8, len: usize) -> usize {
     core::ptr::copy_nonoverlapping(src, dst, len);
     0
+}
+
+use crate::percpu::PercpuBlock;
+
+impl PercpuBlock {
+    pub fn current() -> &'static mut Self {
+        unsafe { &mut gdt::pcr().percpu }
+    }
 }

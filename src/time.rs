@@ -5,6 +5,8 @@ use crate::{
     syscall::error::{Error, Result, EINVAL},
 };
 
+pub use crate::stubs::time_helpers::TimeSpec;
+
 pub const NANOS_PER_SEC: u128 = 1_000_000_000;
 
 // TODO: seqlock?

@@ -10,7 +10,7 @@ use crate::{
 
 #[derive(Debug)]
 pub struct WaitCondition {
-    contexts: OrderedMutex<L1, Vec<Weak<ContextLock>>>,
+    pub(crate) contexts: OrderedMutex<L1, Vec<Weak<ContextLock>>>,
 }
 
 impl WaitCondition {
@@ -28,6 +28,22 @@ impl WaitCondition {
         while let Some(context_weak) = contexts.pop() {
             if let Some(context_ref) = context_weak.upgrade() {
                 context_ref.write().unblock();
+            }
+        }
+        len
+    }
+
+    // Notify all waiters and boost their priority
+    pub fn notify_boosted(&self, token: &mut CleanLockToken) -> usize {
+        let mut contexts = self.contexts.lock(token.token());
+        let (contexts, mut token) = contexts.token_split();
+        let len = contexts.len();
+        while let Some(context_weak) = contexts.pop() {
+            if let Some(context_ref) = context_weak.upgrade() {
+                let mut context = context_ref.write();
+                context.unblock();
+                // Boost priority for IPC completion (approx 10k cycles)
+                context.priority.boost_for_ipc(10000);
             }
         }
         len
@@ -67,7 +83,7 @@ impl WaitCondition {
             drop(guard);
         }
 
-        context::switch(token);
+        unsafe { context::switch(token) };
 
         let mut waited = true;
 

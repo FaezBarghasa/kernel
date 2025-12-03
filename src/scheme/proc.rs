@@ -74,7 +74,7 @@ fn try_stop_context<T>(
 
     // Wait until stopped
     while running {
-        context::switch(token);
+        unsafe { context::switch(token) };
 
         running = context_ref.read(token.token()).running;
     }
@@ -247,7 +247,7 @@ impl ProcScheme {
                 };
 
                 let (hopefully_this_scheme, number) = extract_scheme_number(auth_fd, token)?;
-                verify_scheme(hopefully_this_scheme)?;
+                verify_scheme(&hopefully_this_scheme)?;
                 if !matches!(
                     HANDLES
                         .read(token.token())
@@ -287,7 +287,7 @@ impl ProcScheme {
                     "new-context" => {
                         let id = NonZeroUsize::new(NEXT_ID.fetch_add(1, Ordering::Relaxed))
                             .ok_or(Error::new(EMFILE))?;
-                        let context = context::spawn(true, Some(id), ret, token)?;
+                        let context = context::spawn(true, Some(id), || ret(), token)?;
                         HANDLES.write(token.token()).insert(
                             id.get(),
                             Handle {
@@ -427,7 +427,7 @@ impl KernelScheme for ProcScheme {
                     Ok(context.set_addr_space(Some(new)))
                 })?;
                 let _ = ptrace::send_event(
-                    crate::syscall::ptrace_event!(PTRACE_EVENT_ADDRSPACE_SWITCH, 0),
+                    crate::ptrace_event!(PTRACE_EVENT_ADDRSPACE_SWITCH, 0),
                     token,
                 );
             }
@@ -502,7 +502,7 @@ impl KernelScheme for ProcScheme {
                         map.flags,
                         &mut notify_files,
                         |dst_page, _, dst_mapper, flusher| {
-                            Grant::borrow(
+                            Grant::borrow_grant(
                                 Arc::clone(addrspace),
                                 &mut src_addr_space,
                                 src_span.base,
@@ -534,7 +534,7 @@ impl KernelScheme for ProcScheme {
                     _ => return Err(Error::new(EINVAL)),
                 };
                 // TODO: Allocated or AllocatedShared?
-                let addrsp = AddrSpace::current()?;
+                let addrsp = AddrSpace::current(token)?;
                 let page = addrsp.acquire_write().mmap(
                     &addrsp,
                     None,
@@ -775,8 +775,10 @@ impl KernelScheme for ProcScheme {
                             let page = Page::containing_address(VirtualAddress::new(page_addr));
 
                             let read_lock = addrspace.acquire_read();
-                            let (_, info) =
-                                read_lock.grants.contains(page).ok_or(Error::new(EINVAL))?;
+                            let (_, info) = read_lock
+                                .grants
+                                .get_key_value(&page)
+                                .ok_or(Error::new(EINVAL))?;
                             return Ok(OpenResult::External(
                                 info.file_ref()
                                     .map(|r| Arc::clone(&r.description))
@@ -796,7 +798,10 @@ impl KernelScheme for ProcScheme {
         .map(|(r, fl)| OpenResult::SchemeLocal(r, fl))
     }
 }
-fn extract_scheme_number(fd: usize, token: &mut CleanLockToken) -> Result<(KernelSchemes, usize)> {
+fn extract_scheme_number(
+    fd: usize,
+    token: &mut CleanLockToken,
+) -> Result<(Arc<KernelSchemes>, usize)> {
     let file_descriptor = context::current()
         .read(token.token())
         .get_file(FileHandle::from(fd))
@@ -810,7 +815,7 @@ fn extract_scheme_number(fd: usize, token: &mut CleanLockToken) -> Result<(Kerne
 
     Ok((scheme, number))
 }
-fn verify_scheme(scheme: KernelSchemes) -> Result<()> {
+fn verify_scheme(scheme: &KernelSchemes) -> Result<()> {
     if !matches!(scheme, KernelSchemes::Global(GlobalSchemes::Proc)) {
         return Err(Error::new(EBADF));
     }
@@ -912,7 +917,7 @@ impl ContextHandle {
                             Err(Error::new(ENOTRECOVERABLE))
                         }
                         Some(stack) => {
-                            stack.load(&regs);
+                            stack.load_from(&regs);
 
                             Ok(mem::size_of::<IntRegisters>())
                         }
@@ -995,7 +1000,7 @@ impl ContextHandle {
             ContextHandle::CurrentFiletable => {
                 let filetable_fd = buf.read_usize()?;
                 let (hopefully_this_scheme, number) = extract_scheme_number(filetable_fd, token)?;
-                verify_scheme(hopefully_this_scheme)?;
+                verify_scheme(&hopefully_this_scheme)?;
 
                 let mut handles = HANDLES.write(token.token());
                 let Entry::Occupied(mut entry) = handles.entry(number) else {
@@ -1042,7 +1047,7 @@ impl ContextHandle {
                 let ip = iter.next().ok_or(Error::new(EINVAL))??;
 
                 let (hopefully_this_scheme, number) = extract_scheme_number(addrspace_fd, token)?;
-                verify_scheme(hopefully_this_scheme)?;
+                verify_scheme(&hopefully_this_scheme)?;
 
                 let mut handles = HANDLES.write(token.token());
                 let &Handle {
@@ -1149,11 +1154,11 @@ impl ContextHandle {
                                         false,
                                     )?;
                                     for r in res {
-                                        let _ = r.unmap(token);
+                                        let _ = r.unmap();
                                     }
                                 }
                             }
-                            crate::syscall::exit_this_context(None, token);
+                            crate::syscall::exit_this_context(0);
                         } else {
                             let mut ctxt = context.write(token.token());
                             //trace!("FORCEKILL NONSELF={} {}, SELF={}", ctxt.debug_id, ctxt.pid, context::current().read().debug_id);
@@ -1229,7 +1234,7 @@ impl ContextHandle {
                             }
                             Some(stack) => {
                                 let mut regs = IntRegisters::default();
-                                stack.save(&mut regs);
+                                stack.save_to(&mut regs);
                                 Ok((Output { int: regs }, mem::size_of::<IntRegisters>()))
                             }
                         })?

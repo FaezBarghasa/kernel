@@ -1,8 +1,12 @@
 //! # Topology and Affinity
 
-use crate::context;
-use crate::cpu_set::CpuSet;
-use crate::syscall::error::{Error, EINVAL, ESRCH};
+use crate::{
+    context,
+    cpu_set::CpuSet,
+    syscall::error::{Error, EINVAL, ESRCH},
+};
+
+pub use crate::stubs::topology::*;
 
 pub fn thread_set_affinity(pid: usize, cpuset: CpuSet) -> Result<(), Error> {
     if cpuset == CpuSet::new() {
@@ -10,7 +14,7 @@ pub fn thread_set_affinity(pid: usize, cpuset: CpuSet) -> Result<(), Error> {
     }
 
     let mut contexts = context::contexts();
-    let context = contexts.get_mut(pid).ok_or(Error::new(ESRCH))?;
+    let context = contexts.get_mut(&pid).ok_or(Error::new(ESRCH))?;
     context.affinity = cpuset;
 
     Ok(())

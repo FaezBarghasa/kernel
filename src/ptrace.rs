@@ -5,14 +5,15 @@
 use crate::{
     event,
     percpu::PercpuBlock,
+    ptrace_event,
     scheme::GlobalSchemes,
     sync::{CleanLockToken, WaitCondition},
-    syscall::{data::PtraceEvent, error::*, flag::*, ptrace_event},
+    syscall::{data::PtraceEvent, error::*, flag::*},
 };
 
+use crate::sync::Mutex;
 use alloc::{collections::VecDeque, sync::Arc};
 use core::cmp;
-use spin::Mutex;
 
 //  ____                _
 // / ___|  ___  ___ ___(_) ___  _ __  ___
@@ -31,14 +32,11 @@ pub struct SessionData {
     file_id: usize,
 }
 impl SessionData {
-    fn add_event(&mut self, event: PtraceEvent) {
+    fn add_event(&mut self, event: PtraceEvent) -> bool {
         self.events.push_back(event);
 
         // Notify nonblocking tracers
-        if self.events.len() == 1 {
-            // If the list of events was previously empty, alert now
-            proc_trigger_event(self.file_id, EVENT_READ);
-        }
+        self.events.len() == 1
     }
 
     /// Override the breakpoint for the specified tracee. Pass `None` to clear
@@ -126,13 +124,16 @@ pub fn close_session(session: &Session, token: &mut CleanLockToken) {
 pub fn close_tracee(session: &Session, token: &mut CleanLockToken) {
     session.tracer.notify(token);
 
-    let data = session.data.lock();
-    proc_trigger_event(data.file_id, EVENT_READ);
+    let file_id = {
+        let data = session.data.lock(token);
+        data.file_id
+    };
+    proc_trigger_event(file_id, EVENT_READ, token);
 }
 
 /// Trigger a notification to the event: scheme
-fn proc_trigger_event(file_id: usize, flags: EventFlags) {
-    event::trigger(GlobalSchemes::Proc.scheme_id(), file_id, flags);
+fn proc_trigger_event(file_id: usize, flags: EventFlags, token: &mut CleanLockToken) {
+    event::trigger(GlobalSchemes::Proc.scheme_id(), file_id, flags, token);
 }
 
 /// Dispatch an event to any tracer tracing `self`. This will cause
@@ -140,7 +141,7 @@ fn proc_trigger_event(file_id: usize, flags: EventFlags) {
 /// event was sent.
 pub fn send_event(event: PtraceEvent, token: &mut CleanLockToken) -> Option<()> {
     let session = Session::current()?;
-    let mut data = session.data.lock();
+    let mut data = session.data.lock(token);
     let breakpoint = data.breakpoint.as_ref()?;
 
     if event.cause & breakpoint.flags != event.cause {
@@ -148,7 +149,14 @@ pub fn send_event(event: PtraceEvent, token: &mut CleanLockToken) -> Option<()> 
     }
 
     // Add event to queue
-    data.add_event(event);
+    let trigger = data.add_event(event);
+    let file_id = data.file_id;
+    drop(data);
+
+    if trigger {
+        proc_trigger_event(file_id, EVENT_READ, token);
+    }
+
     // Notify tracer
     session.tracer.notify(token);
 
@@ -177,7 +185,7 @@ pub fn wait(session: Arc<Session>, token: &mut CleanLockToken) -> Result<()> {
     loop {
         // Lock the data, to make sure we're reading the final value before going
         // to sleep.
-        let data = session.data.lock();
+        let data = session.data.lock(token);
 
         // Wake up if a breakpoint is already reached or there's an unread event
         if data.breakpoint.as_ref().map(|b| b.reached).unwrap_or(false) || !data.events.is_empty() {
@@ -216,7 +224,7 @@ pub fn breakpoint_callback(
 
         let session = percpu.ptrace_session.borrow().as_ref()?.upgrade()?;
 
-        let mut data = session.data.lock();
+        let mut data = session.data.lock(token);
         let breakpoint = data.breakpoint?; // only go to sleep if there's a breakpoint
 
         // In case no tracer is waiting, make sure the next one gets the memo
@@ -226,17 +234,28 @@ pub fn breakpoint_callback(
             .reached = true;
 
         // Add event to queue
-        data.add_event(event.unwrap_or(ptrace_event!(match_flags)));
+        let trigger = data.add_event(event.unwrap_or(ptrace_event!(match_flags)));
+        let file_id = data.file_id;
 
         // Wake up sleeping tracer
         session.tracer.notify(token);
+
+        if trigger {
+            drop(data);
+            proc_trigger_event(file_id, EVENT_READ, token);
+            data = session.data.lock(token);
+        }
 
         if session
             .tracee
             .wait(data, "ptrace::breakpoint_callback", token)
         {
             // We successfully waited, wake up!
-            break Some(breakpoint.flags);
+            // We need to re-check breakpoint because we might have dropped lock
+            if let Some(bp) = data.breakpoint {
+                break Some(bp.flags);
+            }
+            // If breakpoint is gone, we loop and check again (and probably return None)
         }
     }
 }
@@ -244,12 +263,19 @@ pub fn breakpoint_callback(
 /// Obtain the next breakpoint flags for the current process. This is used for
 /// detecting whether or not the tracer decided to use sysemu mode.
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-pub fn next_breakpoint() -> Option<PtraceFlags> {
+pub fn next_breakpoint(token: &mut CleanLockToken) -> Option<PtraceFlags> {
     //  TODO: Make this function arch-independent (probably requires moving
     //  some stuff from the syscall handler)
     let session = Session::current()?;
-    let data = session.data.lock();
+    let data = session.data.lock(token);
     let breakpoint = data.breakpoint?;
 
     Some(breakpoint.flags)
+}
+
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+pub fn set_process_regs(
+    _stack: &mut crate::arch::interrupt::InterruptStack,
+) -> Option<crate::arch::interrupt::InterruptStack> {
+    None
 }

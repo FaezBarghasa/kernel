@@ -19,7 +19,7 @@ const IA32_PL0_SSP: u32 = 0x6E2;
 const S_CET_ENABLE: u64 = 1 << 0; // CET Enable Bit
 
 // CR4 Bit for Control-flow Enforcement
-const CR4_CET_ENABLE: Cr4 = Cr4::CR4_CET;
+const CR4_CET_ENABLE: Cr4 = Cr4::from_bits_truncate(1 << 23);
 
 /// **Task 2.1:** Implements Control-flow Enforcement Technology (CET) initialization.
 ///

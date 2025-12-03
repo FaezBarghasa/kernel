@@ -1,23 +1,31 @@
-//! # Syscall Debugging
+use crate::syscall::flag::MapFlags;
 
-use crate::syscall::error::Result;
+#[derive(Debug, Default)]
+pub struct SyscallDebugInfo {
+    // Placeholder fields
+}
 
-pub fn debug_syscall(number: usize, a: usize, b: usize, c: usize, d: usize, e: usize, f: usize) {
-    #[cfg(feature = "syscall_debug")]
-    {
-        crate::println!(
-            "SYSCALL: #{}({:#x}, {:#x}, {:#x}, {:#x}, {:#x}, {:#x})",
-            number, a, b, c, d, e, f
-        );
+impl SyscallDebugInfo {
+    pub fn format_call(
+        &self,
+        _a: usize,
+        _b: usize,
+        _c: usize,
+        _d: usize,
+        _e: usize,
+        _f: usize,
+    ) -> alloc::string::String {
+        alloc::string::String::from("syscall")
     }
 }
 
-pub fn debug_syscall_result(result: Result<usize>) {
-    #[cfg(feature = "syscall_debug")]
-    {
-        match result {
-            Ok(val) => crate::println!(" -> Ok({:#x})", val),
-            Err(err) => crate::println!(" -> Err({:?})", err),
-        }
-    }
+pub fn format_call(
+    _a: usize,
+    _b: usize,
+    _c: usize,
+    _d: usize,
+    _e: usize,
+    _f: usize,
+) -> alloc::string::String {
+    alloc::string::String::from("syscall")
 }

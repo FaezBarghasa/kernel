@@ -10,6 +10,13 @@ log = "0.4.20"
 rmm = { path = "rmm", default-features = false }
 spin = "0.9.8"
 rustc-demangle = "0.1.23"
+raw-cpuid = "10.7.0"
+slab = { version = "0.4", default-features = false }
+hashbrown = { version = "0.14", default-features = false, features = ["ahash", "inline-more"] }
+arrayvec = { version = "0.7", default-features = false }
+object = { version = "0.32", default-features = false, features = ["read_core", "elf"] }
+redox-path = "0.2"
+syscall = { package = "redox_syscall", version = "0.5" }
 
 [dependencies.goblin]
 version = "0.7.1"

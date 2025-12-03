@@ -10,7 +10,6 @@
 #![allow(clippy::or_fun_call)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::identity_op)]
-
 // Strict safety enforcement
 #![deny(clippy::not_unsafe_ptr_arg_deref)]
 #![deny(clippy::cast_ptr_alignment)]
@@ -20,7 +19,7 @@
 #![deny(static_mut_refs)]
 #![deny(unreachable_patterns)]
 #![deny(unused_must_use)]
-
+#![feature(core_intrinsics)]
 #![feature(if_let_guard)]
 #![feature(int_roundings)]
 #![feature(iter_next_chunk)]
@@ -36,10 +35,8 @@ extern crate alloc;
 #[macro_use]
 extern crate bitflags;
 
+use crate::{consts::*, context::switch::SwitchResult, scheme::SchemeNamespace};
 use core::sync::atomic::{AtomicU32, Ordering};
-use crate::context::switch::SwitchResult;
-use crate::scheme::SchemeNamespace;
-use crate::consts::*;
 
 #[macro_use]
 mod common;
@@ -49,28 +46,33 @@ mod macros;
 mod arch;
 use crate::arch::*;
 
-mod allocator;
 #[cfg(feature = "acpi")]
 mod acpi;
-#[cfg(feature = "dtb")]
-mod dtb;
+mod allocator;
+mod alternative;
+mod context;
 mod cpu_set;
 mod cpu_stats;
-mod context;
 #[cfg(feature = "debugger")]
 mod debugger;
 mod devices;
+#[cfg(feature = "dtb")]
+mod dtb;
 mod event;
 #[cfg(not(test))]
 mod externs;
+mod gdt;
 mod log;
 mod memory;
+mod misc;
 mod panic;
 mod percpu;
-mod ptrace;
 mod profiling;
+mod ptrace;
 mod scheme;
 mod startup;
+#[macro_use]
+mod stubs;
 use sync::CleanLockToken;
 mod sync;
 mod syscall;
@@ -119,7 +121,7 @@ extern "C" fn kmain_reaper() {
 
 fn kmain(bootstrap: Bootstrap) -> ! {
     let mut token = unsafe { CleanLockToken::new() };
-    context::init(&mut token);
+    context::init();
     scheme::init_schemes();
 
     info!("BSP: {} CPUs", cpu_count());
@@ -129,9 +131,9 @@ fn kmain(bootstrap: Bootstrap) -> ! {
     profiling::ready_for_profiling();
 
     let owner = None;
-    match context::spawn(false, owner.clone(), kmain_reaper, &mut token) {
+    match context::spawn(false, owner.clone(), || kmain_reaper(), &mut token) {
         Ok(context_lock) => {
-            let mut context = context_lock.write();
+            let mut context = context_lock.write(token.token());
             context.status = context::Status::Runnable;
             context.name.clear();
             context.name.push_str("[kmain_reaper]");
@@ -140,9 +142,9 @@ fn kmain(bootstrap: Bootstrap) -> ! {
             panic!("failed to spawn kmain_reaper: {:?}", err);
         }
     }
-    match context::spawn(true, owner, userspace_init, &mut token) {
+    match context::spawn(true, owner, || userspace_init(), &mut token) {
         Ok(context_lock) => {
-            let mut context = context_lock.write();
+            let mut context = context_lock.write(token.token());
             context.status = context::Status::Runnable;
             context.name.clear();
             context.name.push_str("[bootstrap]");
@@ -172,7 +174,7 @@ fn kmain_ap(cpu_id: crate::cpu_set::LogicalCpuId) -> ! {
         }
     }
 
-    context::init(&mut token);
+    context::init();
     info!("AP {}", cpu_id);
     profiling::ready_for_profiling();
     run_userspace(&mut token)

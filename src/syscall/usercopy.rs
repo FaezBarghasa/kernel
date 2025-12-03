@@ -101,7 +101,8 @@ impl<const WRITE: bool> UserSlice<true, WRITE> {
             return Err(Error::new(EINVAL));
         }
 
-        if unsafe { arch_copy_from_user(slice.as_mut_ptr() as usize, self.base, self.len) } == 0 {
+        if unsafe { arch_copy_from_user(slice.as_mut_ptr(), self.base as *const u8, self.len) } == 0
+        {
             Ok(())
         } else {
             Err(Error::new(EFAULT))
@@ -165,7 +166,7 @@ impl<const READ: bool> UserSlice<READ, true> {
             return Err(Error::new(EINVAL));
         }
 
-        if unsafe { arch_copy_to_user(self.base, slice.as_ptr() as usize, self.len) } == 0 {
+        if unsafe { arch_copy_to_user(self.base as *mut u8, slice.as_ptr(), self.len) } == 0 {
             Ok(())
         } else {
             Err(Error::new(EFAULT))

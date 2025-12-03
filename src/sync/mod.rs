@@ -15,6 +15,11 @@ mod ordered;
 mod wait_condition;
 mod wait_queue;
 
+// Lock-free and optimized synchronization primitives
+mod lockfree_queue;
+mod optimized_wait_queue;
+mod priority;
+
 // Re-export ordered lock types
 pub use ordered::{
     check_no_locks, ArcRwLockWriteGuard, CleanLockToken, Higher, Level, LockToken, Lower,
@@ -25,6 +30,11 @@ pub use ordered::{
 // Re-export wait queue types
 pub use wait_condition::WaitCondition;
 pub use wait_queue::WaitQueue;
+
+// Re-export lock-free and optimized types
+pub use lockfree_queue::LockFreeQueue;
+pub use optimized_wait_queue::OptimizedWaitQueue;
+pub use priority::{IpcCriticalGuard, Priority, PriorityTracker};
 
 /// A Mutex wrapper implementing a placeholder for the Priority Inheritance Protocol (PIP).
 ///

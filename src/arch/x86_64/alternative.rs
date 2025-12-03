@@ -39,3 +39,7 @@ pub unsafe fn apply_alternatives() {
         // Implementation for applying relocs
     }
 }
+
+pub fn kfx_size() -> usize {
+    512
+}

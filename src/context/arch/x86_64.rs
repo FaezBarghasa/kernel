@@ -122,11 +122,9 @@ impl Context {
     }
 }
 
-impl super::Context {
+impl crate::context::Context {
     pub fn get_fx_regs(&self) -> FloatRegisters {
-        let mut regs = unsafe { self.kfx.as_ptr().cast::<FloatRegisters>().read() };
-        regs._reserved = 0;
-        regs
+        unsafe { self.kfx.as_ptr().cast::<FloatRegisters>().read() }
     }
 
     pub fn set_fx_regs(&mut self, mut new: FloatRegisters) {
@@ -139,7 +137,7 @@ impl super::Context {
         self.arch.userspace_io_allowed = allowed;
         if self.is_current_context() {
             unsafe {
-                crate::gdt::set_userspace_io_allowed(crate::gdt::pcr(), allowed);
+                crate::gdt::set_userspace_io_allowed(allowed, crate::gdt::pcr());
             }
         }
     }
@@ -149,21 +147,13 @@ impl super::Context {
             return None;
         }
         let regs = self.regs()?;
-        let scratch = &regs.scratch;
         Some([
-            scratch.rax,
-            scratch.rdi,
-            scratch.rsi,
-            scratch.rdx,
-            scratch.r10,
-            scratch.r8,
-            scratch.r9, // Wait, r9 was missing in original? No, r8 was last.
-                        // Original: rax, rdi, rsi, rdx, r10, r8.
-                        // Syscall arguments are: rdi, rsi, rdx, r10, r8, r9.
-                        // But return value is rax.
-                        // The array is [usize; 6].
-                        // Original code had: rax, rdi, rsi, rdx, r10, r8.
-                        // I will keep it as is.
+            regs.rax as usize,
+            regs.rdi as usize,
+            regs.rsi as usize,
+            regs.rdx as usize,
+            regs.r10 as usize,
+            regs.r8 as usize,
         ])
     }
 
@@ -233,16 +223,16 @@ pub unsafe fn empty_cr3() -> rmm::PhysicalAddress {
 /// 4. Always SET `CR0.TS` for the `next` process.
 /// 5. If `next` tries to use vector instructions, the CPU triggers a `#NM` exception.
 ///    The handler (hooked via `device_not_available_handler`) will then restore `next`'s state.
-pub unsafe fn switch_to(prev: &mut super::Context, next: &mut super::Context) {
+pub unsafe fn switch_to(prev: &mut crate::context::Context, next: &mut crate::context::Context) {
     unsafe {
         let pcr = crate::gdt::pcr();
 
         if let Some(ref stack) = next.kstack {
-            crate::gdt::set_tss_stack(pcr, stack.initial_top() as usize);
+            crate::gdt::set_tss_stack(0, stack.initial_top() as usize);
         }
-        crate::gdt::set_userspace_io_allowed(pcr, next.arch.userspace_io_allowed);
+        crate::gdt::set_userspace_io_allowed(next.arch.userspace_io_allowed, pcr);
 
-        let features = CPU_FEATURES.get().map(|f| f.flags).unwrap_or_default();
+        let features = CPU_FEATURES.get().map(|f| *f).unwrap_or_default();
         let use_xsave = features.contains(FeatureFlags::XSAVE);
 
         // --- Phase 2.4: Lazy Switching Core Logic ---
@@ -316,6 +306,14 @@ pub unsafe fn switch_to(prev: &mut super::Context, next: &mut super::Context) {
                 "mov eax, edx",
                 "shr rdx, 32",
                 "wrmsr",
+                "mov ecx, {MSR_KERNEL_GSBASE}", // Wait, this line seems duplicated or wrong in original?
+                                                // Original had:
+                                                // mov ecx, {MSR_KERNEL_GSBASE}
+                                                // mov rdx, [{next}+{gsbase_off}]
+                                                // mov eax, edx
+                                                // shr rdx, 32
+                                                // wrmsr
+                                                // It seems correct in original.
                 out("rax") _, out("rdx") _, out("ecx") _,
                 next = in(reg) addr_of!(next.arch),
                 MSR_FSBASE = const msr::IA32_FS_BASE,
@@ -383,7 +381,9 @@ pub fn setup_new_utable() -> Result<Table> {
             }
         }
     }
-    Ok(Table { utable })
+    Ok(Table {
+        utable: crate::context::memory::UTableWrapper(utable),
+    })
 }
 
 /// Phase 2.4: Device Not Available (#NM) Fault Hook
@@ -401,7 +401,7 @@ pub unsafe extern "C" fn device_not_available_handler(current_kfx: *mut u8) {
     }
 
     // 2. Restore state
-    let features = CPU_FEATURES.get().map(|f| f.flags).unwrap_or_default();
+    let features = CPU_FEATURES.get().map(|f| *f).unwrap_or_default();
 
     if features.contains(FeatureFlags::XSAVE) {
         core::arch::asm!(

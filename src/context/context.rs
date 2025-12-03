@@ -151,6 +151,9 @@ pub struct Context {
     pub egid: u32,
     pub pid: usize,
     pub capabilities: Capabilities,
+
+    /// Priority tracking for scheduling and IPC optimization
+    pub priority: crate::sync::PriorityTracker,
 }
 
 #[derive(Debug)]
@@ -205,6 +208,8 @@ impl Context {
             egid: 0,
             pid: 0,
             capabilities: Capabilities::empty(),
+
+            priority: crate::sync::PriorityTracker::default(),
 
             #[cfg(feature = "syscall_debug")]
             syscall_debug_info: crate::syscall::debug::SyscallDebugInfo::default(),
@@ -376,7 +381,7 @@ impl Context {
                     }
                 }
                 _ => unsafe {
-                    crate::paging::RmmA::set_table(rmm::TableKind::User, empty_cr3());
+                    crate::paging::RmmA::set_table(rmm::TableKind::User, empty_cr3().base());
                 },
             }
         } else {

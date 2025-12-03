@@ -1,8 +1,7 @@
 use crate::{
     arch::{gdt, interrupt::InterruptStack},
-    ptrace,
+    pop_preserved, pop_scratch, ptrace, ptrace_event, push_preserved, push_scratch,
     sync::CleanLockToken,
-    syscall,
     syscall::flag::{PTRACE_FLAG_IGNORE, PTRACE_STOP_POST_SYSCALL, PTRACE_STOP_PRE_SYSCALL},
 };
 use core::mem::offset_of;
@@ -27,7 +26,7 @@ pub unsafe fn init() {
 
         msr::wrmsr(msr::IA32_STAR, u64::from(star_high) << 32);
         #[expect(clippy::fn_to_numeric_cast)]
-        msr::wrmsr(msr::IA32_LSTAR, syscall_instruction as u64);
+        msr::wrmsr(msr::IA32_LSTAR, syscall_instruction_entry as u64);
 
         // DF needs to be cleared, required by the compiler ABI. If DF were not part of FMASK,
         // userspace would be able to reverse the direction of in-kernel REP MOVS/STOS/(CMPS/SCAS), and
@@ -61,39 +60,65 @@ pub unsafe fn init() {
             | RFlags::FLAGS_OF;
         msr::wrmsr(msr::IA32_FMASK, (mask_critical | mask_other).bits());
 
-        let efer = msr::rdmsr(msr::IA32_EFER);
-        msr::wrmsr(msr::IA32_EFER, efer | 1);
+        // Enable syscall/sysret
+        x86::msr::wrmsr(
+            x86::msr::IA32_EFER,
+            x86::msr::rdmsr(x86::msr::IA32_EFER) | 1,
+        );
     }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __inner_syscall_instruction(stack: *mut InterruptStack) {
-    unsafe {
-        let mut token = CleanLockToken::new();
-        let allowed = ptrace::breakpoint_callback(PTRACE_STOP_PRE_SYSCALL, None, &mut token)
-            .and_then(|_| ptrace::next_breakpoint().map(|f| !f.contains(PTRACE_FLAG_IGNORE)));
+pub unsafe extern "C" fn syscall_instruction(stack: *mut InterruptStack) {
+    let _guard = ptrace::set_process_regs(&mut *stack);
 
-        if allowed.unwrap_or(true) {
-            let scratch = &(*stack).scratch;
+    let mut token = CleanLockToken::new();
+    let allowed = ptrace::breakpoint_callback(PTRACE_STOP_PRE_SYSCALL, None, &mut token)
+        .and_then(|_| ptrace::next_breakpoint(&mut token).map(|f| !f.contains(PTRACE_FLAG_IGNORE)));
 
-            let ret = syscall::syscall(
-                scratch.rax,
-                scratch.rdi,
-                scratch.rsi,
-                scratch.rdx,
-                scratch.r10,
-                scratch.r8,
-                &mut token,
-            );
-            (*stack).scratch.rax = ret;
-        }
+    if allowed.unwrap_or(true) {
+        let current_stack = &mut *stack;
+        // Set the scratch registers
+        let rax = current_stack.rax;
+        let rdi = current_stack.rdi;
+        let rsi = current_stack.rsi;
+        let rdx = current_stack.rdx;
+        let r10 = current_stack.r10;
+        let r8 = current_stack.r8;
+        let r9 = current_stack.r9;
 
-        ptrace::breakpoint_callback(PTRACE_STOP_POST_SYSCALL, None, &mut token);
+        // Call the syscall
+        let ret = crate::syscall::syscall(
+            rax as usize,
+            rdi as usize,
+            rsi as usize,
+            rdx as usize,
+            r10 as usize,
+            r8 as usize,
+            r9 as usize,
+        );
+
+        // Save the return value
+        current_stack.rax = ret as u64;
     }
+
+    ptrace::breakpoint_callback(PTRACE_STOP_POST_SYSCALL, None, &mut token);
 }
 
 #[unsafe(naked)]
-pub unsafe extern "C" fn syscall_instruction() {
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn clone_ret() {
+    core::arch::naked_asm!(
+        "pop rdi", "pop rsi", "pop rdx", "pop rcx", "pop r8", "pop r9", "pop r10", "pop r11",
+        "pop rbx", "pop rbp", "pop r12", "pop r13", "pop r14", "pop r15",
+        "pop rax", // Error code
+        "iretq",
+    );
+}
+
+#[unsafe(naked)]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn syscall_instruction_entry() {
     core::arch::naked_asm!(concat!(
     // Yes, this is magic. No, you don't need to understand
     "swapgs;",                    // Swap KGSBASE with GSBASE, allowing fast TSS access.
@@ -115,7 +140,7 @@ pub unsafe extern "C" fn syscall_instruction() {
 
     // Call inner funtion
     "mov rdi, rsp;",
-    "call __inner_syscall_instruction;",
+    "call syscall_instruction;",
 
     // TODO: Unmap PTI
     // $crate::arch::x86_64::pti::unmap();
@@ -188,7 +213,7 @@ pub unsafe extern "C" fn syscall_instruction() {
     // IRETQ fallback:
     "
     .p2align 4
-2:
+    2:
     xor rcx, rcx
     xor r11, r11
     iretq

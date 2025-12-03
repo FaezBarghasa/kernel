@@ -21,6 +21,7 @@ use crate::{
     },
 };
 
+#[cfg(feature = "acpi")]
 pub mod acpi;
 pub mod debug;
 #[cfg(dtb)]
@@ -381,6 +382,7 @@ pub enum GlobalSchemes {
     Irq,
     Time,
     Sys,
+    #[cfg(feature = "acpi")]
     Acpi,
     #[cfg(dtb)]
     Dtb,
@@ -400,10 +402,11 @@ impl GlobalSchemes {
             Self::Irq => "irq",
             Self::Time => "time",
             Self::Sys => "sys",
+            #[cfg(feature = "acpi")]
             Self::Acpi => "acpi",
             #[cfg(dtb)]
             Self::Dtb => "dtb",
-            Self::Root => "root",
+            Self::Root(_) => "root",
         };
         SCHEMES.read().get_id(name).unwrap_or(SchemeId(0))
     }
@@ -452,6 +455,8 @@ macro_rules! forward_scheme {
                 let $s = &sys::SysScheme;
                 $expr
             }
+
+            #[cfg(feature = "acpi")]
             GlobalSchemes::Acpi => {
                 let $s = &acpi::AcpiScheme;
                 $expr
@@ -1131,6 +1136,7 @@ pub fn init_schemes() {
         KernelSchemes::Global(GlobalSchemes::Time),
     );
     schemes.insert(Box::from("sys"), KernelSchemes::Global(GlobalSchemes::Sys));
+    #[cfg(feature = "acpi")]
     schemes.insert(
         Box::from("acpi"),
         KernelSchemes::Global(GlobalSchemes::Acpi),
