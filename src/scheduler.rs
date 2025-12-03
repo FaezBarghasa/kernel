@@ -10,6 +10,7 @@ use core::sync::atomic::{AtomicU64, Ordering};
 
 use crate::{
     context::{Context, ContextRef, Status},
+    cpu_set::LogicalCpuId,
     percpu::PercpuBlock,
     sync::CleanLockToken,
     time::monotonic,
@@ -23,59 +24,81 @@ const BASE_TIME_SLICE_NS: u64 = 1_000_000; // 1ms
 ///
 /// This will hold runnable contexts, ordered by their virtual deadline.
 pub struct RunQueue {
-    /// The actual queue of runnable contexts.
-    ///
-    /// Contexts are ordered by their virtual deadline, with the smallest (earliest)
-    /// deadline at the front.
-    queue: VecDeque<ContextRef>,
+    /// Real-time tasks, ordered by virtual deadline.
+    rt_queue: VecDeque<ContextRef>,
+    /// Non-real-time tasks, ordered by virtual deadline.
+    non_rt_queue: VecDeque<ContextRef>,
 }
 
 impl RunQueue {
     pub fn new() -> Self {
         RunQueue {
-            queue: VecDeque::new(),
+            rt_queue: VecDeque::new(),
+            non_rt_queue: VecDeque::new(),
         }
     }
 
-    /// Adds a context to the run queue.
+    /// Adds a context to the appropriate run queue.
     ///
     /// The context is inserted into the queue based on its virtual deadline,
     /// maintaining the sorted order.
     pub fn add(&mut self, context_ref: ContextRef) {
         let new_deadline = context_ref.read().virtual_deadline;
+        let is_realtime = context_ref.read().is_realtime;
+
+        let queue = if is_realtime {
+            &mut self.rt_queue
+        } else {
+            &mut self.non_rt_queue
+        };
 
         // Find the correct position to insert based on virtual_deadline
         let mut i = 0;
-        while i < self.queue.len() {
-            if new_deadline < self.queue[i].read().virtual_deadline {
+        while i < queue.len() {
+            if new_deadline < queue[i].read().virtual_deadline {
                 break;
             }
             i += 1;
         }
-        self.queue.insert(i, context_ref);
+        queue.insert(i, context_ref);
     }
 
     /// Removes and returns the next context to run.
     ///
-    /// This will be the context with the earliest virtual deadline.
+    /// This will prioritize real-time tasks.
     pub fn next(&mut self) -> Option<ContextRef> {
-        self.queue.pop_front()
+        if let Some(ctx) = self.rt_queue.pop_front() {
+            Some(ctx)
+        } else {
+            self.non_rt_queue.pop_front()
+        }
     }
 
     /// Removes a specific context from the run queue.
     pub fn remove(&mut self, context_id: usize) -> Option<ContextRef> {
         let mut found_idx = None;
-        for (i, c) in self.queue.iter().enumerate() {
+        for (i, c) in self.rt_queue.iter().enumerate() {
             if c.read().id() == context_id {
                 found_idx = Some(i);
                 break;
             }
         }
-        found_idx.map(|i| self.queue.remove(i).unwrap())
+        if let Some(i) = found_idx {
+            return self.rt_queue.remove(i);
+        }
+
+        found_idx = None;
+        for (i, c) in self.non_rt_queue.iter().enumerate() {
+            if c.read().id() == context_id {
+                found_idx = Some(i);
+                break;
+            }
+        }
+        found_idx.map(|i| self.non_rt_queue.remove(i).unwrap())
     }
 
     pub fn is_empty(&self) -> bool {
-        self.queue.is_empty()
+        self.rt_queue.is_empty() && self.non_rt_queue.is_empty()
     }
 }
 
@@ -105,6 +128,9 @@ impl Scheduler {
             let mut current_ctx = current_ctx_ref.write(token.token());
             let now = monotonic();
             let time_spent = now.saturating_sub(current_ctx.switch_time);
+
+            // Update last_cpu_id for cache locality
+            current_ctx.last_cpu_id = Some(crate::cpu_id());
 
             // Calculate the virtual deadline based on effective priority
             // Lower effective_priority means higher actual priority.
@@ -158,12 +184,27 @@ pub fn schedule_next(token: &mut CleanLockToken) -> Option<ContextRef> {
 }
 
 pub fn add_context(context_ref: ContextRef) {
+    // Determine which CPU's run queue to add the context to
+    let target_cpu = {
+        let context = context_ref.read();
+        context.last_cpu_id.unwrap_or_else(crate::cpu_id)
+    };
+
     // Initialize virtual_deadline for new contexts
     {
         let mut context = context_ref.write();
-        context.virtual_deadline = scheduler().current_virtual_deadline.load(Ordering::Relaxed);
+        context.virtual_deadline = PercpuBlock::current().scheduler.current_virtual_deadline.load(Ordering::Relaxed);
     }
-    scheduler().run_queue.add(context_ref)
+
+    // TODO: Implement proper load balancing if target_cpu's queue is overloaded
+    if target_cpu == crate::cpu_id() {
+        scheduler().run_queue.add(context_ref);
+    } else {
+        // For now, if not the current CPU, just add to current CPU's queue
+        // In a real implementation, this would involve inter-processor interrupts (IPIs)
+        // to add to the target CPU's run queue.
+        scheduler().run_queue.add(context_ref);
+    }
 }
 
 pub fn remove_context(context_id: &usize) {

@@ -1,6 +1,8 @@
 use crate::memory::KernelMapper;
 use core::cell::Cell;
 
+use crate::time::{self, ActiveTimer};
+
 pub mod cpu;
 #[cfg(feature = "acpi")]
 pub mod hpet;
@@ -30,17 +32,22 @@ pub unsafe fn init_after_acpi() {
 }
 
 #[cfg(feature = "acpi")]
-unsafe fn init_hpet() -> bool {
+unsafe fn init_hpet_one_shot() -> bool {
     unsafe {
         use crate::acpi::ACPI_TABLE;
-        match *ACPI_TABLE.hpet.write() {
-            Some(ref mut hpet) => {
+        match ACPI_TABLE.hpet.write().take() {
+            Some(hpet) => {
                 if cfg!(target_arch = "x86") {
                     //TODO: fix HPET on i686
                     warn!("HPET found but implemented on i686");
                     return false;
                 }
-                hpet::init(hpet)
+                if hpet::init(hpet) {
+                    *time::ACTIVE_TIMER.lock() = ActiveTimer::Hpet;
+                    true
+                } else {
+                    false
+                }
             }
             _ => false,
         }
@@ -48,7 +55,7 @@ unsafe fn init_hpet() -> bool {
 }
 
 #[cfg(not(feature = "acpi"))]
-unsafe fn init_hpet() -> bool {
+unsafe fn init_hpet_one_shot() -> bool {
     false
 }
 
@@ -61,10 +68,11 @@ pub unsafe fn init_noncore() {
             debug!("TSC used as system clock source");
         }
 
-        if init_hpet() {
+        if init_hpet_one_shot() {
             debug!("HPET used as system timer");
         } else {
-            pit::init();
+            pit::init(); // Initialize PIT in one-shot mode
+            *time::ACTIVE_TIMER.lock() = ActiveTimer::Pit;
             debug!("PIT used as system timer");
         }
 

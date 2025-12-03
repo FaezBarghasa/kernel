@@ -23,6 +23,9 @@ pub struct Hpet {
     pub hpet_number: u8,
     pub min_periodic_clk_tick: u16,
     pub oem_attribute: u8,
+
+    // Added field to store the clock period in femtoseconds
+    pub period_femtoseconds: u64,
 }
 
 impl Hpet {
@@ -39,9 +42,12 @@ impl Hpet {
 
     pub fn new(sdt: &'static Sdt) -> Option<Hpet> {
         if &sdt.signature == b"HPET" && sdt.length as usize >= mem::size_of::<Hpet>() {
-            let s = unsafe { ptr::read((sdt as *const Sdt) as *const Hpet) };
+            let mut s = unsafe { ptr::read((sdt as *const Sdt) as *const Hpet) };
             if s.base_address.address_space == 0 {
                 unsafe { s.map() };
+                // Read capabilities to get the period
+                let capability = unsafe { s.read_u64(crate::arch::x86_shared::device::hpet::CAPABILITY_OFFSET) };
+                s.period_femtoseconds = capability >> 32;
                 Some(s)
             } else {
                 warn!(
@@ -53,6 +59,10 @@ impl Hpet {
         } else {
             None
         }
+    }
+
+    pub fn get_period_femtoseconds(&self) -> u64 {
+        self.period_femtoseconds
     }
 }
 

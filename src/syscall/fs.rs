@@ -872,3 +872,27 @@ pub fn sys_write(fd: FileHandle, buf: UserSliceRo, token: &mut CleanLockToken) -
     }
     Ok(bytes_written)
 }
+
+/// mlock syscall
+pub fn sys_mlock(addr: usize, len: usize, token: &mut CleanLockToken) -> Result<usize> {
+    let current_context_ref = context::current();
+    let addr_space = Arc::clone(current_context_ref.read().addr_space()?);
+
+    addr_space.mlock(VirtualAddress::new(addr), len)?;
+
+    current_context_ref.write().memory_locked_count = current_context_ref.read().memory_locked_count.saturating_add(1);
+
+    Ok(0)
+}
+
+/// munlock syscall
+pub fn sys_munlock(addr: usize, len: usize, token: &mut CleanLockToken) -> Result<usize> {
+    let current_context_ref = context::current();
+    let addr_space = Arc::clone(current_context_ref.read().addr_space()?);
+
+    addr_space.munlock(VirtualAddress::new(addr), len)?;
+
+    current_context_ref.write().memory_locked_count = current_context_ref.read().memory_locked_count.saturating_sub(1);
+
+    Ok(0)
+}

@@ -43,6 +43,7 @@ pub struct Grant {
     flags: PageFlags<RmmA>,
     phys: Option<RaiiFrame>,
     pub provider: Provider,
+    pub locked: bool, // Added field for memory locking
 }
 
 impl Grant {
@@ -53,6 +54,7 @@ impl Grant {
             flags,
             phys: None,
             provider: Provider::Allocated { flags },
+            locked: false,
         }
     }
 
@@ -169,10 +171,34 @@ impl Grant {
 }
 
 pub fn try_correcting_page_tables(
-    _faulting_page: Page,
+    faulting_page: Page,
     _access: AccessMode,
-    _token: &mut CleanLockToken,
+    token: &mut CleanLockToken,
 ) -> Result<(), PfError> {
+    let current_context_ref = crate::context::current();
+    let current_context = current_context_ref.read(token.token());
+
+    if current_context.memory_locked_count > 0 {
+        if let Some(addr_space) = current_context.addr_space.as_ref() {
+            let mut inner = addr_space.inner.write();
+            if let Some(grant) = inner.grants.get_mut(&faulting_page) {
+                if grant.locked {
+                    // Page is locked and not present, so we need to make it present
+                    if grant.phys.is_none() {
+                        let frame = memory::allocate_frame().ok_or(PfError::Oom)?;
+                        grant.set_phys(frame);
+                        let mut mapper = Mapper;
+                        unsafe {
+                            mapper.map_phys(faulting_page.start_address(), frame.base(), grant.flags).ok_or(PfError::Oom)?.flush();
+                        }
+                        return Ok(());
+                    }
+                }
+            }
+        }
+    }
+
+    // Default behavior if not a locked page or not handled
     Err(PfError::Segv)
 }
 
@@ -319,6 +345,63 @@ impl AddrSpaceWrapper {
     pub fn mprotect(&self, _base: Page, _count: usize, _flags: MapFlags) -> SysResult<()> {
         Err(Error::new(crate::syscall::error::ENOSYS))
     }
+
+    /// Locks a region of memory, ensuring it remains in physical RAM.
+    pub fn mlock(&self, start: VirtualAddress, size: usize) -> SysResult<()> {
+        let mut inner = self.inner.write();
+        let mut mapper = Mapper;
+        let mut flusher = GenericFlusher;
+
+        let start_page = Page::containing_address(start);
+        let end_page = Page::containing_address(start + size - 1);
+
+        for page in Page::range_inclusive(start_page, end_page) {
+            if let Some(grant) = inner.grants.get_mut(&page) {
+                if !grant.locked {
+                    // Ensure the page is present in physical memory
+                    // This might involve allocating a frame and mapping it if not already present
+                    if grant.phys.is_none() {
+                        let frame = memory::allocate_frame().ok_or(Error::new(syscall::error::ENOMEM))?;
+                        grant.set_phys(frame);
+                        unsafe {
+                            mapper.map_phys(page.start_address(), frame.base(), grant.flags).ok_or(Error::new(syscall::error::ENOMEM))?.flush();
+                        }
+                    }
+                    grant.locked = true;
+                }
+            } else {
+                // Attempting to lock unmapped memory, or memory not managed by grants
+                // For now, return error. In a full implementation, this might trigger
+                // demand paging and then lock.
+                return Err(Error::new(syscall::error::ENOMEM));
+            }
+        }
+        Ok(())
+    }
+
+    /// Unlocks a region of memory.
+    pub fn munlock(&self, start: VirtualAddress, size: usize) -> SysResult<()> {
+        let mut inner = self.inner.write();
+
+        let start_page = Page::containing_address(start);
+        let end_page = Page::containing_address(start + size - 1);
+
+        for page in Page::range_inclusive(start_page, end_page) {
+            if let Some(grant) = inner.grants.get_mut(&page) {
+                grant.locked = false;
+            }
+        }
+        Ok(())
+    }
+
+    /// Checks if a given page is locked.
+    pub fn is_locked(&self, page: Page) -> bool {
+        self.inner
+            .read()
+            .grants
+            .get(&page)
+            .map_or(false, |grant| grant.locked)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -362,7 +445,7 @@ impl Mapper {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 pub struct TlbShootdownActions;
 impl TlbShootdownActions {
     pub const NEW_MAPPING: Self = Self;

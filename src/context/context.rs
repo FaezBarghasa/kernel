@@ -158,6 +158,12 @@ pub struct Context {
 
     /// Virtual deadline for the scheduler
     pub virtual_deadline: u64,
+
+    /// Last CPU this context ran on, for cache locality
+    pub last_cpu_id: Option<LogicalCpuId>,
+
+    /// True if this is a hard real-time task
+    pub is_realtime: bool,
 }
 
 #[derive(Debug)]
@@ -215,12 +221,19 @@ impl Context {
 
             priority: crate::sync::PriorityTracker::default(),
             virtual_deadline: 0,
+            last_cpu_id: None,
+            is_realtime: false,
 
             #[cfg(feature = "syscall_debug")]
             syscall_debug_info: crate::syscall::debug::SyscallDebugInfo::default(),
         };
         cpu_stats::add_context();
         Ok(this)
+    }
+
+    /// Set whether this context is a hard real-time task.
+    pub fn set_realtime(&mut self, is_rt: bool) {
+        self.is_realtime = is_rt;
     }
 
     /// Block the context, and return true if it was runnable before being blocked

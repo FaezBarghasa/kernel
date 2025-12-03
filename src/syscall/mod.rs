@@ -12,20 +12,25 @@ pub mod process;
 pub mod time;
 pub mod usercopy;
 
+use crate::sync::CleanLockToken;
 use crate::syscall::error::{Error, Result, EBADF, EFAULT, EINVAL, ENOSYS};
 
 /// The main syscall entry point
 pub fn syscall(
-    _number: usize,
-    _a: usize,
-    _b: usize,
+    number: usize,
+    a: usize,
+    b: usize,
     _c: usize,
     _d: usize,
     _e: usize,
     _f: usize,
 ) -> usize {
-    // Dispatch logic...
-    // For production readiness, this returns ENOSYS by default if not handled
-    // or calls specific handlers based on number.
-    Error::mux(Err(Error::new(ENOSYS)))
+    let mut token = unsafe { CleanLockToken::new() };
+    let res = match number {
+        number::SYS_MLOCK => fs::sys_mlock(a, b, &mut token),
+        number::SYS_MUNLOCK => fs::sys_munlock(a, b, &mut token),
+        // ... other syscalls ...
+        _ => Err(Error::new(ENOSYS)),
+    };
+    Error::mux(res)
 }

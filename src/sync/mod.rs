@@ -5,10 +5,14 @@
 use core::{
     cell::UnsafeCell,
     ops::{Deref, DerefMut},
+    sync::atomic::{AtomicUsize, Ordering},
 };
 use parking_lot::{Mutex as ParkingLotMutex, MutexGuard as ParkingLotMutexGuard};
 
-use crate::context::Context;
+use crate::{
+    context::{self, ContextRef},
+    sync::{optimized_wait_queue::OptimizedWaitQueue, CleanLockToken},
+};
 
 // Declare submodules
 mod ordered;
@@ -36,49 +40,65 @@ pub use lockfree_queue::LockFreeQueue;
 pub use optimized_wait_queue::OptimizedWaitQueue;
 pub use priority::{IpcCriticalGuard, Priority, PriorityTracker};
 
-/// A Mutex wrapper implementing a placeholder for the Priority Inheritance Protocol (PIP).
-///
-/// In a full PIP implementation, the `priority_ceiling` would automatically be raised
-/// to the priority of the highest-priority waiting task upon contention.
+/// A Mutex wrapper implementing the Priority Inheritance Protocol (PIP).
 pub struct Mutex<T: ?Sized> {
-    /// Tracks the highest priority of any task currently waiting for this lock.
-    /// Used by the scheduler to adjust the priority of the lock owner (priority inheritance).
-    pub priority_ceiling: UnsafeCell<u8>,
+    /// The actual mutex protecting the data.
     inner: ParkingLotMutex<T>,
+    /// The ID of the context currently holding the lock.
+    owner_id: AtomicUsize,
+    /// A wait queue for contexts trying to acquire this mutex.
+    wait_queue: OptimizedWaitQueue<ContextRef>,
 }
 
 impl<T> Mutex<T> {
     pub const fn new(user_data: T) -> Self {
         Mutex {
-            priority_ceiling: UnsafeCell::new(0),
             inner: ParkingLotMutex::new(user_data),
+            owner_id: AtomicUsize::new(0), // 0 indicates no owner
+            wait_queue: OptimizedWaitQueue::new(),
         }
     }
 
-    /// Locks the mutex, simulating Priority Inheritance management.
+    /// Locks the mutex, implementing Priority Inheritance.
     pub fn lock(&self) -> MutexGuard<'_, T> {
-        // --- PRIORITY INHERITANCE SIMULATION START ---
-        // In a real implementation:
-        // 1. Get the current task's priority (P_current).
-        // 2. Lock the Mutex (inner.lock()).
-        // 3. If contention occurs:
-        //    a. Check if P_current > self.priority_ceiling.
-        //    b. If so, raise the current task's effective priority to the higher ceiling.
+        let current_context_ref = context::current();
+        let current_context_id = current_context_ref.read().id();
 
-        let guard = self.inner.lock();
+        loop {
+            // Try to acquire the lock
+            if let Some(guard) = self.inner.try_lock() {
+                self.owner_id.store(current_context_id, Ordering::Release);
+                return MutexGuard { mutex: self, guard };
+            }
 
-        // For demonstration, we simply update the ceiling placeholder on lock acquisition.
-        unsafe {
-            // Assume the current task has a priority to inherit, e.g., 255 (highest).
-            // This is where priority tracking logic would be fully integrated.
-            *self.priority_ceiling.get() = 255;
+            // Lock is held by another context. Implement Priority Inheritance.
+            let owner_id = self.owner_id.load(Ordering::Acquire);
+            if owner_id != 0 {
+                if let Some(owner_context_ref) = context::contexts().read().get(&owner_id).cloned()
+                {
+                    let current_priority = current_context_ref.read().priority.effective_priority();
+                    let mut owner_context = owner_context_ref.write();
+
+                    // If current context has higher priority than owner, boost owner's priority
+                    if current_priority < owner_context.priority.effective_priority() {
+                        owner_context
+                            .priority
+                            .inherit_priority(current_priority);
+                    }
+                }
+            }
+
+            // Block the current context and add it to the wait queue
+            let mut token = unsafe { CleanLockToken::new() };
+            current_context_ref.write().block("Mutex::lock");
+            self.wait_queue.send(current_context_ref.clone(), &mut token);
+
+            // Switch to another context
+            unsafe { crate::context::switch(&mut token) };
         }
-        // --- PRIORITY INHERITANCE SIMULATION END ---
-
-        MutexGuard { mutex: self, guard }
     }
 
-    // Other Mutex methods (try_lock, etc.) omitted for brevity.
+    // Other Mutex methods (try_lock, etc.) can be added as needed.
 }
 
 /// A Guard structure holding the lock and implementing Deref/DerefMut.
@@ -89,14 +109,20 @@ pub struct MutexGuard<'a, T: ?Sized> {
 
 impl<'a, T: ?Sized> Drop for MutexGuard<'a, T> {
     fn drop(&mut self) {
-        // --- PRIORITY INHERITANCE SIMULATION START ---
-        // When the lock is released:
-        // 1. Reset the owner's priority back to its original value.
-        // 2. Clear the `priority_ceiling` field.
-        unsafe {
-            *self.mutex.priority_ceiling.get() = 0;
+        let owner_id = self.mutex.owner_id.swap(0, Ordering::Acquire); // Clear owner
+        let owner_context_ref = context::contexts().read().get(&owner_id).cloned();
+
+        // Restore owner's priority if it was boosted
+        if let Some(owner_ctx_ref) = owner_context_ref {
+            owner_ctx_ref.write().priority.restore_base_priority();
         }
-        // --- PRIORITY INHERITANCE SIMULATION END ---
+
+        // Unblock the highest-priority waiting task
+        let mut token = unsafe { CleanLockToken::new() };
+        if let Ok(next_waiter_ref) = self.mutex.wait_queue.receive(false, "Mutex::drop", &mut token)
+        {
+            next_waiter_ref.write().unblock();
+        }
     }
 }
 

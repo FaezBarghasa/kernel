@@ -187,8 +187,8 @@ crate::interrupt_stack!(pit_stack, |_stack| {
     // Any better way of doing this?
     timeout::trigger(&mut token);
 
-    // Switch after a sufficient amount of time since the last switch.
-    context::switch::tick(&mut token);
+    // Reschedule after timer interrupt
+    context::switch(token);
 });
 
 crate::interrupt!(keyboard, || {
@@ -311,6 +311,8 @@ crate::interrupt!(ata2, || {
 crate::interrupt!(lapic_timer, || {
     println!("Local apic timer interrupt");
     unsafe { lapic_eoi() };
+    let mut token = unsafe { CleanLockToken::new() };
+    context::switch(token);
 });
 #[cfg(feature = "profiling")]
 crate::interrupt!(aux_timer, || {
