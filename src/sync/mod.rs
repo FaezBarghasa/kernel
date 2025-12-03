@@ -6,7 +6,7 @@ use core::{
     cell::UnsafeCell,
     ops::{Deref, DerefMut},
 };
-use spin::{Mutex as SpinMutex, MutexGuard as SpinMutexGuard};
+use parking_lot::{Mutex as ParkingLotMutex, MutexGuard as ParkingLotMutexGuard};
 
 use crate::context::Context;
 
@@ -44,14 +44,14 @@ pub struct Mutex<T: ?Sized> {
     /// Tracks the highest priority of any task currently waiting for this lock.
     /// Used by the scheduler to adjust the priority of the lock owner (priority inheritance).
     pub priority_ceiling: UnsafeCell<u8>,
-    inner: SpinMutex<T>,
+    inner: ParkingLotMutex<T>,
 }
 
 impl<T> Mutex<T> {
     pub const fn new(user_data: T) -> Self {
         Mutex {
             priority_ceiling: UnsafeCell::new(0),
-            inner: SpinMutex::new(user_data),
+            inner: ParkingLotMutex::new(user_data),
         }
     }
 
@@ -84,7 +84,7 @@ impl<T> Mutex<T> {
 /// A Guard structure holding the lock and implementing Deref/DerefMut.
 pub struct MutexGuard<'a, T: ?Sized> {
     mutex: &'a Mutex<T>,
-    guard: SpinMutexGuard<'a, T>,
+    guard: ParkingLotMutexGuard<'a, T>,
 }
 
 impl<'a, T: ?Sized> Drop for MutexGuard<'a, T> {

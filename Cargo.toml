@@ -9,6 +9,7 @@ linked_list_allocator = "0.10.5"
 log = "0.4.20"
 rmm = { path = "rmm", default-features = false }
 spin = "0.9.8"
+parking_lot = "0.12" # Added for improved lock performance
 rustc-demangle = "0.1.23"
 raw-cpuid = "10.7.0"
 slab = { version = "0.4", default-features = false }

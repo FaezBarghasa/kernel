@@ -23,7 +23,7 @@ use crate::{
     },
     paging::{Page, PageFlags, VirtualAddress},
     scheme::{CallerCtx, KernelScheme, OpenResult},
-    sync::{CleanLockToken, WaitQueue},
+    sync::{CleanLockToken, OptimizedWaitQueue},
     syscall::{
         data::Map,
         error::{Error, Result, EBADF, EINVAL, EIO, ENOMEM, ESPIPE},
@@ -43,7 +43,6 @@ pub struct IpcRing {
     pub sq_mask: u32,
     pub cq_head: AtomicU32,
     pub cq_tail: AtomicU32,
-    pub cq_mask: u32,
     pub features: u32,
     pub _reserved: u32,
 }
@@ -79,11 +78,11 @@ pub struct RingHandle {
     pub sq_entries: usize,
     pub cq_entries: usize,
     /// **Task 4.1:** Queue to hold commands waiting for a userspace driver to process them.
-    pub driver_queue: WaitQueue<()>,
+    pub driver_queue: OptimizedWaitQueue<()>,
     /// **Task 4.2:** Context ID of the userspace process (e.g., the Netstack) consuming the queue.
     pub consumer_pid: AtomicUsize,
     /// **Task 4.2:** Queue to wake up the original userspace process waiting for CQE.
-    pub completion_wait_queue: WaitQueue<()>,
+    pub completion_wait_queue: OptimizedWaitQueue<()>,
 }
 
 // Safety: RingHandle owns the frame and pointer implies access to shared memory.
@@ -140,7 +139,7 @@ impl RingScheme {
                 // Push the SQE pointer/metadata onto the driver's wait queue.
                 // The kernel yields immediately. The driver (consumer_pid) is woken up
                 // via `handle.driver_queue.wake_one()`.
-                handle.driver_queue.send(sqe.user_data, token);
+                handle.driver_queue.send((), token);
 
                 // Wake up the consumers of the driver_queue (the userspace driver)
                 handle.driver_queue.wake_one();
@@ -203,9 +202,10 @@ impl KernelScheme for RingScheme {
         let ring_ptr = data as *mut IpcRing;
 
         const SQ_SIZE: usize = 48;
-        const SQ_MASK: u32 = 63;
         const CQ_SIZE: usize = 128;
-        const CQ_MASK: u32 = 127;
+        // NOTE: Masks are (SIZE - 1)
+        const SQ_MASK: u32 = (SQ_SIZE - 1) as u32;
+        const CQ_MASK: u32 = (CQ_SIZE - 1) as u32;
 
         unsafe {
             (*ring_ptr).sq_head.store(0, Ordering::Relaxed);
@@ -228,9 +228,9 @@ impl KernelScheme for RingScheme {
             ring_ptr,
             sq_entries: SQ_SIZE,
             cq_entries: CQ_SIZE,
-            driver_queue: WaitQueue::new(),
+            driver_queue: OptimizedWaitQueue::new(),
             consumer_pid: AtomicUsize::new(0),
-            completion_wait_queue: WaitQueue::new(),
+            completion_wait_queue: OptimizedWaitQueue::new(),
         });
 
         self.handles.write().insert(id, handle);
