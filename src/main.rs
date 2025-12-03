@@ -70,6 +70,7 @@ mod percpu;
 mod profiling;
 mod ptrace;
 mod scheme;
+mod scheduler;
 mod startup;
 #[macro_use]
 mod stubs;

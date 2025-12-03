@@ -33,7 +33,7 @@ use crate::{
     memory::Frame,
     paging::{Page, VirtualAddress, PAGE_SIZE},
     scheme::SchemeId,
-    sync::{CleanLockToken, WaitQueue},
+    sync::{CleanLockToken, OptimizedWaitQueue},
     syscall::{
         data::{Map, Packet},
         error::*,
@@ -53,7 +53,7 @@ pub struct UserInner {
     v2: bool,
     supports_on_close: bool,
     context: Weak<ContextLock>,
-    todo: WaitQueue<Sqe>,
+    todo: OptimizedWaitQueue<Sqe>,
 
     // FIXME: custom packed radix tree data structure
     states: Mutex<Slab<State>>,
@@ -218,7 +218,7 @@ impl UserInner {
             supports_on_close: new_close,
             scheme_id,
             context,
-            todo: WaitQueue::new(),
+            todo: OptimizedWaitQueue::new(),
             unmounting: AtomicBool::new(false),
             states: Mutex::new(Slab::with_capacity(32)),
         }
@@ -229,7 +229,7 @@ impl UserInner {
         self.unmounting.store(true, Ordering::SeqCst);
 
         // Wake up any blocked scheme handler
-        unsafe { self.todo.condition.notify_signal(token) };
+        self.todo.wake_one();
 
         // Tell the scheme handler to read
         event::trigger(self.root_id, self.handle_id, EVENT_READ);
@@ -610,12 +610,10 @@ impl UserInner {
                 },
             )?;
 
-            let head = CopyInfo {
+            CopyInfo {
                 src: Some(array),
                 dst: WRITE.then_some(head_part_of_buf.reinterpret_unchecked()),
-            };
-
-            head
+            }
         } else {
             CopyInfo {
                 src: None,
@@ -946,7 +944,10 @@ impl UserInner {
             c: flags.bits(),
             d: required_page_count,
             uid: offset as u32,
+            #[cfg(target_pointer_width = "64")]
             gid: (offset >> 32) as u32,
+            #[cfg(target_pointer_width = "32")]
+            gid: 0,
         });*/
         self.todo.send(
             Sqe {
@@ -1279,13 +1280,14 @@ impl UserInner {
         let mapping_is_lazy = false;
 
         let base_page_opt = match response {
-            Response::Regular(code, _) => (!mapping_is_lazy).then_some(Error::demux(code)?),
-            Response::Fd(_) => {
+            Some(Response::Regular(code, _)) => (!mapping_is_lazy).then_some(Error::demux(code)?),
+            Some(Response::Fd(_)) => {
                 debug!("Scheme incorrectly returned an fd for fmap.");
 
                 return Err(Error::new(EIO));
             }
-            Response::MultipleFds(_) => return Err(Error::new(EIO)),
+            Some(Response::MultipleFds(_)) => return Err(Error::new(EIO)),
+            None => return Err(Error::new(EIO)),
         };
 
         let file_ref = GrantFileRef {

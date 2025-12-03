@@ -8,7 +8,7 @@ const LEG_RT_CNF: u64 = 2;
 const ENABLE_CNF: u64 = 1;
 
 const TN_VAL_SET_CNF: u64 = 0x40;
-const TN_TYPE_CNF: u64 = 0x08;
+const TN_TYPE_CNF: u64 = 0x08; // This bit controls periodic (1) or one-shot (0)
 const TN_INT_ENB_CNF: u64 = 0x04;
 
 pub(crate) const CAPABILITY_OFFSET: usize = 0x00;
@@ -43,28 +43,24 @@ pub unsafe fn init(hpet: &mut Hpet) -> bool {
             return false;
         }
 
-        let period_fs = capability >> 32;
-        let divisor = (pit::RATE as u64 * 1_000_000) / period_fs;
-
+        // Configure Timer 0 for one-shot mode
         let t0_capabilities = hpet.read_u64(T0_CONFIG_CAPABILITY_OFFSET);
         if t0_capabilities & PER_INT_CAP == 0 {
             warn!("HPET T0 missing capability PER_INT_CAP");
             return false;
         }
 
-        let counter = hpet.read_u64(MAIN_COUNTER_OFFSET);
-
-        let t0_config_word: u64 = TN_VAL_SET_CNF | TN_TYPE_CNF | TN_INT_ENB_CNF;
+        // Clear TN_TYPE_CNF for one-shot mode
+        let t0_config_word: u64 = TN_VAL_SET_CNF | TN_INT_ENB_CNF;
         hpet.write_u64(T0_CONFIG_CAPABILITY_OFFSET, t0_config_word);
-        // set accumulator value
-        hpet.write_u64(T0_COMPARATOR_OFFSET, counter + divisor);
-        // set interval
-        hpet.write_u64(T0_COMPARATOR_OFFSET, divisor);
 
-        // Enable interrupts from the HPET
+        // Set comparator to a large value initially to prevent immediate interrupt
+        hpet.write_u64(T0_COMPARATOR_OFFSET, u64::MAX);
+
+        // Enable HPET
         {
             let mut config_word: u64 = hpet.read_u64(GENERAL_CONFIG_OFFSET);
-            config_word |= LEG_RT_CNF | ENABLE_CNF;
+            config_word |= ENABLE_CNF; // Only enable, LEG_RT_CNF is for legacy replacement
             hpet.write_u64(GENERAL_CONFIG_OFFSET, config_word);
         }
 
@@ -73,6 +69,10 @@ pub unsafe fn init(hpet: &mut Hpet) -> bool {
 
         true
     }
+}
+
+pub unsafe fn set_comparator(hpet: &mut Hpet, value: u64) {
+    hpet.write_u64(T0_COMPARATOR_OFFSET, value);
 }
 
 unsafe fn debug_caps(hpet: &mut Hpet) {

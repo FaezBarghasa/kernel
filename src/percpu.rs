@@ -16,6 +16,7 @@ use crate::{
     cpu_set::{LogicalCpuId, MAX_CPU_COUNT},
     cpu_stats::{CpuStats, CpuStatsData},
     ptrace::Session,
+    scheduler::Scheduler,
     syscall::debug::SyscallDebugInfo,
 };
 
@@ -44,6 +45,8 @@ pub struct PercpuBlock {
     pub misc_arch_info: crate::device::ArchPercpuMisc,
 
     pub stats: CpuStats,
+
+    pub scheduler: Scheduler,
 }
 
 static ALL_PERCPU_BLOCKS: [AtomicPtr<PercpuBlock>; MAX_CPU_COUNT as usize] =
@@ -190,7 +193,7 @@ impl PercpuBlock {
 
             misc_arch_info: ArchPercpuMisc::default(),
 
-            stats: CpuStats::default(),
+            scheduler: Scheduler::new(),
         }
     }
 }

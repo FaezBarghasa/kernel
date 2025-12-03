@@ -23,7 +23,7 @@ use crate::{
     },
     paging::{Page, PageFlags, VirtualAddress},
     scheme::{CallerCtx, KernelScheme, OpenResult},
-    sync::{CleanLockToken, OptimizedWaitQueue},
+    sync::{CleanLockToken, OptimizedWaitQueue, IpcCriticalGuard},
     syscall::{
         data::Map,
         error::{Error, Result, EBADF, EINVAL, EIO, ENOMEM, ESPIPE},
@@ -117,7 +117,7 @@ impl RingScheme {
                     res: 0,
                     flags: 0,
                 };
-                Self::ring_complete(handle, &cqe);
+                Self::ring_complete(handle, &cqe, token);
                 Ok(())
             }
 
@@ -132,7 +132,7 @@ impl RingScheme {
                         res: -(EIO as i32),
                         flags: 0,
                     };
-                    Self::ring_complete(handle, &cqe);
+                    Self::ring_complete(handle, &cqe, token);
                     return Err(Error::new(EIO));
                 }
 
@@ -153,7 +153,7 @@ impl RingScheme {
                     res: -(EINVAL as i32),
                     flags: 0,
                 };
-                Self::ring_complete(handle, &cqe);
+                Self::ring_complete(handle, &cqe, token);
                 Err(Error::new(EINVAL))
             }
         }
@@ -161,7 +161,14 @@ impl RingScheme {
 
     /// **Task 4.2:** Function called by a userspace driver to signal a command completion.
     /// In a production system, this would be a custom syscall (`SYS_RING_COMPLETE`).
-    pub fn ring_complete(handle: &Arc<RingHandle>, cqe: &Cqe) {
+    pub fn ring_complete(handle: &Arc<RingHandle>, cqe: &Cqe, token: &mut CleanLockToken) {
+        // Boost priority for the duration of this critical IPC completion
+        let _ipc_guard = {
+            let context_lock = context::current();
+            let context = context_lock.read(token.token());
+            IpcCriticalGuard::new(&context.tracker)
+        };
+
         let ring = unsafe { &*handle.ring_ptr };
 
         // 1. Write CQE to the Completion Queue

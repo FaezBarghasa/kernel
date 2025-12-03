@@ -7,7 +7,7 @@ use crate::{
     context,
     scheme::{self, GlobalSchemes, KernelScheme, SchemeId},
     sync::{
-        CleanLockToken, LockToken, RwLock, RwLockReadGuard, RwLockWriteGuard, WaitQueue, L0, L1,
+        CleanLockToken, LockToken, RwLock, RwLockReadGuard, RwLockWriteGuard, OptimizedWaitQueue, L0, L1,
     },
     syscall::{
         data::Event,
@@ -25,7 +25,7 @@ pub struct EventQueue {
     /// The unique identifier of the event queue.
     id: EventQueueId,
     /// The wait queue for events.
-    queue: WaitQueue<Event>,
+    queue: OptimizedWaitQueue<Event>,
 }
 
 impl EventQueue {
@@ -33,7 +33,7 @@ impl EventQueue {
     pub fn new(id: EventQueueId) -> EventQueue {
         EventQueue {
             id,
-            queue: WaitQueue::new(),
+            queue: OptimizedWaitQueue::new(),
         }
     }
 

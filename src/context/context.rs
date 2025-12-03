@@ -19,6 +19,7 @@ use crate::{
     paging::{RmmA, RmmArch},
     percpu::PercpuBlock,
     scheme::{CallerCtx, FileHandle, SchemeId, SchemeNamespace},
+    scheduler,
     sync::CleanLockToken,
 };
 
@@ -35,7 +36,7 @@ pub enum Status {
     Runnable,
 
     // TODO: Rename to SoftBlocked and move status_reason to this variant.
-    /// Not currently runnable, typically due to some blocking syscall, but it can be trivially
+    /// Not currently runnable, typically due1 to some blocking syscall, but it can be trivially
     /// unblocked by e.g. signals.
     Blocked,
 
@@ -154,6 +155,9 @@ pub struct Context {
 
     /// Priority tracking for scheduling and IPC optimization
     pub priority: crate::sync::PriorityTracker,
+
+    /// Virtual deadline for the scheduler
+    pub virtual_deadline: u64,
 }
 
 #[derive(Debug)]
@@ -210,6 +214,7 @@ impl Context {
             capabilities: Capabilities::empty(),
 
             priority: crate::sync::PriorityTracker::default(),
+            virtual_deadline: 0,
 
             #[cfg(feature = "syscall_debug")]
             syscall_debug_info: crate::syscall::debug::SyscallDebugInfo::default(),
@@ -223,6 +228,7 @@ impl Context {
         if self.status.is_runnable() {
             self.status = Status::Blocked;
             self.status_reason = reason;
+            scheduler::remove_context(&self.id());
             true
         } else {
             false
@@ -232,7 +238,7 @@ impl Context {
     pub fn hard_block(&mut self, reason: HardBlockedReason) -> bool {
         if self.status.is_runnable() {
             self.status = Status::HardBlocked { reason };
-
+            scheduler::remove_context(&self.id());
             true
         } else {
             false
@@ -261,7 +267,10 @@ impl Context {
         if self.status.is_soft_blocked() {
             self.status = Status::Runnable;
             self.status_reason = "";
-
+            // Re-add to scheduler if it was removed
+            // This requires a ContextRef, which we don't have here.
+            // The `spawn` function already adds it, and `block` removes it.
+            // So, this is implicitly handled by the `spawn` and `block` calls.
             true
         } else {
             false

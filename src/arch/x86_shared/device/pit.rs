@@ -19,7 +19,8 @@ pub unsafe fn command<'a>() -> &'a mut Pio<u8> {
 const SELECT_CHAN0: u8 = 0b00 << 6;
 const ACCESS_LATCH: u8 = 0b00 << 4;
 const ACCESS_LOHI: u8 = 0b11 << 4;
-const MODE_2: u8 = 0b010 << 1;
+const MODE_0: u8 = 0b000 << 1; // Interrupt on terminal count (one-shot)
+const MODE_2: u8 = 0b010 << 1; // Rate generator (periodic)
 
 // 1 / (1.193182 MHz) = 838,095,110 femtoseconds ~= 838.095 ns
 pub const PERIOD_FS: u128 = 838_095_110;
@@ -31,11 +32,14 @@ pub const CHAN0_DIVISOR: u16 = 4847;
 pub const RATE: u128 = (CHAN0_DIVISOR as u128 * PERIOD_FS) / 1_000_000;
 
 pub unsafe fn init() {
-    unsafe {
-        command().write(SELECT_CHAN0 | ACCESS_LOHI | MODE_2);
-        chan0().write(CHAN0_DIVISOR as u8);
-        chan0().write((CHAN0_DIVISOR >> 8) as u8);
-    }
+    // Initialize in one-shot mode with a default divisor
+    oneshot(CHAN0_DIVISOR);
+}
+
+pub unsafe fn oneshot(divisor: u16) {
+    command().write(SELECT_CHAN0 | ACCESS_LOHI | MODE_0);
+    chan0().write(divisor as u8);
+    chan0().write((divisor >> 8) as u8);
 }
 
 pub unsafe fn read() -> u16 {

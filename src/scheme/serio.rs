@@ -10,7 +10,7 @@ use hashbrown::{hash_map::DefaultHashBuilder, HashMap};
 use crate::{
     event,
     scheme::*,
-    sync::{CleanLockToken, RwLock, WaitQueue, L1},
+    sync::{CleanLockToken, RwLock, OptimizedWaitQueue, L1},
     syscall::{
         error::*,
         flag::{EventFlags, EVENT_READ, O_NONBLOCK},
@@ -21,7 +21,7 @@ use crate::{
 static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
 
 /// Input queue
-static INPUT: [WaitQueue<u8>; 2] = [WaitQueue::new(), WaitQueue::new()];
+static INPUT: [OptimizedWaitQueue<u8>; 2] = [OptimizedWaitQueue::new(), OptimizedWaitQueue::new()];
 
 #[derive(Clone, Copy)]
 struct Handle {
