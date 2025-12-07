@@ -19,7 +19,7 @@ impl core::fmt::Display for LogicalCpuId {
 
 impl LogicalCpuId {
     pub const BSP: LogicalCpuId = LogicalCpuId(0);
-    pub fn new(id: u32) -> Self {
+    pub const fn new(id: u32) -> Self {
         Self(id)
     }
     pub fn get(&self) -> u32 {

@@ -14,7 +14,7 @@ use syscall::EINTR;
 use crate::{
     context::{
         self,
-        memory::{AddrSpace, AddrSpaceWrapper},
+        memory::{AddrSpace, AddrSpaceInner, AddrSpaceWrapper},
         ContextLock,
     },
     memory::PhysicalAddress,
@@ -53,7 +53,10 @@ pub struct FutexEntry {
 static FUTEXES: OrderedMutex<L1, FutexList> =
     OrderedMutex::new(FutexList::with_hasher(DefaultHashBuilder::new()));
 
-fn validate_and_translate_virt(space: &AddrSpace, addr: VirtualAddress) -> Option<PhysicalAddress> {
+fn validate_and_translate_virt(
+    space: &AddrSpaceInner,
+    addr: VirtualAddress,
+) -> Option<PhysicalAddress> {
     // TODO: Move this elsewhere!
     if addr.data().saturating_add(core::mem::size_of::<usize>()) >= crate::USER_END_OFFSET {
         return None;

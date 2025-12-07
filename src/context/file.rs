@@ -2,7 +2,7 @@
 
 use crate::{
     event,
-    scheme::{self, SchemeId},
+    scheme::{self, KernelScheme, SchemeId},
     sync::CleanLockToken,
     syscall::error::{Error, Result, EBADF},
 };

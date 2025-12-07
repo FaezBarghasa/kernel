@@ -232,7 +232,7 @@ impl UserInner {
         self.todo.wake_one();
 
         // Tell the scheme handler to read
-        event::trigger(self.root_id, self.handle_id, EVENT_READ);
+        event::trigger(self.root_id, self.handle_id, EVENT_READ, token);
 
         //TODO: wait for all todo and done to be processed?
         Ok(())
@@ -324,7 +324,7 @@ impl UserInner {
         }
         self.todo.send(sqe, token);
 
-        event::trigger(self.root_id, self.handle_id, EVENT_READ);
+        event::trigger(self.root_id, self.handle_id, EVENT_READ, token);
 
         loop {
             context::switch(token);
@@ -400,7 +400,7 @@ impl UserInner {
                                 },
                                 token,
                             );
-                            event::trigger(self.root_id, self.handle_id, EVENT_READ);
+                            event::trigger(self.root_id, self.handle_id, EVENT_READ, token);
                             context::current()
                                 .write(token.token())
                                 .block("UserInner::call");
@@ -531,7 +531,7 @@ impl UserInner {
             });
         }
 
-        let cur_space_lock = AddrSpace::current()?;
+        let cur_space_lock = AddrSpace::current(token)?;
         let dst_space_lock = {
             Arc::clone(
                 context_weak
@@ -967,7 +967,7 @@ impl UserInner {
             },
             token,
         );
-        event::trigger(self.root_id, self.handle_id, EVENT_READ);
+        event::trigger(self.root_id, self.handle_id, EVENT_READ, token);
 
         Ok(())
     }
@@ -1076,7 +1076,7 @@ impl UserInner {
 
                 let context = context.upgrade().ok_or(Error::new(ESRCH))?;
 
-                let (frame, _) = AddrSpace::current()?
+                let (frame, _) = AddrSpace::current(token)?
                     .acquire_read()
                     .table
                     .utable
@@ -1095,7 +1095,7 @@ impl UserInner {
                 }
             }
             ParsedCqe::TriggerFevent { number, flags } => {
-                event::trigger(self.scheme_id, number, flags)
+                event::trigger(self.scheme_id, number, flags, token)
             }
         }
         Ok(())
@@ -1162,7 +1162,7 @@ impl UserInner {
                         }
 
                         let unpin = true;
-                        AddrSpace::current()?.munmap(callee_responsible, unpin)?;
+                        AddrSpace::current(token)?.munmap(callee_responsible, unpin)?;
                     }
                 },
                 // invalid state

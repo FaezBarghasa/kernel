@@ -89,7 +89,7 @@ impl MemoryScheme {
             return Err(Error::new(EOPNOTSUPP));
         }
 
-        let page = addr_space.acquire_write().mmap(
+        let page = addr_space.mmap(
             addr_space,
             (map.address != 0).then_some(span.base),
             page_count,
@@ -140,7 +140,7 @@ impl MemoryScheme {
 
         let current_addrsp = AddrSpace::current(token)?;
 
-        let base_page = current_addrsp.acquire_write().mmap_anywhere(
+        let base_page = current_addrsp.mmap_anywhere(
             &current_addrsp,
             page_count,
             flags,

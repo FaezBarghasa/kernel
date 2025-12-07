@@ -188,7 +188,7 @@ crate::interrupt_stack!(pit_stack, |_stack| {
     timeout::trigger(&mut token);
 
     // Reschedule after timer interrupt
-    context::switch(token);
+    let _ = context::switch(&mut token);
 });
 
 crate::interrupt!(keyboard, || {
@@ -312,7 +312,7 @@ crate::interrupt!(lapic_timer, || {
     println!("Local apic timer interrupt");
     unsafe { lapic_eoi() };
     let mut token = unsafe { CleanLockToken::new() };
-    context::switch(token);
+    let _ = context::switch(&mut token);
 });
 #[cfg(feature = "profiling")]
 crate::interrupt!(aux_timer, || {

@@ -4,10 +4,24 @@ use crate::{context::memory::PageSpan, memory::Frame, paging::PhysicalAddress};
 
 /// Topology types
 pub mod topology {
+    use core::fmt;
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct NumaNodeId(pub u8);
 
+    impl fmt::Display for NumaNodeId {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+
     pub struct CpuTopology;
+
+    impl CpuTopology {
+        pub fn get(&self) -> Option<()> {
+            Some(())
+        }
+    }
 
     pub static CPU_TOPOLOGY: CpuTopology = CpuTopology;
 }

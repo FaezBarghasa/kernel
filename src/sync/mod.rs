@@ -105,6 +105,15 @@ impl<T> Mutex<T> {
     // Other Mutex methods (try_lock, etc.) can be added as needed.
 }
 
+impl<T: ?Sized + core::fmt::Debug> core::fmt::Debug for Mutex<T> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self.inner.try_lock() {
+            Some(guard) => write!(f, "Mutex {{ data: {:?} }}", &*guard),
+            None => write!(f, "Mutex {{ <locked> }}"),
+        }
+    }
+}
+
 /// A Guard structure holding the lock and implementing Deref/DerefMut.
 pub struct MutexGuard<'a, T: ?Sized> {
     mutex: &'a Mutex<T>,

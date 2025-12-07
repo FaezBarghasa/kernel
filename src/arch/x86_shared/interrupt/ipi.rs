@@ -25,5 +25,5 @@ interrupt!(pit, || {
 
     // Switch after a sufficient amount of time since the last switch.
     let mut token = unsafe { CleanLockToken::new() };
-    context::switch::tick(&mut token);
+    let _ = context::switch(&mut token);
 });
