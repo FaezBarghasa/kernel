@@ -155,16 +155,6 @@ impl Grant {
         self.flags
     }
 
-    pub fn grant_flags(&self) -> MapFlags {
-        let mut flags = MapFlags::empty();
-        if self.flags.has_write() {
-            flags |= MapFlags::PROT_WRITE;
-        }
-        // TODO: Execute?
-        flags |= MapFlags::PROT_READ;
-        flags
-    }
-
     pub fn page_count(&self) -> usize {
         (self.end.start_address().data() - self.start.start_address().data()) / PAGE_SIZE
     }
@@ -188,9 +178,14 @@ pub fn try_correcting_page_tables(
                         let frame = memory::allocate_frame().ok_or(PfError::Oom)?;
                         grant.set_phys(frame);
                         let mut kernel_mapper = crate::memory::KernelMapper::lock();
-                        let mapper = kernel_mapper.get_mut().expect("failed to lock kernel mapper");
+                        let mapper = kernel_mapper
+                            .get_mut()
+                            .expect("failed to lock kernel mapper");
                         unsafe {
-                            mapper.map_phys(faulting_page.start_address(), frame.base(), grant.flags).ok_or(PfError::Oom)?.flush();
+                            mapper
+                                .map_phys(faulting_page.start_address(), frame.base(), grant.flags)
+                                .ok_or(PfError::Oom)?
+                                .flush();
                         }
                         return Ok(());
                     }
@@ -238,7 +233,7 @@ impl UTableWrapper {
             self.0.make_current();
         }
     }
-    pub fn table(&self) -> &rmm::PageTable<crate::arch::x86_shared::CurrentRmmArch> {
+    pub fn table(&self) -> rmm::PageTable<crate::arch::x86_shared::CurrentRmmArch> {
         self.0.table()
     }
     pub fn translate(&self, addr: VirtualAddress) -> Option<crate::paging::PhysicalAddress> {
@@ -302,7 +297,7 @@ impl AddrSpaceWrapper {
             Page,
             crate::paging::PageFlags<RmmA>,
             &mut crate::memory::KernelMapper,
-            &mut crate::paging::TlbShootdownActions,
+            &mut TlbShootdownActions,
         ) -> SysResult<Grant>,
     ) -> SysResult<Grant> {
         Err(Error::new(crate::syscall::error::ENOMEM))
@@ -317,7 +312,7 @@ impl AddrSpaceWrapper {
             Page,
             crate::paging::PageFlags<RmmA>,
             &mut crate::memory::KernelMapper,
-            &mut crate::paging::TlbShootdownActions,
+            &mut TlbShootdownActions,
         ) -> SysResult<Grant>,
     ) -> SysResult<Grant> {
         self.mmap(addr_space, None, count, flags, &mut Vec::new(), func)
@@ -350,25 +345,32 @@ impl AddrSpaceWrapper {
     /// Locks a region of memory, ensuring it remains in physical RAM.
     pub fn mlock(&self, start: VirtualAddress, size: usize) -> SysResult<()> {
         let current_context_ref = crate::context::current();
-        let mut current_context = current_context_ref.write();
+        let mut current_context =
+            current_context_ref.write(unsafe { CleanLockToken::new() }.token());
 
         let mut inner = self.inner.write();
         let mut kernel_mapper = crate::memory::KernelMapper::lock();
-        let mapper = kernel_mapper.get_mut().expect("failed to lock kernel mapper");
-        let mut flusher = crate::paging::TlbShootdownActions::new();
+        let mapper = kernel_mapper
+            .get_mut()
+            .expect("failed to lock kernel mapper");
+        let mut flusher = TlbShootdownActions::new();
 
         let start_page = Page::containing_address(start);
-        let end_page = Page::containing_address(start + size - 1);
+        let end_page = Page::containing_address(VirtualAddress::new(start.data() + size - 1));
 
         for page in Page::range_inclusive(start_page, end_page) {
             if let Some(grant) = inner.grants.get_mut(&page) {
                 if !grant.locked {
                     // Ensure the page is present in physical memory
                     if grant.phys.is_none() {
-                        let frame = memory::allocate_frame().ok_or(Error::new(syscall::error::ENOMEM))?;
+                        let frame =
+                            memory::allocate_frame().ok_or(Error::new(syscall::error::ENOMEM))?;
                         grant.set_phys(frame);
                         unsafe {
-                            mapper.map_phys(page.start_address(), frame.base(), grant.flags).ok_or(Error::new(syscall::error::ENOMEM))?.flush();
+                            mapper
+                                .map_phys(page.start_address(), frame.base(), grant.flags)
+                                .ok_or(Error::new(syscall::error::ENOMEM))?
+                                .flush();
                         }
                     }
                     grant.locked = true;
@@ -384,12 +386,13 @@ impl AddrSpaceWrapper {
     /// Unlocks a region of memory.
     pub fn munlock(&self, start: VirtualAddress, size: usize) -> SysResult<()> {
         let current_context_ref = crate::context::current();
-        let mut current_context = current_context_ref.write();
+        let mut current_context =
+            current_context_ref.write(unsafe { CleanLockToken::new() }.token());
 
         let mut inner = self.inner.write();
 
         let start_page = Page::containing_address(start);
-        let end_page = Page::containing_address(start + size - 1);
+        let end_page = Page::containing_address(VirtualAddress::new(start.data() + size - 1));
 
         for page in Page::range_inclusive(start_page, end_page) {
             if let Some(grant) = inner.grants.get_mut(&page) {
@@ -457,7 +460,9 @@ impl Mapper {
 pub struct TlbShootdownActions;
 impl TlbShootdownActions {
     pub const NEW_MAPPING: Self = Self;
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
     pub fn flush(&mut self) {}
 }
 

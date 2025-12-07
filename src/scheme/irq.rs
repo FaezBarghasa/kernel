@@ -59,13 +59,24 @@ const INO_PHANDLE: u64 = 0x8003_0000_0000_0000;
 pub fn irq_trigger(irq: u8, token: &mut CleanLockToken) {
     COUNTS.lock()[irq as usize] += 1;
 
-    for (fd, _) in HANDLES
+    let fds: Vec<usize> = HANDLES
         .read(token.token())
         .iter()
-        .filter_map(|(fd, handle)| Some((fd, handle.as_irq_handle()?)))
-        .filter(|&(_, (_, handle_irq))| handle_irq == irq)
-    {
-        event::trigger(GlobalSchemes::Irq.scheme_id(), *fd, EVENT_READ, token);
+        .filter_map(|(fd, handle)| {
+            handle.as_irq_handle().and_then(
+                |(_, handle_irq)| {
+                    if handle_irq == irq {
+                        Some(*fd)
+                    } else {
+                        None
+                    }
+                },
+            )
+        })
+        .collect();
+
+    for fd in fds {
+        event::trigger(GlobalSchemes::Irq.scheme_id(), fd, EVENT_READ, token);
     }
 }
 

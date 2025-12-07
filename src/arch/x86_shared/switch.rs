@@ -6,3 +6,7 @@ pub fn switch_to(prev: *mut crate::context::Context, next: *mut crate::context::
         // asm!("...");
     }
 }
+
+pub unsafe fn switch_to_first(next: *mut crate::context::Context) {
+    // Placeholder
+}

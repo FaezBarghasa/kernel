@@ -131,7 +131,6 @@ pub unsafe extern "C" fn syscall_instruction_entry() {
     "push rcx;",                  // Push userspace return pointer
 
     // Push context registers
-    "push rax;",
     push_scratch!(),
     push_preserved!(),
 

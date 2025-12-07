@@ -23,6 +23,7 @@ pub unsafe fn init() {
         local_apic::init(&mut KernelMapper::lock());
 
         // Run here for the side-effect of printing if KVM was used to avoid interleaved logs.
+        #[cfg(feature = "x86_kvm_pv")]
         tsc::get_kvm_support();
     }
 }

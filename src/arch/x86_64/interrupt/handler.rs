@@ -10,22 +10,21 @@ use crate::alternative;
 #[derive(Debug, Default)]
 #[repr(C)]
 pub struct InterruptStack {
-    pub pres: u64,
-    pub fs: u64,
     pub r15: u64,
     pub r14: u64,
     pub r13: u64,
     pub r12: u64,
+    pub rbp: u64,
+    pub rbx: u64,
+    pub fs: u64,
     pub r11: u64,
     pub r10: u64,
     pub r9: u64,
     pub r8: u64,
-    pub rbp: u64,
-    pub rsi: u64,
     pub rdi: u64,
+    pub rsi: u64,
     pub rdx: u64,
     pub rcx: u64,
-    pub rbx: u64,
     pub rax: u64,
     pub rip: u64,
     pub cs: u64,
@@ -93,11 +92,11 @@ impl InterruptStack {
         self.rbx = regs.rbx as u64;
         self.rax = regs.rax as u64;
         self.rip = regs.rip as u64;
-        self.cs = regs.cs as u64;
         self.rflags = regs.rflags as u64;
         self.rsp = regs.rsp as u64;
-        self.ss = regs.ss as u64;
-        self.fs = regs.fs as u64;
+        // self.cs = regs.cs as u64;
+        // self.ss = regs.ss as u64;
+        // self.fs = regs.fs as u64;
     }
     pub fn save_to(&self, regs: &mut syscall::IntRegisters) {
         regs.r15 = self.r15 as usize;
@@ -116,11 +115,11 @@ impl InterruptStack {
         regs.rbx = self.rbx as usize;
         regs.rax = self.rax as usize;
         regs.rip = self.rip as usize;
-        regs.cs = self.cs as usize;
         regs.rflags = self.rflags as usize;
         regs.rsp = self.rsp as usize;
-        regs.ss = self.ss as usize;
-        regs.fs = self.fs as usize;
+        // regs.cs = self.cs as usize;
+        // regs.ss = self.ss as usize;
+        // regs.fs = self.fs as usize;
     }
     pub fn set_instr_pointer(&mut self, ip: usize) {
         self.rip = ip as u64;

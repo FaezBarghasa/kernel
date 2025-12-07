@@ -42,7 +42,7 @@ pub mod stop;
 pub mod time;
 
 pub mod switch;
-pub use switch::switch_to;
+pub use switch::{switch_to, switch_to_first};
 
 #[cfg(target_arch = "x86")]
 pub use ::rmm::X86Arch as CurrentRmmArch;

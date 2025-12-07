@@ -12,8 +12,8 @@
 //! At some point in time we would want Level to be replaced by usize, however
 //! with current cont generics (rust 1.55), we cannot compare const generic arguments
 //! so we are left with this mess.
-use alloc::sync::Arc;
-use core::marker::PhantomData;
+use alloc::{sync::Arc, vec::Vec};
+use core::{marker::PhantomData, sync::atomic::Ordering};
 
 use crate::context::{self, ContextRef};
 
@@ -137,19 +137,19 @@ impl CleanLockToken {
 /// returned from `lock` and `try_lock`, which guarantees that the data is only
 /// ever accessed when the mutex is locked.
 #[derive(Debug)]
-pub struct Mutex<L: Level, T> {
-    inner: spin::Mutex<T>,
+pub struct Mutex<L: Level, T: ?Sized> {
     _phantom: PhantomData<L>,
     /// The context currently holding the lock, for priority inheritance
     holder: spin::Mutex<Option<ContextRef>>,
+    inner: spin::Mutex<T>,
 }
 
 impl<L: Level, T: Default> Default for Mutex<L, T> {
     fn default() -> Self {
         Self {
-            inner: Default::default(),
             _phantom: Default::default(),
             holder: spin::Mutex::new(None),
+            inner: Default::default(),
         }
     }
 }
@@ -158,9 +158,9 @@ impl<L: Level, T> Mutex<L, T> {
     /// Creates a new mutex in an unlocked state ready for use
     pub const fn new(val: T) -> Self {
         Self {
-            inner: spin::Mutex::new(val),
             _phantom: PhantomData,
             holder: spin::Mutex::new(None),
+            inner: spin::Mutex::new(val),
         }
     }
 
@@ -171,7 +171,7 @@ impl<L: Level, T> Mutex<L, T> {
     /// An RAII guard is returned to allow scoped unlock of the lock. When the guard goes out of scope, the mutex will be unlocked.
     pub fn lock<'a, LP: Lower<L> + 'a>(
         &'a self,
-        lock_token: LockToken<'a, LP>,
+        mut lock_token: LockToken<'a, LP>,
     ) -> MutexGuard<'a, L, T> {
         let current_context_ref = context::current();
 
@@ -190,13 +190,19 @@ impl<L: Level, T> Mutex<L, T> {
             // Lock is held, check for priority inversion
             let holder_context_ref_opt = self.holder.lock().clone();
             if let Some(holder_context_ref) = holder_context_ref_opt {
-                let current_priority = current_context_ref.read().priority.effective_priority();
-                let holder_priority = holder_context_ref.read().priority.effective_priority();
+                let current_priority = current_context_ref
+                    .read(lock_token.token())
+                    .priority
+                    .effective_priority();
+                let holder_priority = holder_context_ref
+                    .read(lock_token.token())
+                    .priority
+                    .effective_priority();
 
                 if current_priority < holder_priority {
                     // Current thread has higher priority than holder, perform priority inheritance
                     holder_context_ref
-                        .read()
+                        .read(lock_token.token())
                         .priority
                         .inherit_priority(current_priority);
                 }
@@ -218,7 +224,7 @@ impl<L: Level, T> Mutex<L, T> {
     /// This function does not block.
     pub fn try_lock<'a, LP: Lower<L> + 'a>(
         &'a self,
-        lock_token: LockToken<'a, LP>,
+        mut lock_token: LockToken<'a, LP>,
     ) -> Option<MutexGuard<'a, L, T>> {
         let current_context_ref = context::current();
 
@@ -233,13 +239,19 @@ impl<L: Level, T> Mutex<L, T> {
             // Lock is held, check for priority inversion
             let holder_context_ref_opt = self.holder.lock().clone();
             if let Some(holder_context_ref) = holder_context_ref_opt {
-                let current_priority = current_context_ref.read().priority.effective_priority();
-                let holder_priority = holder_context_ref.read().priority.effective_priority();
+                let current_priority = current_context_ref
+                    .read(lock_token.token())
+                    .priority
+                    .effective_priority();
+                let holder_priority = holder_context_ref
+                    .read(lock_token.token())
+                    .priority
+                    .effective_priority();
 
                 if current_priority < holder_priority {
                     // Current thread has higher priority than holder, perform priority inheritance
                     holder_context_ref
-                        .read()
+                        .read(lock_token.token())
                         .priority
                         .inherit_priority(current_priority);
                 }
@@ -296,26 +308,30 @@ impl<'a, L: Level, T: ?Sized + 'a> Drop for MutexGuard<'a, L, T> {
         // to the highest priority of any other locks it holds, or its base.
         // For now, rely on expiration or explicit restore.
         // TODO: Implement proper priority restoration for nested locks.
-        context::current().read().priority.restore_base_priority();
+        context::current()
+            .inner
+            .read()
+            .priority
+            .restore_base_priority();
     }
 }
 
-pub struct RwLock<L: Level, T> {
-    inner: spin::RwLock<T>,
+pub struct RwLock<L: Level, T: ?Sized> {
     _phantom: PhantomData<L>,
     /// The context currently holding the write lock, for priority inheritance
     writer_holder: spin::Mutex<Option<ContextRef>>,
     /// The contexts currently holding read locks, for priority inheritance
     reader_holders: spin::Mutex<Vec<ContextRef>>,
+    inner: spin::RwLock<T>,
 }
 
 impl<L: Level, T: Default> Default for RwLock<L, T> {
     fn default() -> Self {
         Self {
-            inner: Default::default(),
             _phantom: Default::default(),
             writer_holder: spin::Mutex::new(None),
             reader_holders: spin::Mutex::new(Vec::new()),
+            inner: Default::default(),
         }
     }
 }
@@ -351,7 +367,7 @@ impl<L: Level, T> RwLock<L, T> {
     /// Returns an RAII guard which will drop the write access of this RwLock when dropped.
     pub fn write<'a, LP: Lower<L> + 'a>(
         &'a self,
-        lock_token: LockToken<'a, LP>,
+        mut lock_token: LockToken<'a, LP>,
     ) -> RwLockWriteGuard<'a, L, T> {
         let current_context_ref = context::current();
 
@@ -368,24 +384,36 @@ impl<L: Level, T> RwLock<L, T> {
             // Lock is held, check for priority inversion
             let writer_context_ref_opt = self.writer_holder.lock().clone();
             if let Some(writer_context_ref) = writer_context_ref_opt {
-                let current_priority = current_context_ref.read().priority.effective_priority();
-                let writer_priority = writer_context_ref.read().priority.effective_priority();
+                let current_priority = current_context_ref
+                    .read(lock_token.token())
+                    .priority
+                    .effective_priority();
+                let writer_priority = writer_context_ref
+                    .read(lock_token.token())
+                    .priority
+                    .effective_priority();
 
                 if current_priority < writer_priority {
                     writer_context_ref
-                        .read()
+                        .read(lock_token.token())
                         .priority
                         .inherit_priority(current_priority);
                 }
             }
             // Also check readers
             for reader_context_ref in self.reader_holders.lock().iter() {
-                let current_priority = current_context_ref.read().priority.effective_priority();
-                let reader_priority = reader_context_ref.read().priority.effective_priority();
+                let current_priority = current_context_ref
+                    .read(lock_token.token())
+                    .priority
+                    .effective_priority();
+                let reader_priority = reader_context_ref
+                    .read(lock_token.token())
+                    .priority
+                    .effective_priority();
 
                 if current_priority < reader_priority {
                     reader_context_ref
-                        .read()
+                        .read(lock_token.token())
                         .priority
                         .inherit_priority(current_priority);
                 }
@@ -406,7 +434,7 @@ impl<L: Level, T> RwLock<L, T> {
     /// Returns an RAII guard which will release this thread’s shared access once it is dropped.
     pub fn read<'a, LP: Lower<L> + 'a>(
         &'a self,
-        lock_token: LockToken<'a, LP>,
+        mut lock_token: LockToken<'a, LP>,
     ) -> RwLockReadGuard<'a, L, T> {
         let current_context_ref = context::current();
 
@@ -423,12 +451,18 @@ impl<L: Level, T> RwLock<L, T> {
             // Lock is held, check for priority inversion
             let writer_context_ref_opt = self.writer_holder.lock().clone();
             if let Some(writer_context_ref) = writer_context_ref_opt {
-                let current_priority = current_context_ref.read().priority.effective_priority();
-                let writer_priority = writer_context_ref.read().priority.effective_priority();
+                let current_priority = current_context_ref
+                    .read(lock_token.token())
+                    .priority
+                    .effective_priority();
+                let writer_priority = writer_context_ref
+                    .read(lock_token.token())
+                    .priority
+                    .effective_priority();
 
                 if current_priority < writer_priority {
                     writer_context_ref
-                        .read()
+                        .read(lock_token.token())
                         .priority
                         .inherit_priority(current_priority);
                 }
@@ -445,27 +479,47 @@ impl<L: Level, T> RwLock<L, T> {
             if let Some(guard) = self.inner.try_write() {
                 *self.writer_holder.lock() = Some(current_context_ref.clone());
                 core::mem::forget(guard); // Manually manage guard
-                return ArcRwLockWriteGuard { rwlock: self.clone() };
+                return ArcRwLockWriteGuard {
+                    rwlock: self.clone(),
+                };
             }
 
             let writer_context_ref_opt = self.writer_holder.lock().clone();
             if let Some(writer_context_ref) = writer_context_ref_opt {
-                let current_priority = current_context_ref.read().priority.effective_priority();
-                let writer_priority = writer_context_ref.read().priority.effective_priority();
+                let current_priority = current_context_ref
+                    .inner
+                    .read()
+                    .priority
+                    .effective_priority();
+                let writer_priority = writer_context_ref
+                    .inner
+                    .read()
+                    .priority
+                    .effective_priority();
 
                 if current_priority < writer_priority {
                     writer_context_ref
+                        .inner
                         .read()
                         .priority
                         .inherit_priority(current_priority);
                 }
             }
             for reader_context_ref in self.reader_holders.lock().iter() {
-                let current_priority = current_context_ref.read().priority.effective_priority();
-                let reader_priority = reader_context_ref.read().priority.effective_priority();
+                let current_priority = current_context_ref
+                    .inner
+                    .read()
+                    .priority
+                    .effective_priority();
+                let reader_priority = reader_context_ref
+                    .inner
+                    .read()
+                    .priority
+                    .effective_priority();
 
                 if current_priority < reader_priority {
                     reader_context_ref
+                        .inner
                         .read()
                         .priority
                         .inherit_priority(current_priority);
@@ -508,7 +562,11 @@ impl<L: Level, T> core::ops::DerefMut for RwLockWriteGuard<'_, L, T> {
 impl<'a, L: Level, T> Drop for RwLockWriteGuard<'a, L, T> {
     fn drop(&mut self) {
         *self.rwlock.writer_holder.lock() = None;
-        context::current().read().priority.restore_base_priority();
+        context::current()
+            .inner
+            .read()
+            .priority
+            .restore_base_priority();
     }
 }
 
@@ -538,8 +596,15 @@ impl<L: Level, T> core::ops::Deref for RwLockReadGuard<'_, L, T> {
 impl<'a, L: Level, T> Drop for RwLockReadGuard<'a, L, T> {
     fn drop(&mut self) {
         let current_context_ref = context::current();
-        self.rwlock.reader_holders.lock().retain(|ctx| !Arc::ptr_eq(ctx, &current_context_ref));
-        context::current().read().priority.restore_base_priority();
+        self.rwlock
+            .reader_holders
+            .lock()
+            .retain(|ctx| !Arc::ptr_eq(ctx, &current_context_ref));
+        context::current()
+            .inner
+            .read()
+            .priority
+            .restore_base_priority();
     }
 }
 
@@ -573,7 +638,11 @@ impl<L: Level, T> Drop for ArcRwLockWriteGuard<L, T> {
     #[inline]
     fn drop(&mut self) {
         *self.rwlock.writer_holder.lock() = None;
-        context::current().read().priority.restore_base_priority();
+        context::current()
+            .inner
+            .read()
+            .priority
+            .restore_base_priority();
         unsafe {
             self.rwlock.inner.force_write_unlock();
         }

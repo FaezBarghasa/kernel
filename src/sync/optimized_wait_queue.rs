@@ -71,6 +71,8 @@ impl<T> OptimizedWaitQueue<T> {
             }
 
             // Wait for notification
+            // SAFETY: context::switch is safe to call here as we are holding a valid token
+            // and the current context is in a valid state for switching.
             unsafe { crate::context::switch(token) };
 
             // Clear waiters flag if we're the last one
@@ -114,6 +116,11 @@ impl<T> OptimizedWaitQueue<T> {
     #[inline]
     pub fn wake_one(&self) {
         if self.has_waiters.load(Ordering::Acquire) {
+            // SAFETY: CleanLockToken::new() is unsafe because it creates a token that implies
+            // no locks are held. We are in wake_one which might be called from various contexts,
+            // but we are only using it to notify a condition variable which is generally safe.
+            // However, the caller must ensure this doesn't violate lock ordering if called from
+            // a critical section.
             unsafe {
                 let mut token = CleanLockToken::new();
                 self.condition.notify(&mut token);

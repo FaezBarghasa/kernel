@@ -26,9 +26,9 @@ interrupt_stack!(debug, @paranoid, |stack| {
     // handler might end up setting it again but unless it does we want the
     // default to be false.
     #[cfg(target_arch = "x86")]
-    let had_singlestep = stack.iret.eflags & (1 << 8) == 1 << 8;
+    let had_singlestep = stack.eflags & (1 << 8) == 1 << 8;
     #[cfg(target_arch = "x86_64")]
-    let had_singlestep = stack.iret.rflags & (1 << 8) == 1 << 8;
+    let had_singlestep = stack.rflags & (1 << 8) == 1 << 8;
     stack.set_singlestep(false);
 
     let mut token = unsafe { CleanLockToken::new() };
@@ -74,11 +74,11 @@ interrupt_stack!(breakpoint, |stack| {
     // int3 instruction. After all, it's the sanest thing to do.
     #[cfg(target_arch = "x86")]
     {
-        stack.iret.eip -= 1;
+        stack.eip -= 1;
     }
     #[cfg(target_arch = "x86_64")]
     {
-        stack.iret.rip -= 1;
+        stack.rip -= 1;
     }
 
     let mut token = unsafe { CleanLockToken::new() };
