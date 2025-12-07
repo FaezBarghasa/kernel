@@ -494,8 +494,7 @@ impl KernelScheme for ProcScheme {
                         &mut notify_files,
                     )?
                 } else {
-                    let mut dst_addrsp_guard = dst_addr_space.acquire_write();
-                    dst_addrsp_guard.mmap(
+                    dst_addr_space.mmap(
                         dst_addr_space,
                         requested_dst_base,
                         src_page_count,
@@ -535,7 +534,7 @@ impl KernelScheme for ProcScheme {
                 };
                 // TODO: Allocated or AllocatedShared?
                 let addrsp = AddrSpace::current(token)?;
-                let page = addrsp.acquire_write().mmap(
+                let page = addrsp.mmap(
                     &addrsp,
                     None,
                     NonZeroUsize::new(1).unwrap(),

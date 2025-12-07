@@ -439,7 +439,7 @@ pub const MAX_SECTION_PAGE_COUNT: usize = MAX_SECTION_SIZE / PAGE_SIZE;
 #[cold]
 fn init_sections(mut allocator: BumpAllocator<RmmA>) {
     let (free_areas, offset_into_first_free_area) = allocator.free_areas();
-    let bump_used = allocator.allocated_frames();
+    let bump_used = unsafe { allocator.usage().used().data() };
     BUMP_FRAMES.store(bump_used, Ordering::Relaxed);
 }
 

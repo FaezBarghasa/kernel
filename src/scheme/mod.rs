@@ -1083,15 +1083,15 @@ pub static SCHEMES: RwLock<SchemeList> = RwLock::new(SchemeList {
     next_id: AtomicUsize::new(1),
 });
 
-pub fn schemes<'a, L: crate::sync::Level>(
-    _token: &'a crate::sync::LockToken<'a, L>,
-) -> spin::RwLockReadGuard<'a, SchemeList> {
+pub fn schemes<L: crate::sync::Level>(
+    _token: &crate::sync::LockToken<'_, L>,
+) -> spin::RwLockReadGuard<'static, SchemeList> {
     SCHEMES.read()
 }
 
-pub fn schemes_mut<'a, L: crate::sync::Level>(
-    _token: &'a crate::sync::LockToken<'a, L>,
-) -> spin::RwLockWriteGuard<'a, SchemeList> {
+pub fn schemes_mut<L: crate::sync::Level>(
+    _token: &crate::sync::LockToken<'_, L>,
+) -> spin::RwLockWriteGuard<'static, SchemeList> {
     SCHEMES.write()
 }
 

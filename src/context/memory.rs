@@ -200,6 +200,7 @@ pub fn try_correcting_page_tables(
 
 // --- Added missing types ---
 
+#[derive(Debug)]
 pub struct AddrSpaceWrapper {
     pub inner: RwLock<AddrSpaceInner>,
 }
@@ -345,8 +346,9 @@ impl AddrSpaceWrapper {
     /// Locks a region of memory, ensuring it remains in physical RAM.
     pub fn mlock(&self, start: VirtualAddress, size: usize) -> SysResult<()> {
         let current_context_ref = crate::context::current();
+        let mut token = unsafe { CleanLockToken::new() };
         let mut current_context =
-            current_context_ref.write(unsafe { CleanLockToken::new() }.token());
+            current_context_ref.write(token.token());
 
         let mut inner = self.inner.write();
         let mut kernel_mapper = crate::memory::KernelMapper::lock();
@@ -386,8 +388,9 @@ impl AddrSpaceWrapper {
     /// Unlocks a region of memory.
     pub fn munlock(&self, start: VirtualAddress, size: usize) -> SysResult<()> {
         let current_context_ref = crate::context::current();
+        let mut token = unsafe { CleanLockToken::new() };
         let mut current_context =
-            current_context_ref.write(unsafe { CleanLockToken::new() }.token());
+            current_context_ref.write(token.token());
 
         let mut inner = self.inner.write();
 

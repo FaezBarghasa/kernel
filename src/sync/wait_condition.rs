@@ -33,7 +33,7 @@ impl WaitCondition {
         for (priority, contexts) in contexts_map.iter_mut() {
             for context_weak in contexts.drain(..) {
                 if let Some(context_ref) = context_weak.upgrade() {
-                    context_ref.write().unblock();
+                    context_ref.write(token.token()).unblock();
                     notified_count += 1;
                 }
             }
@@ -58,7 +58,7 @@ impl WaitCondition {
         for (priority, contexts) in contexts_map.iter_mut() {
             for context_weak in contexts.drain(..) {
                 if let Some(context_ref) = context_weak.upgrade() {
-                    let mut context = context_ref.write();
+                    let mut context = context_ref.write(token.token());
                     context.unblock();
                     // Boost priority for IPC completion (approx 10k cycles)
                     context.priority.boost_for_ipc(10000);
@@ -86,7 +86,7 @@ impl WaitCondition {
         for (priority, contexts) in contexts_map.iter_mut() {
             for context_weak in contexts.drain(..) {
                 if let Some(context_ref) = context_weak.upgrade() {
-                    context_ref.write().unblock();
+                    context_ref.write(token.token()).unblock();
                     notified_count += 1;
                 }
             }
@@ -116,7 +116,7 @@ impl WaitCondition {
             }
 
             // Get the effective priority of the current context
-            let effective_priority = current_context_ref.read().priority.effective_priority();
+            let effective_priority = current_context_ref.read(token.token()).priority.effective_priority();
 
             self.contexts
                 .lock(token.token())
@@ -132,8 +132,8 @@ impl WaitCondition {
         let mut waited = true;
 
         // Remove the current context from the wait queue if it was not woken by notify
+        let effective_priority = current_context_ref.read(token.token()).priority.effective_priority(); // Re-read priority, it might have changed
         let mut contexts_map = self.contexts.lock(token.token());
-        let effective_priority = current_context_ref.read().priority.effective_priority(); // Re-read priority, it might have changed
 
         if let Some(contexts_at_priority) = contexts_map.get_mut(&effective_priority) {
             contexts_at_priority.retain(|w| {

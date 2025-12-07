@@ -29,10 +29,17 @@ use x86::{
 };
 
 bitflags! {
+    #[derive(Clone, Copy)]
     pub struct FeatureFlags: u64 {
         const XSAVE = 1 << 0;
         const XSAVEOPT = 1 << 1;
         const FSGSBASE = 1 << 2;
+    }
+}
+
+impl Default for FeatureFlags {
+    fn default() -> Self {
+        Self::empty()
     }
 }
 
@@ -404,18 +411,22 @@ pub unsafe extern "C" fn device_not_available_handler(current_kfx: *mut u8) {
     let features = CPU_FEATURES.get().map(|f| *f).unwrap_or_default();
 
     if features.contains(FeatureFlags::XSAVE) {
-        core::arch::asm!(
-            "mov eax, 0xffffffff",
-            "mov edx, eax",
-            "xrstor64 [{kfx}]",
-            kfx = in(reg) current_kfx,
-            out("eax") _, out("edx") _
-        );
+        unsafe {
+            core::arch::asm!(
+                "mov eax, 0xffffffff",
+                "mov edx, eax",
+                "xrstor64 [{kfx}]",
+                kfx = in(reg) current_kfx,
+                out("eax") _, out("edx") _
+            );
+        }
     } else {
-        core::arch::asm!(
-            "fxrstor64 [{kfx}]",
-            kfx = in(reg) current_kfx,
-        );
+        unsafe {
+            core::arch::asm!(
+                "fxrstor64 [{kfx}]",
+                kfx = in(reg) current_kfx,
+            );
+        }
     }
 }
 

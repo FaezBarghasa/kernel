@@ -3,7 +3,7 @@ use arrayvec::ArrayString;
 use core::{
     mem::{self, size_of},
     num::NonZeroUsize,
-    sync::atomic::{AtomicU32, Ordering},
+    sync::atomic::{AtomicU32, AtomicUsize, Ordering},
 };
 use spin::RwLock;
 use syscall::{SigProcControl, Sigcontrol, UPPER_FDTBL_TAG};
@@ -23,7 +23,7 @@ use crate::{
     sync::{CleanLockToken, Priority},
 };
 
-use crate::syscall::error::{Error, Result, EAGAIN, EBADF, EEXIST, EINVAL, EMFILE, ESRCH};
+use crate::syscall::error::{Error, Result, EAGAIN, EBADF, EEXIST, EINVAL, EMFILE, ENOMEM, ESRCH};
 
 use super::{
     empty_cr3,
@@ -90,6 +90,7 @@ bitflags! {
 /// A context, which is typically mapped to a userspace thread
 #[derive(Debug)]
 pub struct Context {
+    pub id: usize,
     pub debug_id: u32,
     /// Signal handler
     pub sig: Option<SignalState>,
@@ -186,11 +187,13 @@ pub struct SignalState {
 
 impl Context {
     pub fn new(owner_proc_id: Option<NonZeroUsize>) -> Result<Context> {
+        static CONTEXT_ID: AtomicUsize = AtomicUsize::new(1);
         static DEBUG_ID: AtomicU32 = AtomicU32::new(1);
         let priority_tracker = crate::sync::PriorityTracker::default();
         let is_realtime = priority_tracker.effective_priority() == Priority::Realtime as u8;
 
         let this = Self {
+            id: CONTEXT_ID.fetch_add(1, Ordering::Relaxed),
             debug_id: DEBUG_ID.fetch_add(1, Ordering::Relaxed),
             sig: None,
             status: Status::HardBlocked {
@@ -236,6 +239,10 @@ impl Context {
         };
         cpu_stats::add_context();
         Ok(this)
+    }
+
+    pub fn id(&self) -> usize {
+        self.id
     }
 
     /// Set whether this context is a hard real-time task.
@@ -410,7 +417,7 @@ impl Context {
                     }
                 }
                 _ => unsafe {
-                    crate::paging::RmmA::set_table(rmm::TableKind::User, empty_cr3().base());
+                    crate::paging::RmmA::set_table(rmm::TableKind::User, empty_cr3());
                 },
             }
         } else {
@@ -471,6 +478,14 @@ impl Context {
     }
     pub fn has_capability(&self, cap: Capabilities) -> bool {
         self.capabilities.contains(cap)
+    }
+
+    pub fn set_entry_point(&mut self, call: extern "C" fn()) -> Result<()> {
+        if self.kstack.is_none() {
+            self.kstack = Some(Kstack::new().map_err(|_| Error::new(ENOMEM))?);
+        }
+        self.arch.setup_initial_call(self.kstack.as_ref().unwrap(), call, self.userspace);
+        Ok(())
     }
 }
 

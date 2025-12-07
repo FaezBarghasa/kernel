@@ -5,7 +5,10 @@
 
 use crate::{
     sync::{lockfree_queue::LockFreeQueue, CleanLockToken, WaitCondition},
-    syscall::error::{Error, Result, EAGAIN, EINTR},
+    syscall::{
+        error::{Error, Result, EAGAIN, EINTR},
+        usercopy::UserSliceWo,
+    },
 };
 use core::sync::atomic::{AtomicBool, Ordering};
 
@@ -138,6 +141,46 @@ impl<T> OptimizedWaitQueue<T> {
 impl<T> Default for OptimizedWaitQueue<T> {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl<T: Copy> OptimizedWaitQueue<T> {
+    pub fn receive_into_user(
+        &self,
+        mut buf: UserSliceWo,
+        block: bool,
+        reason: &'static str,
+        token: &mut CleanLockToken,
+    ) -> Result<usize> {
+        let mut total = 0;
+
+        loop {
+             let do_block = block && total == 0;
+             match self.receive(do_block, reason, token) {
+                 Ok(val) => {
+                     let slice = unsafe {
+                         core::slice::from_raw_parts(&val as *const T as *const u8, core::mem::size_of::<T>())
+                     };
+                     match buf.copy_common_bytes_from_slice(slice) {
+                         Ok(written) => {
+                             total += written;
+                             if let Some(next) = buf.advance(written) {
+                                 buf = next;
+                             } else {
+                                 break;
+                             }
+                         }
+                         Err(e) => return Err(e),
+                     }
+                 }
+                 Err(Error { errno: EAGAIN }) => break,
+                 Err(e) => return Err(e),
+             }
+
+             if buf.len() == 0 { break; }
+        }
+
+        Ok(total)
     }
 }
 
