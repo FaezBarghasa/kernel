@@ -84,10 +84,8 @@ impl<T> OptimizedWaitQueue<T> {
             // Check for signals
             {
                 let context = current_context_ref.read(token.token());
-                if let Some((control, pctl, _)) = context.sig.as_ref().map(|sig| {
-                    crate::context::context::Context::sigcontrol_raw(unsafe {
-                        &mut *(sig as *const _ as *mut _)
-                    })
+                if let Some((control, pctl)) = context.sig.as_ref().map(|sig| {
+                    crate::context::context::Context::sigcontrol_raw_const(sig)
                 }) {
                     if control.currently_pending_unblocked(pctl) != 0 {
                         return Err(Error::new(EINTR));

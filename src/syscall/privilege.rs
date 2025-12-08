@@ -38,6 +38,6 @@ pub fn mkns(mut user_buf: UserSliceRo, token: &mut CleanLockToken) -> Result<usi
         user_buf = next_part;
     }
 
-    let to = scheme::schemes_mut(token.token()).make_ns(from, names)?;
+    let to = scheme::schemes_mut(&token.token()).make_ns(from, names)?;
     Ok(to.into())
 }

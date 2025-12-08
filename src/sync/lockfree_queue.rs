@@ -30,6 +30,7 @@ impl<T> Node<T> {
 /// 1. Atomic operations instead of spin locks
 /// 2. Reduced cache line bouncing
 /// 3. Fast path for single producer/consumer
+#[derive(Debug)]
 pub struct LockFreeQueue<T> {
     head: AtomicPtr<Node<T>>,
     tail: AtomicPtr<Node<T>>,

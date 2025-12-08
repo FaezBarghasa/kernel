@@ -451,6 +451,12 @@ impl Context {
     pub fn sigcontrol_raw(
         sig: &mut SignalState,
     ) -> (&Sigcontrol, &SigProcControl, &mut SignalState) {
+        let (thread, proc) = Self::sigcontrol_raw_const(sig);
+        (thread, proc, sig)
+    }
+    pub fn sigcontrol_raw_const(
+        sig: &SignalState,
+    ) -> (&'static Sigcontrol, &'static SigProcControl) {
         let check = |off| {
             assert_eq!(usize::from(off) % mem::align_of::<usize>(), 0);
             assert!(usize::from(off).saturating_add(mem::size_of::<Sigcontrol>()) < PAGE_SIZE);
@@ -467,7 +473,7 @@ impl Context {
                 .byte_add(usize::from(sig.procctl_off))
         };
 
-        (for_thread, for_proc, sig)
+        (for_thread, for_proc)
     }
     pub fn caller_ctx(&self) -> CallerCtx {
         CallerCtx {

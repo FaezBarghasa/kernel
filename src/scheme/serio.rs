@@ -21,7 +21,7 @@ use crate::{
 static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
 
 /// Input queue
-static INPUT: [OptimizedWaitQueue<u8>; 2] = [OptimizedWaitQueue::new(), OptimizedWaitQueue::new()];
+static INPUT: spin::Lazy<[OptimizedWaitQueue<u8>; 2]> = spin::Lazy::new(|| [OptimizedWaitQueue::new(), OptimizedWaitQueue::new()]);
 
 #[derive(Clone, Copy)]
 struct Handle {

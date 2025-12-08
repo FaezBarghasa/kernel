@@ -32,6 +32,12 @@ pub struct CpuSet {
     mask: [Word; WORD_COUNT],
 }
 
+impl core::fmt::Display for CpuSet {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{:?}", self.mask)
+    }
+}
+
 impl CpuSet {
     pub const fn new() -> Self {
         Self {

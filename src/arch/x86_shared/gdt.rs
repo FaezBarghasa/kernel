@@ -38,6 +38,7 @@ pub unsafe fn init() {
     // Placeholder
 }
 
+#[allow(static_mut_refs)]
 pub unsafe fn init_bsp(stack_end: usize) {
     static mut BSP_PCR: Option<ProcessorControlRegion> = None;
 

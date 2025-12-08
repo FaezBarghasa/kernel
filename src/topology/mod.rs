@@ -17,7 +17,7 @@ pub fn thread_set_affinity(
         return Err(Error::new(EINVAL));
     }
 
-    let contexts = context::contexts().read(token.token());
+    let contexts = context::contexts().read();
     let context_lock = contexts.get(&pid).ok_or(Error::new(ESRCH))?;
     let mut context = context_lock.write(token.token());
     context.sched_affinity = cpuset;

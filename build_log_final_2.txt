@@ -1,0 +1,4201 @@
+   Compiling kernel v0.2.0 (/app)
+warning: kernel@0.2.0: config.toml not found, using config.toml.example
+warning: the feature `core_intrinsics` is internal to the compiler or standard library
+  --> src/main.rs:22:12
+   |
+22 | #![feature(core_intrinsics)]
+   |            ^^^^^^^^^^^^^^^
+   |
+   = note: using it is strongly discouraged
+   = note: `#[warn(internal_features)]` on by default
+
+warning: unused import: `scheme::SchemeNamespace`
+  --> src/main.rs:38:55
+   |
+38 | use crate::{consts::*, context::switch::SwitchResult, scheme::SchemeNamespace};
+   |                                                       ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `AtomicBool` and `Ordering`
+ --> src/arch/x86_64/mod.rs:6:26
+  |
+6 | use core::sync::atomic::{AtomicBool, Ordering};
+  |                          ^^^^^^^^^^  ^^^^^^^^
+
+warning: unused import: `syscall::flag::*`
+ --> src/arch/x86_64/interrupt/handler.rs:5:30
+  |
+5 | use crate::{ptrace, syscall, syscall::flag::*};
+  |                              ^^^^^^^^^^^^^^^^
+
+warning: unused import: `ptrace_event`
+ --> src/arch/x86_64/interrupt/syscall.rs:3:41
+  |
+3 |     pop_preserved, pop_scratch, ptrace, ptrace_event, push_preserved, push_scratch,
+  |                                         ^^^^^^^^^^^^
+
+warning: unused imports: `Frame`, `PageFlags`, `Page`, `PhysicalAddress`, and `entry::EntryFlags`
+  --> src/arch/x86_shared/device/ioapic.rs:11:14
+   |
+11 |     memory::{Frame, KernelMapper},
+   |              ^^^^^
+12 |     paging::{entry::EntryFlags, Page, PageFlags, PhysicalAddress},
+   |              ^^^^^^^^^^^^^^^^^  ^^^^  ^^^^^^^^^  ^^^^^^^^^^^^^^^
+
+warning: unused import: `pic`
+  --> src/arch/x86_shared/device/ioapic.rs:15:33
+   |
+15 | use super::{local_apic::ApicId, pic};
+   |                                 ^^^
+
+warning: unused imports: `crate::memory::RmmA` and `rmm::Arch`
+  --> src/arch/x86_shared/device/ioapic.rs:18:6
+   |
+18 | use {crate::memory::RmmA, rmm::Arch};
+   |      ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^
+
+warning: unused imports: `alternative2`, `alternative_auto`, `alternative`, `conditional_swapgs_back_paranoid`, `conditional_swapgs_paranoid`, `expand_bool`, `interrupt_error`, `interrupt_stack`, `nop`, `pop_preserved`, `pop_scratch`, `push_preserved`, `push_scratch`, `saturating_sub`, `swapgs_iff_ring3_fast_errorcode`, and `swapgs_iff_ring3_fast`
+ --> src/arch/x86_shared/interrupt/exception.rs:5:5
+  |
+5 |     alternative, alternative2, alternative_auto, arch::x86_shared::interrupt,
+  |     ^^^^^^^^^^^  ^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^
+6 |     conditional_swapgs_back_paranoid, conditional_swapgs_paranoid, context::signal::excp_handler,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+7 |     expand_bool, interrupt_error, interrupt_stack, memory::GenericPfFlags, nop,
+  |     ^^^^^^^^^^^  ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^                          ^^^
+8 |     paging::VirtualAddress, pop_preserved, pop_scratch, ptrace, push_preserved, push_scratch,
+  |                             ^^^^^^^^^^^^^  ^^^^^^^^^^^          ^^^^^^^^^^^^^^  ^^^^^^^^^^^^
+9 |     saturating_sub, swapgs_iff_ring3_fast, swapgs_iff_ring3_fast_errorcode, sync::CleanLockToken,
+  |     ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `super::*`
+  --> src/arch/x86_shared/macros.rs:86:17
+   |
+86 |               use super::*;
+   |                   ^^^^^^^^
+   |
+  ::: src/arch/x86_shared/interrupt/exception.rs:52:1
+   |
+52 | / interrupt_stack!(non_maskable, @paranoid, |stack| {
+53 | |     #[cfg(feature = "profiling")]
+54 | |     unsafe { crate::profiling::nmi_handler(stack) };
+...  |
+61 | | });
+   | |__- in this macro invocation
+   |
+   = note: this warning originates in the macro `interrupt_stack` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unused import: `interrupt`
+ --> src/arch/x86_shared/interrupt/ipi.rs:2:50
+  |
+2 |     context, device::local_apic::the_local_apic, interrupt, percpu::PercpuBlock,
+  |                                                  ^^^^^^^^^
+
+warning: unused import: `interrupt`
+  --> src/arch/x86_shared/interrupt/irq.rs:11:5
+   |
+11 |     interrupt,
+   |     ^^^^^^^^^
+
+warning: unused imports: `conditional_swapgs_back_paranoid`, `conditional_swapgs_paranoid`, `nop`, and `swapgs_iff_ring3_fast`
+  --> src/arch/x86_shared/interrupt/irq.rs:21:5
+   |
+21 |     conditional_swapgs_back_paranoid, conditional_swapgs_paranoid, nop, swapgs_iff_ring3_fast,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^  ^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `PageFlush`
+ --> src/arch/x86_shared/paging/mod.rs:9:43
+  |
+9 | pub use rmm::{Arch as RmmArch, PageFlags, PageFlush, PhysicalAddress, TableKind, VirtualAddress};
+  |                                           ^^^^^^^^^
+
+warning: unused imports: `PAGE_SIZE` and `PhysicalAddress`
+ --> src/arch/x86_shared/paging/mapper.rs:3:28
+  |
+3 | use crate::memory::{Frame, PAGE_SIZE, PhysicalAddress};
+  |                            ^^^^^^^^^  ^^^^^^^^^^^^^^^
+
+warning: unused imports: `PageFlags`, `Page`, `RmmA`, `RmmArch`, and `VirtualAddress`
+ --> src/arch/x86_shared/paging/mapper.rs:4:21
+  |
+4 | use crate::paging::{Page, PageFlags, RmmA, RmmArch, VirtualAddress};
+  |                     ^^^^  ^^^^^^^^^  ^^^^  ^^^^^^^  ^^^^^^^^^^^^^^
+
+warning: unused imports: `Arch as RmmArchTrait`, `PageTable`, and `TableKind`
+ --> src/arch/x86_shared/paging/mapper.rs:5:11
+  |
+5 | use rmm::{Arch as RmmArchTrait, PageTable, TableKind};
+  |           ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^  ^^^^^^^^^
+
+warning: unused import: `scheme::SchemeNamespace`
+ --> src/context/list.rs:5:5
+  |
+5 |     scheme::SchemeNamespace,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Status`
+ --> src/context/reap.rs:3:31
+  |
+3 | use crate::context::{Context, Status};
+  |                               ^^^^^^
+
+warning: unused import: `Context`
+ --> src/context/switch.rs:4:25
+  |
+4 |     context::{contexts, Context},
+  |                         ^^^^^^^
+
+warning: unused import: `core::ops::Bound`
+  --> src/context/switch.rs:11:5
+   |
+11 | use core::ops::Bound;
+   |     ^^^^^^^^^^^^^^^^
+
+warning: unused doc comment
+  --> src/event.rs:20:1
+   |
+20 | /// A unique identifier for an event queue.
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ rustdoc does not generate documentation for macro invocations
+   |
+   = help: to document an item produced by a macro, the macro must produce the documentation as part of its expansion
+   = note: `#[warn(unused_doc_comments)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `HashSet`
+ --> src/event.rs:3:26
+  |
+3 | use hashbrown::{HashMap, HashSet};
+  |                          ^^^^^^^
+
+warning: unused import: `mem`
+ --> src/memory/mod.rs:8:5
+  |
+8 |     mem,
+  |     ^^^
+
+warning: unexpected `cfg` condition name: `dtb`
+  --> src/scheme/mod.rs:27:7
+   |
+27 | #[cfg(dtb)]
+   |       ^^^ help: found config with similar value: `feature = "dtb"`
+   |
+   = help: expected names are: `docsrs`, `feature`, and `test` and 31 more
+   = help: consider using a Cargo feature instead
+   = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+            [lints.rust]
+            unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+   = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+   = note: `#[warn(unexpected_cfgs)]` on by default
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:392:11
+    |
+392 |     #[cfg(dtb)]
+    |           ^^^ help: found config with similar value: `feature = "dtb"`
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unused imports: `MapFlags` and `Stat`
+  --> src/scheme/mod.rs:17:21
+   |
+17 |         data::{Map, Stat},
+   |                     ^^^^
+18 |         error::{Error, Result, ENODEV, ENOSYS},
+19 |         flag::{CallFlags, EventFlags, MapFlags, MunmapFlags},
+   |                                       ^^^^^^^^
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/irq.rs:174:11
+    |
+174 |     #[cfg(dtb)]
+    |           ^^^ help: found config with similar value: `feature = "dtb"`
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/irq.rs:251:19
+    |
+251 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/irq.rs:278:19
+    |
+278 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/irq.rs:298:23
+    |
+298 |             #[cfg(not(dtb))]
+    |                       ^^^ help: found config with similar value: `feature = "dtb"`
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/irq.rs:277:24
+    |
+277 |         } else if cfg!(dtb) && path_str.starts_with("phandle-") {
+    |                        ^^^ help: found config with similar value: `feature = "dtb"`
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unused import: `boxed::Box`
+ --> src/scheme/ring.rs:6:13
+  |
+6 | use alloc::{boxed::Box, collections::BTreeMap, sync::Arc};
+  |             ^^^^^^^^^^
+
+warning: unused import: `slice`
+ --> src/scheme/ring.rs:8:5
+  |
+8 |     slice,
+  |     ^^^^^
+
+warning: unused imports: `ContextId`, `ESPIPE`, `KernelMapper`, `MapFlags`, `O_CLOEXEC`, `O_RDWR`, `PageFlags`, `PhysicalAddress`, and `number::*`
+  --> src/scheme/ring.rs:18:9
+   |
+18 |         ContextId,
+   |         ^^^^^^^^^
+...
+21 |         allocate_frame, deallocate_frame, Frame, KernelMapper, PhysicalAddress, RmmA, RmmArch,
+   |                                                  ^^^^^^^^^^^^  ^^^^^^^^^^^^^^^
+...
+24 |     paging::{Page, PageFlags, VirtualAddress},
+   |                    ^^^^^^^^^
+...
+29 |         error::{Error, Result, EBADF, EINVAL, EIO, ENOMEM, ESPIPE},
+   |                                                            ^^^^^^
+30 |         flag::{MapFlags, O_CLOEXEC, O_RDWR},
+   |                ^^^^^^^^  ^^^^^^^^^  ^^^^^^
+31 |         number::*,
+   |         ^^^^^^^^^
+
+warning: unused import: `ContextRef`
+ --> src/scheme/sys/stat.rs:2:25
+  |
+2 |     context::{contexts, ContextRef, Status},
+  |                         ^^^^^^^^^^
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:412:19
+    |
+412 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+490 |         forward_scheme!(self, |s| s.kopen(path, flags, ctx, token))
+    |         ----------------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+501 |         forward_scheme!(self, |s| s.kopenat(file, path, flags, fcntl, ctx, token))
+    |         -------------------------------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+504 |         forward_scheme!(self, |s| s.rmdir(path, ctx, token))
+    |         ---------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+507 |         forward_scheme!(self, |s| s.unlink(path, ctx, token))
+    |         ----------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+510 |         forward_scheme!(self, |s| s.close(file, token))
+    |         ----------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+520 |         forward_scheme!(self, |s| s.kread(file, buf, flags, stored_flags, token))
+    |         ------------------------------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |               #[cfg(dtb)]
+    |                     ^^^ help: found config with similar value: `feature = "dtb"`
+...
+531 | /         forward_scheme!(self, |s| s.kreadoff(
+532 | |             file,
+533 | |             buf,
+534 | |             offset,
+...   |
+537 | |             token
+538 | |         ))
+    | |__________- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+548 |         forward_scheme!(self, |s| s.kwrite(file, buf, flags, stored_flags, token))
+    |         -------------------------------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |               #[cfg(dtb)]
+    |                     ^^^ help: found config with similar value: `feature = "dtb"`
+...
+559 | /         forward_scheme!(self, |s| s.kwriteoff(
+560 | |             file,
+561 | |             buf,
+562 | |             offset,
+...   |
+565 | |             token
+566 | |         ))
+    | |__________- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+575 |         forward_scheme!(self, |s| s.legacy_seek(file, pos, whence, token))
+    |         ------------------------------------------------------------------ in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+585 |         forward_scheme!(self, |s| s.kfmap(file, addr_space, map, consume, token))
+    |         ------------------------------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+595 |         forward_scheme!(self, |s| s.kfunmap(number, offset, size, flags, token))
+    |         ------------------------------------------------------------------------ in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+598 |         forward_scheme!(self, |s| s.kfstat(file, stat, token))
+    |         ------------------------------------------------------ in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+601 |         forward_scheme!(self, |s| s.kfstatvfs(file, stat, token))
+    |         --------------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+604 |         forward_scheme!(self, |s| s.kfpath(file, buf, token))
+    |         ----------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+612 |         forward_scheme!(self, |s| s.kfutimens(file, buf, token))
+    |         -------------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+615 |         forward_scheme!(self, |s| s.fsize(file, token))
+    |         ----------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+618 |         forward_scheme!(self, |s| s.fchmod(file, mode, token))
+    |         ------------------------------------------------------ in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+621 |         forward_scheme!(self, |s| s.fchown(file, uid, gid, token))
+    |         ---------------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+630 |         forward_scheme!(self, |s| s.fcntl(file, cmd, arg, token))
+    |         --------------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+638 |         forward_scheme!(self, |s| s.fevent(file, flags, token))
+    |         ------------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+641 |         forward_scheme!(self, |s| s.fsync(file, token))
+    |         ----------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+644 |         forward_scheme!(self, |s| s.ftruncate(file, len, token))
+    |         -------------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+653 |         forward_scheme!(self, |s| s.flink(file, path, ctx, token))
+    |         ---------------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+662 |         forward_scheme!(self, |s| s.frename(file, path, ctx, token))
+    |         ------------------------------------------------------------ in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+671 |         forward_scheme!(self, |s| s.kdup(file, buf, ctx, token))
+    |         -------------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+681 |         forward_scheme!(self, |s| s.kcall(file, payload, flags, metadata, token))
+    |         ------------------------------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |               #[cfg(dtb)]
+    |                     ^^^ help: found config with similar value: `feature = "dtb"`
+...
+692 | /         forward_scheme!(self, |s| s
+693 | |             .kfdwrite(file, descs, flags, arg, metadata, token))
+    | |________________________________________________________________- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+703 |         forward_scheme!(self, |s| s.kfdread(file, payload, flags, metadata, token))
+    |         --------------------------------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/scheme/mod.rs:469:19
+    |
+469 |             #[cfg(dtb)]
+    |                   ^^^ help: found config with similar value: `feature = "dtb"`
+...
+713 |         forward_scheme!(self, |s| s.getdents(file, buf, header_size, opaque, token))
+    |         ---------------------------------------------------------------------------- in this macro invocation
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unexpected `cfg` condition name: `dtb`
+    --> src/scheme/mod.rs:1179:11
+     |
+1179 |     #[cfg(dtb)]
+     |           ^^^ help: found config with similar value: `feature = "dtb"`
+     |
+     = help: consider using a Cargo feature instead
+     = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+              [lints.rust]
+              unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+     = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+     = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unused imports: `Context`, `Priority`, `Status`, and `cpu_set::LogicalCpuId`
+  --> src/scheduler.rs:12:15
+   |
+12 |     context::{Context, ContextRef, Status},
+   |               ^^^^^^^              ^^^^^^
+13 |     cpu_set::LogicalCpuId,
+   |     ^^^^^^^^^^^^^^^^^^^^^
+14 |     percpu::PercpuBlock,
+15 |     sync::{CleanLockToken, Priority},
+   |                            ^^^^^^^^
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/startup/memory.rs:149:11
+    |
+149 |     #[cfg(dtb)]
+    |           ^^^ help: found config with similar value: `feature = "dtb"`
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unexpected `cfg` condition name: `dtb`
+   --> src/startup/mod.rs:103:11
+    |
+103 |     #[cfg(dtb)]
+    |           ^^^ help: found config with similar value: `feature = "dtb"`
+    |
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unused import: `context::memory::PageSpan`
+ --> src/stubs.rs:3:13
+  |
+3 | use crate::{context::memory::PageSpan, memory::Frame, paging::PhysicalAddress};
+  |             ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `x86::segmentation::SegmentSelector`
+  --> src/stubs.rs:31:9
+   |
+31 |     use x86::segmentation::SegmentSelector;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Context`
+   --> src/stubs.rs:113:19
+    |
+113 |         context::{Context, ContextLock},
+    |                   ^^^^^^^
+
+warning: unused import: `cell::UnsafeCell`
+ --> src/sync/mod.rs:6:5
+  |
+6 |     cell::UnsafeCell,
+  |     ^^^^^^^^^^^^^^^^
+
+warning: unused import: `sync::atomic::Ordering`
+  --> src/sync/ordered.rs:16:33
+   |
+16 | use core::{marker::PhantomData, sync::atomic::Ordering};
+   |                                 ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `ArcRwLockWriteGuard`, `Higher`, `L3`, `L4`, `L5`, `Lower`, and `check_no_locks`
+  --> src/sync/mod.rs:26:5
+   |
+26 |     check_no_locks, ArcRwLockWriteGuard, CleanLockToken, Higher, Level, LockToken, Lower,
+   |     ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^                  ^^^^^^                    ^^^^^
+27 |     Mutex as OrderedMutex, MutexGuard as OrderedMutexGuard, RwLock, RwLockReadGuard,
+28 |     RwLockWriteGuard, L0, L1, L2, L3, L4, L5,
+   |                                   ^^  ^^  ^^
+
+warning: unused import: `lockfree_queue::LockFreeQueue`
+  --> src/sync/mod.rs:36:9
+   |
+36 | pub use lockfree_queue::LockFreeQueue;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `self::debug::*`
+  --> src/syscall/mod.rs:16:9
+   |
+16 | pub use self::debug::*;
+   |         ^^^^^^^^^^^^^^
+
+warning: unused import: `crate::syscall::flag::MapFlags`
+ --> src/syscall/debug.rs:1:5
+  |
+1 | use crate::syscall::flag::MapFlags;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `ContextRef`
+  --> src/syscall/process.rs:11:9
+   |
+11 |         ContextRef,
+   |         ^^^^^^^^^^
+
+warning: the feature `naked_functions` has been stable since 1.88.0 and no longer requires an attribute to enable
+  --> src/main.rs:28:12
+   |
+28 | #![feature(naked_functions)]
+   |            ^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(stable_features)]` on by default
+
+warning[E0133]: call to unsafe function `x86::msr::wrmsr` is unsafe and requires unsafe block
+  --> src/arch/x86_64/mod.rs:44:5
+   |
+44 |     msr::wrmsr(IA32_PL0_SSP, ssp_phys_addr);
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: consult the function's documentation for information on how to avoid undefined behavior
+note: an unsafe function restricts its caller, but its body is safe by default
+  --> src/arch/x86_64/mod.rs:28:1
+   |
+28 | pub unsafe fn enable_cet() {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = note: `#[warn(unsafe_op_in_unsafe_fn)]` (part of `#[warn(rust_2024_compatibility)]`) on by default
+
+warning[E0133]: call to unsafe function `x86::msr::rdmsr` is unsafe and requires unsafe block
+  --> src/arch/x86_64/mod.rs:47:25
+   |
+47 |     let mut s_cet_val = msr::rdmsr(IA32_S_CET);
+   |                         ^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: consult the function's documentation for information on how to avoid undefined behavior
+
+warning[E0133]: call to unsafe function `x86::msr::wrmsr` is unsafe and requires unsafe block
+  --> src/arch/x86_64/mod.rs:49:5
+   |
+49 |     msr::wrmsr(IA32_S_CET, s_cet_val);
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: consult the function's documentation for information on how to avoid undefined behavior
+
+warning: unused variable: `reloc`
+  --> src/arch/x86_64/alternative.rs:38:9
+   |
+38 |     for reloc in relocs {
+   |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_reloc`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `stack`
+   --> src/arch/x86_64/interrupt/handler.rs:179:44
+    |
+179 | pub unsafe extern "C" fn interrupt_handler(stack: &mut InterruptStack) {
+    |                                            ^^^^^ help: if this is intentional, prefix it with an underscore: `_stack`
+
+warning[E0133]: dereference of raw pointer is unsafe and requires unsafe block
+  --> src/arch/x86_64/interrupt/syscall.rs:73:48
+   |
+73 |     let _guard = ptrace::set_process_regs(&mut *stack);
+   |                                                ^^^^^^ dereference of raw pointer
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: raw pointers may be null, dangling or unaligned; they can violate aliasing rules and cause data races: all of these are undefined behavior
+note: an unsafe function restricts its caller, but its body is safe by default
+  --> src/arch/x86_64/interrupt/syscall.rs:72:1
+   |
+72 | pub unsafe extern "C" fn syscall_instruction(stack: *mut InterruptStack) {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning[E0133]: call to unsafe function `sync::ordered::CleanLockToken::new` is unsafe and requires unsafe block
+  --> src/arch/x86_64/interrupt/syscall.rs:75:21
+   |
+75 |     let mut token = CleanLockToken::new();
+   |                     ^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: consult the function's documentation for information on how to avoid undefined behavior
+
+warning[E0133]: dereference of raw pointer is unsafe and requires unsafe block
+  --> src/arch/x86_64/interrupt/syscall.rs:80:34
+   |
+80 |         let current_stack = &mut *stack;
+   |                                  ^^^^^^ dereference of raw pointer
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: raw pointers may be null, dangling or unaligned; they can violate aliasing rules and cause data races: all of these are undefined behavior
+
+warning: unused variable: `active_table`
+   --> src/arch/x86_shared/device/ioapic.rs:315:20
+    |
+315 | pub unsafe fn init(active_table: &mut KernelMapper) {
+    |                    ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_active_table`
+
+warning: unnecessary `unsafe` block
+   --> src/arch/x86_shared/device/ioapic.rs:316:5
+    |
+316 |     unsafe {
+    |     ^^^^^^ unnecessary `unsafe` block
+    |
+    = note: `#[warn(unused_unsafe)]` (part of `#[warn(unused)]`) on by default
+
+warning[E0133]: call to unsafe function `arch::x86_shared::device::pit::oneshot` is unsafe and requires unsafe block
+  --> src/arch/x86_shared/device/pit.rs:36:5
+   |
+36 |     oneshot(CHAN0_DIVISOR);
+   |     ^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: consult the function's documentation for information on how to avoid undefined behavior
+note: an unsafe function restricts its caller, but its body is safe by default
+  --> src/arch/x86_shared/device/pit.rs:34:1
+   |
+34 | pub unsafe fn init() {
+   | ^^^^^^^^^^^^^^^^^^^^
+
+warning[E0133]: call to unsafe function `arch::x86_shared::device::pit::command` is unsafe and requires unsafe block
+  --> src/arch/x86_shared/device/pit.rs:40:5
+   |
+40 |     command().write(SELECT_CHAN0 | ACCESS_LOHI | MODE_0);
+   |     ^^^^^^^^^ call to unsafe function
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: consult the function's documentation for information on how to avoid undefined behavior
+note: an unsafe function restricts its caller, but its body is safe by default
+  --> src/arch/x86_shared/device/pit.rs:39:1
+   |
+39 | pub unsafe fn oneshot(divisor: u16) {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning[E0133]: call to unsafe function `arch::x86_shared::device::pit::chan0` is unsafe and requires unsafe block
+  --> src/arch/x86_shared/device/pit.rs:41:5
+   |
+41 |     chan0().write(divisor as u8);
+   |     ^^^^^^^ call to unsafe function
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: consult the function's documentation for information on how to avoid undefined behavior
+
+warning[E0133]: call to unsafe function `arch::x86_shared::device::pit::chan0` is unsafe and requires unsafe block
+  --> src/arch/x86_shared/device/pit.rs:42:5
+   |
+42 |     chan0().write((divisor >> 8) as u8);
+   |     ^^^^^^^ call to unsafe function
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: consult the function's documentation for information on how to avoid undefined behavior
+
+warning[E0133]: call to unsafe function `devices::uart_16550::SerialPort::<syscall::Pio<u8>>::new` is unsafe and requires unsafe block
+  --> src/arch/x86_shared/device/serial.rs:21:20
+   |
+21 |     let mut com1 = SerialPort::<Pio<u8>>::new(0x3F8);
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: consult the function's documentation for information on how to avoid undefined behavior
+note: an unsafe function restricts its caller, but its body is safe by default
+  --> src/arch/x86_shared/device/serial.rs:12:1
+   |
+12 | pub unsafe fn init() {
+   | ^^^^^^^^^^^^^^^^^^^^
+
+warning[E0133]: call to unsafe function `devices::uart_16550::SerialPort::<T>::init` is unsafe and requires unsafe block
+  --> src/arch/x86_shared/device/serial.rs:22:8
+   |
+22 |     if com1.init().is_ok() {
+   |        ^^^^^^^^^^^ call to unsafe function
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: consult the function's documentation for information on how to avoid undefined behavior
+
+warning[E0133]: call to unsafe function `devices::uart_16550::SerialPort::<syscall::Pio<u8>>::new` is unsafe and requires unsafe block
+  --> src/arch/x86_shared/device/serial.rs:25:20
+   |
+25 |     let mut com2 = SerialPort::<Pio<u8>>::new(0x2F8);
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: consult the function's documentation for information on how to avoid undefined behavior
+
+warning[E0133]: call to unsafe function `devices::uart_16550::SerialPort::<T>::init` is unsafe and requires unsafe block
+  --> src/arch/x86_shared/device/serial.rs:26:8
+   |
+26 |     if com2.init().is_ok() {
+   |        ^^^^^^^^^^^ call to unsafe function
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: consult the function's documentation for information on how to avoid undefined behavior
+
+warning[E0133]: call to unsafe function `devices::uart_16550::SerialPort::<T>::init` is unsafe and requires unsafe block
+  --> src/arch/x86_shared/device/serial.rs:61:8
+   |
+61 |     if lpss.init().is_ok() {
+   |        ^^^^^^^^^^^ call to unsafe function
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: consult the function's documentation for information on how to avoid undefined behavior
+
+warning[E0133]: dereference of raw pointer is unsafe and requires unsafe block
+   --> src/arch/x86_shared/gdt.rs:149:20
+    |
+149 |     let pcr = &mut *pcr_ptr;
+    |                    ^^^^^^^^ dereference of raw pointer
+    |
+    = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+    = note: raw pointers may be null, dangling or unaligned; they can violate aliasing rules and cause data races: all of these are undefined behavior
+note: an unsafe function restricts its caller, but its body is safe by default
+   --> src/arch/x86_shared/gdt.rs:148:1
+    |
+148 | pub unsafe fn install_pcr(pcr_ptr: *mut ProcessorControlRegion) {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning[E0133]: call to unsafe function `x86::msr::wrmsr` is unsafe and requires unsafe block
+   --> src/arch/x86_shared/gdt.rs:150:5
+    |
+150 |     x86::msr::wrmsr(x86::msr::IA32_GS_BASE, pcr as *mut _ as u64);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+    |
+    = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+    = note: consult the function's documentation for information on how to avoid undefined behavior
+
+warning[E0133]: call to unsafe function `x86::msr::wrmsr` is unsafe and requires unsafe block
+   --> src/arch/x86_shared/gdt.rs:151:5
+    |
+151 |     x86::msr::wrmsr(x86::msr::IA32_KERNEL_GSBASE, pcr as *mut _ as u64);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+    |
+    = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+    = note: consult the function's documentation for information on how to avoid undefined behavior
+
+warning[E0133]: call to unsafe function `x86::dtables::lgdt` is unsafe and requires unsafe block
+   --> src/arch/x86_shared/gdt.rs:157:5
+    |
+157 |     dtables::lgdt(&gdtr);
+    |     ^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+    |
+    = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+    = note: consult the function's documentation for information on how to avoid undefined behavior
+
+warning[E0133]: call to unsafe function `x86::task::load_tr` is unsafe and requires unsafe block
+   --> src/arch/x86_shared/gdt.rs:158:5
+    |
+158 |     x86::task::load_tr(SegmentSelector::new(GDT_TSS, Ring::Ring0));
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+    |
+    = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+    = note: consult the function's documentation for information on how to avoid undefined behavior
+
+warning[E0133]: call to unsafe function `context::switch::switch` is unsafe and requires unsafe block
+  --> src/arch/x86_shared/interrupt/ipi.rs:20:13
+   |
+20 |     let _ = context::switch(&mut token);
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: consult the function's documentation for information on how to avoid undefined behavior
+note: an unsafe function restricts its caller, but its body is safe by default
+  --> src/arch/x86_shared/macros.rs:46:13
+   |
+46 |               pub unsafe extern "C" fn inner() {
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+  ::: src/arch/x86_shared/interrupt/ipi.rs:16:1
+   |
+16 | / interrupt!(switch, || {
+17 | |     unsafe { the_local_apic().eoi() };
+18 | |
+19 | |     let mut token = unsafe { CleanLockToken::new() };
+20 | |     let _ = context::switch(&mut token);
+21 | | });
+   | |__- in this macro invocation
+   = note: this warning originates in the macro `interrupt` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning[E0133]: call to unsafe function `context::switch::switch` is unsafe and requires unsafe block
+  --> src/arch/x86_shared/interrupt/ipi.rs:28:13
+   |
+28 |     let _ = context::switch(&mut token);
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: consult the function's documentation for information on how to avoid undefined behavior
+note: an unsafe function restricts its caller, but its body is safe by default
+  --> src/arch/x86_shared/macros.rs:46:13
+   |
+46 |               pub unsafe extern "C" fn inner() {
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+  ::: src/arch/x86_shared/interrupt/ipi.rs:23:1
+   |
+23 | / interrupt!(pit, || {
+24 | |     unsafe { the_local_apic().eoi() };
+...  |
+28 | |     let _ = context::switch(&mut token);
+29 | | });
+   | |__- in this macro invocation
+   = note: this warning originates in the macro `interrupt` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning[E0133]: call to unsafe function `context::switch::switch` is unsafe and requires unsafe block
+   --> src/arch/x86_shared/interrupt/irq.rs:191:13
+    |
+191 |     let _ = context::switch(&mut token);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+    |
+    = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+    = note: consult the function's documentation for information on how to avoid undefined behavior
+note: an unsafe function restricts its caller, but its body is safe by default
+   --> src/arch/x86_shared/macros.rs:78:13
+    |
+ 78 |               pub unsafe extern "C" fn inner($stack: &mut $crate::arch::x86_64::interrupt::handler::InterruptStack) {
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+   ::: src/arch/x86_shared/interrupt/irq.rs:173:1
+    |
+173 | / crate::interrupt_stack!(pit_stack, |_stack| {
+...   |
+191 | |     let _ = context::switch(&mut token);
+192 | | });
+    | |__- in this macro invocation
+    = note: this warning originates in the macro `crate::interrupt_stack` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning[E0133]: call to unsafe function `context::switch::switch` is unsafe and requires unsafe block
+   --> src/arch/x86_shared/interrupt/irq.rs:315:13
+    |
+315 |     let _ = context::switch(&mut token);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+    |
+    = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+    = note: consult the function's documentation for information on how to avoid undefined behavior
+note: an unsafe function restricts its caller, but its body is safe by default
+   --> src/arch/x86_shared/macros.rs:46:13
+    |
+ 46 |               pub unsafe extern "C" fn inner() {
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+   ::: src/arch/x86_shared/interrupt/irq.rs:311:1
+    |
+311 | / crate::interrupt!(lapic_timer, || {
+312 | |     println!("Local apic timer interrupt");
+313 | |     unsafe { lapic_eoi() };
+314 | |     let mut token = unsafe { CleanLockToken::new() };
+315 | |     let _ = context::switch(&mut token);
+316 | | });
+    | |__- in this macro invocation
+    = note: this warning originates in the macro `crate::interrupt` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unused variable: `token`
+  --> src/arch/x86_shared/stop.rs:96:21
+   |
+96 | pub unsafe fn kstop(token: &mut CleanLockToken) -> ! {
+   |                     ^^^^^ help: if this is intentional, prefix it with an underscore: `_token`
+
+warning: unused variable: `prev`
+ --> src/arch/x86_shared/switch.rs:1:18
+  |
+1 | pub fn switch_to(prev: *mut crate::context::Context, next: *mut crate::context::Context) {
+  |                  ^^^^ help: if this is intentional, prefix it with an underscore: `_prev`
+
+warning: unused variable: `next`
+ --> src/arch/x86_shared/switch.rs:1:54
+  |
+1 | pub fn switch_to(prev: *mut crate::context::Context, next: *mut crate::context::Context) {
+  |                                                      ^^^^ help: if this is intentional, prefix it with an underscore: `_next`
+
+warning: unnecessary `unsafe` block
+ --> src/arch/x86_shared/switch.rs:5:5
+  |
+5 |     unsafe {
+  |     ^^^^^^ unnecessary `unsafe` block
+
+warning: unused variable: `next`
+  --> src/arch/x86_shared/switch.rs:10:31
+   |
+10 | pub unsafe fn switch_to_first(next: *mut crate::context::Context) {
+   |                               ^^^^ help: if this is intentional, prefix it with an underscore: `_next`
+
+warning[E0133]: call to unsafe function `core::ptr::copy_nonoverlapping` is unsafe and requires unsafe block
+  --> src/arch/x86_shared/mod.rs:56:5
+   |
+56 |     core::ptr::copy_nonoverlapping(src, dst, len);
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: consult the function's documentation for information on how to avoid undefined behavior
+note: an unsafe function restricts its caller, but its body is safe by default
+  --> src/arch/x86_shared/mod.rs:53:1
+   |
+53 | pub unsafe fn arch_copy_from_user(dst: *mut u8, src: *const u8, len: usize) -> usize {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning[E0133]: call to unsafe function `core::ptr::copy_nonoverlapping` is unsafe and requires unsafe block
+  --> src/arch/x86_shared/mod.rs:61:5
+   |
+61 |     core::ptr::copy_nonoverlapping(src, dst, len);
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: consult the function's documentation for information on how to avoid undefined behavior
+note: an unsafe function restricts its caller, but its body is safe by default
+  --> src/arch/x86_shared/mod.rs:60:1
+   |
+60 | pub unsafe fn arch_copy_to_user(dst: *mut u8, src: *const u8, len: usize) -> usize {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unnecessary `unsafe` block
+  --> src/arch/x86_shared/mod.rs:69:9
+   |
+69 |         unsafe { &mut gdt::pcr().percpu }
+   |         ^^^^^^ unnecessary `unsafe` block
+
+warning: unused variable: `mapper`
+  --> src/allocator/mod.rs:87:24
+   |
+87 | pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, offset: usize, size: usize) {
+   |                        ^^^^^^ help: if this is intentional, prefix it with an underscore: `_mapper`
+
+warning: unused variable: `offset`
+  --> src/allocator/mod.rs:87:66
+   |
+87 | pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, offset: usize, size: usize) {
+   |                                                                  ^^^^^^
+   |
+help: if this is intentional, prefix it with an underscore
+   |
+87 | pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, _offset: usize, size: usize) {
+   |                                                                  +
+help: you might have meant to pattern match on the similarly named constant `CLOCK_MONOTONIC`
+   |
+87 - pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, offset: usize, size: usize) {
+87 + pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, syscall::time::CLOCK_MONOTONIC: usize, size: usize) {
+   |
+
+warning: unused variable: `size`
+  --> src/allocator/mod.rs:87:81
+   |
+87 | pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, offset: usize, size: usize) {
+   |                                                                                 ^^^^
+   |
+help: if this is intentional, prefix it with an underscore
+   |
+87 | pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, offset: usize, _size: usize) {
+   |                                                                                 +
+help: you might have meant to pattern match on the similarly named constant `CLOCK_MONOTONIC`
+   |
+87 - pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, offset: usize, size: usize) {
+87 + pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, offset: usize, syscall::time::CLOCK_MONOTONIC: usize) {
+   |
+
+warning: variable does not need to be mutable
+   --> src/context/arch/x86_64.rs:137:35
+    |
+137 |     pub fn set_fx_regs(&mut self, mut new: FloatRegisters) {
+    |                                   ----^^^
+    |                                   |
+    |                                   help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> src/context/arch/x86_64.rs:246:13
+    |
+246 |         let mut cr0 = controlregs::cr0();
+    |             ----^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: unused variable: `flusher`
+   --> src/context/memory.rs:424:17
+    |
+424 |         let mut flusher = TlbShootdownActions::new();
+    |                 ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_flusher`
+
+warning: variable does not need to be mutable
+   --> src/context/memory.rs:424:13
+    |
+424 |         let mut flusher = TlbShootdownActions::new();
+    |             ----^^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: unused variable: `id`
+  --> src/debugger.rs:33:10
+   |
+33 |     for (id, context_lock) in contexts.iter() {
+   |          ^^ help: if this is intentional, prefix it with an underscore: `_id`
+
+warning[E0133]: dereference of raw pointer is unsafe and requires unsafe block
+  --> src/devices/uart_16550.rs:37:14
+   |
+37 |         &mut *(base as *mut Self)
+   |              ^^^^^^^^^^^^^^^^^^^^ dereference of raw pointer
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
+   = note: raw pointers may be null, dangling or unaligned; they can violate aliasing rules and cause data races: all of these are undefined behavior
+note: an unsafe function restricts its caller, but its body is safe by default
+  --> src/devices/uart_16550.rs:36:5
+   |
+36 |     pub unsafe fn new(base: usize) -> &'static mut Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `free_areas`
+   --> src/memory/mod.rs:441:10
+    |
+441 |     let (free_areas, offset_into_first_free_area) = allocator.free_areas();
+    |          ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_free_areas`
+
+warning: unused variable: `offset_into_first_free_area`
+   --> src/memory/mod.rs:441:22
+    |
+441 |     let (free_areas, offset_into_first_free_area) = allocator.free_areas();
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: if this is intentional, prefix it with an underscore
+    |
+441 |     let (free_areas, _offset_into_first_free_area) = allocator.free_areas();
+    |                      +
+help: you might have meant to pattern match on the similarly named constant `CLOCK_MONOTONIC`
+    |
+441 -     let (free_areas, offset_into_first_free_area) = allocator.free_areas();
+441 +     let (free_areas, syscall::time::CLOCK_MONOTONIC) = allocator.free_areas();
+    |
+
+warning: variable does not need to be mutable
+   --> src/memory/mod.rs:440:18
+    |
+440 | fn init_sections(mut allocator: BumpAllocator<RmmA>) {
+    |                  ----^^^^^^^^^
+    |                  |
+    |                  help: remove this `mut`
+
+warning: unused variable: `breakpoint`
+   --> src/ptrace.rs:228:13
+    |
+228 |         let breakpoint = data.breakpoint?; // only go to sleep if there's a breakpoint
+    |             ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_breakpoint`
+
+warning: unused variable: `token`
+   --> src/ptrace.rs:267:24
+    |
+267 | pub fn next_breakpoint(token: &mut CleanLockToken) -> Option<PtraceFlags> {
+    |                        ^^^^^ help: if this is intentional, prefix it with an underscore: `_token`
+
+warning: unused variable: `id`
+   --> src/scheme/pipe.rs:335:22
+    |
+335 |     fn kfpath(&self, id: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
+    |                      ^^
+    |
+help: if this is intentional, prefix it with an underscore
+    |
+335 |     fn kfpath(&self, _id: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
+    |                      +
+help: you might have meant to pattern match on the similarly named constant `CLOCK_MONOTONIC`
+    |
+335 -     fn kfpath(&self, id: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
+335 +     fn kfpath(&self, syscall::time::CLOCK_MONOTONIC: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
+    |
+
+warning: unused variable: `token`
+   --> src/scheme/pipe.rs:335:51
+    |
+335 |     fn kfpath(&self, id: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
+    |                                                   ^^^^^ help: if this is intentional, prefix it with an underscore: `_token`
+
+warning: unused variable: `id`
+   --> src/scheme/proc.rs:631:22
+    |
+631 |     fn kfpath(&self, id: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
+    |                      ^^
+    |
+help: if this is intentional, prefix it with an underscore
+    |
+631 |     fn kfpath(&self, _id: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
+    |                      +
+help: you might have meant to pattern match on the similarly named constant `CLOCK_MONOTONIC`
+    |
+631 -     fn kfpath(&self, id: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
+631 +     fn kfpath(&self, syscall::time::CLOCK_MONOTONIC: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
+    |
+
+warning: unused variable: `token`
+   --> src/scheme/proc.rs:631:51
+    |
+631 |     fn kfpath(&self, id: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
+    |                                                   ^^^^^ help: if this is intentional, prefix it with an underscore: `_token`
+
+warning: variable does not need to be mutable
+   --> src/scheme/ring.rs:174:13
+    |
+174 |         let mut cq_tail = ring.cq_tail.load(Ordering::Relaxed);
+    |             ----^^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/sync/ordered.rs:174:9
+    |
+174 |         mut lock_token: LockToken<'a, LP>,
+    |         ----^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/sync/ordered.rs:228:9
+    |
+228 |         mut lock_token: LockToken<'a, LP>,
+    |         ----^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/sync/ordered.rs:373:9
+    |
+373 |         mut lock_token: LockToken<'a, LP>,
+    |         ----^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/sync/ordered.rs:442:9
+    |
+442 |         mut lock_token: LockToken<'a, LP>,
+    |         ----^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+  --> src/sync/mod.rs:84:25
+   |
+84 |                     let mut owner_context = owner_context_ref.write(token.token());
+   |                         ----^^^^^^^^^^^^^
+   |                         |
+   |                         help: remove this `mut`
+
+warning: unused variable: `token`
+  --> src/syscall/mod.rs:63:13
+   |
+63 |     let mut token = unsafe { CleanLockToken::new() };
+   |             ^^^^^ help: if this is intentional, prefix it with an underscore: `_token`
+
+warning: unused variable: `a`
+  --> src/syscall/mod.rs:56:5
+   |
+56 |     a: usize,
+   |     ^
+   |
+help: if this is intentional, prefix it with an underscore
+   |
+56 |     _a: usize,
+   |     +
+help: you might have meant to pattern match on the similarly named constant `CLOCK_MONOTONIC`
+   |
+56 -     a: usize,
+56 +     syscall::time::CLOCK_MONOTONIC: usize,
+   |
+
+warning: unused variable: `b`
+  --> src/syscall/mod.rs:57:5
+   |
+57 |     b: usize,
+   |     ^
+   |
+help: if this is intentional, prefix it with an underscore
+   |
+57 |     _b: usize,
+   |     +
+help: you might have meant to pattern match on the similarly named constant `CLOCK_MONOTONIC`
+   |
+57 -     b: usize,
+57 +     syscall::time::CLOCK_MONOTONIC: usize,
+   |
+
+warning: variable does not need to be mutable
+  --> src/syscall/mod.rs:63:9
+   |
+63 |     let mut token = unsafe { CleanLockToken::new() };
+   |         ----^^^^^
+   |         |
+   |         help: remove this `mut`
+
+warning: constant `IA32_S_CET` is never used
+  --> src/arch/x86_64/mod.rs:14:7
+   |
+14 | const IA32_S_CET: u32 = 0x6E0;
+   |       ^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: constant `IA32_PL0_SSP` is never used
+  --> src/arch/x86_64/mod.rs:16:7
+   |
+16 | const IA32_PL0_SSP: u32 = 0x6E2;
+   |       ^^^^^^^^^^^^
+
+warning: constant `S_CET_ENABLE` is never used
+  --> src/arch/x86_64/mod.rs:19:7
+   |
+19 | const S_CET_ENABLE: u64 = 1 << 0; // CET Enable Bit
+   |       ^^^^^^^^^^^^
+
+warning: constant `CR4_CET_ENABLE` is never used
+  --> src/arch/x86_64/mod.rs:22:7
+   |
+22 | const CR4_CET_ENABLE: Cr4 = Cr4::from_bits_truncate(1 << 23);
+   |       ^^^^^^^^^^^^^^
+
+warning: function `enable_cet` is never used
+  --> src/arch/x86_64/mod.rs:28:15
+   |
+28 | pub unsafe fn enable_cet() {
+   |               ^^^^^^^^^^
+
+warning: function `init` is never used
+  --> src/arch/x86_64/mod.rs:75:8
+   |
+75 | pub fn init() {
+   |        ^^^^
+
+warning: struct `AltReloc` is never constructed
+ --> src/arch/x86_64/alternative.rs:7:12
+  |
+7 | pub struct AltReloc {
+  |            ^^^^^^^^
+
+warning: function `apply_alternatives` is never used
+  --> src/arch/x86_64/alternative.rs:27:15
+   |
+27 | pub unsafe fn apply_alternatives() {
+   |               ^^^^^^^^^^^^^^^^^^
+
+warning: function `kfx_size` is never used
+  --> src/arch/x86_64/alternative.rs:43:8
+   |
+43 | pub fn kfx_size() -> usize {
+   |        ^^^^^^^^
+
+warning: constant `PML4_MASK` is never used
+  --> src/arch/x86_64/consts.rs:13:11
+   |
+13 | pub const PML4_MASK: usize = 0x0000_ff80_0000_0000;
+   |           ^^^^^^^^^
+
+warning: constant `KERNEL_PML4` is never used
+  --> src/arch/x86_64/consts.rs:18:11
+   |
+18 | pub const KERNEL_PML4: usize = (KERNEL_OFFSET & PML4_MASK) / PML4_SIZE;
+   |           ^^^^^^^^^^^
+
+warning: constant `KERNEL_HEAP_PML4` is never used
+  --> src/arch/x86_64/consts.rs:22:11
+   |
+22 | pub const KERNEL_HEAP_PML4: usize = (KERNEL_HEAP_OFFSET & PML4_MASK) / PML4_SIZE;
+   |           ^^^^^^^^^^^^^^^^
+
+warning: constant `PHYS_PML4` is never used
+  --> src/arch/x86_64/consts.rs:29:11
+   |
+29 | pub const PHYS_PML4: usize = (PHYS_OFFSET & PML4_MASK) / PML4_SIZE;
+   |           ^^^^^^^^^
+
+warning: constant `FLAG_SINGLESTEP` is never used
+ --> src/arch/x86_64/flags.rs:3:11
+  |
+3 | pub const FLAG_SINGLESTEP: usize = 1 << 8;
+  |           ^^^^^^^^^^^^^^^
+
+warning: methods `frame_pointer`, `stack_pointer`, `load`, `save`, `load_from`, and `save_to` are never used
+   --> src/arch/x86_64/interrupt/handler.rs:66:12
+    |
+ 36 | impl InterruptStack {
+    | ------------------- methods in this implementation
+...
+ 66 |     pub fn frame_pointer(&self) -> usize {
+    |            ^^^^^^^^^^^^^
+...
+ 69 |     pub fn stack_pointer(&self) -> usize {
+    |            ^^^^^^^^^^^^^
+...
+ 72 |     pub fn load(&self) {
+    |            ^^^^
+...
+ 75 |     pub fn save(&mut self) {
+    |            ^^^^
+...
+ 78 |     pub fn load_from(&mut self, regs: &syscall::IntRegisters) {
+    |            ^^^^^^^^^
+...
+101 |     pub fn save_to(&self, regs: &mut syscall::IntRegisters) {
+    |            ^^^^^^^
+
+warning: function `enter_usermode` is never used
+   --> src/arch/x86_64/interrupt/syscall.rs:229:12
+    |
+229 |     pub fn enter_usermode();
+    |            ^^^^^^^^^^^^^^
+
+warning: function `init` is never used
+ --> src/arch/x86_64/misc.rs:9:15
+  |
+9 | pub unsafe fn init(cpu_id: LogicalCpuId) {
+  |               ^^^^
+
+warning: function `feature_info` is never used
+  --> src/arch/x86_shared/cpuid.rs:22:8
+   |
+22 | pub fn feature_info() -> FeatureInfo {
+   |        ^^^^^^^^^^^^
+
+warning: function `has_ext_feat` is never used
+  --> src/arch/x86_shared/cpuid.rs:30:8
+   |
+30 | pub fn has_ext_feat(feat: impl FnOnce(ExtendedFeatures) -> bool) -> bool {
+   |        ^^^^^^^^^^^^
+
+warning: function `init_after_acpi` is never used
+  --> src/arch/x86_shared/device/mod.rs:30:15
+   |
+30 | pub unsafe fn init_after_acpi() {
+   |               ^^^^^^^^^^^^^^^
+
+warning: variants `Edge` and `Level` are never constructed
+   --> src/arch/x86_shared/device/ioapic.rs:199:5
+    |
+197 | pub enum TriggerMode {
+    |          ----------- variants in this enum
+198 |     ConformsToSpecs,
+199 |     Edge,
+    |     ^^^^
+200 |     Level,
+    |     ^^^^^
+    |
+    = note: `TriggerMode` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: variants `ActiveHigh` and `ActiveLow` are never constructed
+   --> src/arch/x86_shared/device/ioapic.rs:206:5
+    |
+204 | pub enum Polarity {
+    |          -------- variants in this enum
+205 |     ConformsToSpecs,
+206 |     ActiveHigh,
+    |     ^^^^^^^^^^
+207 |     ActiveLow,
+    |     ^^^^^^^^^
+    |
+    = note: `Polarity` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: multiple methods are never used
+   --> src/arch/x86_shared/device/local_apic.rs:129:12
+    |
+ 54 | impl LocalApic {
+    | -------------- methods in this implementation
+...
+129 |     pub fn version(&self) -> u32 {
+    |            ^^^^^^^
+...
+137 |     pub fn icr(&self) -> u64 {
+    |            ^^^
+...
+165 |     pub fn ipi(&mut self, apic_id: ApicId, kind: IpiKind) {
+    |            ^^^
+...
+169 |     pub fn ipi_nmi(&mut self, apic_id: ApicId) {
+    |            ^^^^^^^
+...
+197 |     pub unsafe fn lvt_timer(&mut self) -> u32 {
+    |                   ^^^^^^^^^
+...
+206 |     pub unsafe fn set_lvt_timer(&mut self, value: u32) {
+    |                   ^^^^^^^^^^^^^
+...
+215 |     pub unsafe fn init_count(&mut self) -> u32 {
+    |                   ^^^^^^^^^^
+...
+224 |     pub unsafe fn set_init_count(&mut self, initial_count: u32) {
+    |                   ^^^^^^^^^^^^^^
+...
+233 |     pub unsafe fn cur_count(&mut self) -> u32 {
+    |                   ^^^^^^^^^
+...
+242 |     pub unsafe fn div_conf(&mut self) -> u32 {
+    |                   ^^^^^^^^
+...
+251 |     pub unsafe fn set_div_conf(&mut self, div_conf: u32) {
+    |                   ^^^^^^^^^^^^
+...
+260 |     pub unsafe fn lvt_error(&mut self) -> u32 {
+    |                   ^^^^^^^^^
+
+warning: enum `LvtTimerMode` is never used
+   --> src/arch/x86_shared/device/local_apic.rs:287:10
+    |
+287 | pub enum LvtTimerMode {
+    |          ^^^^^^^^^^^^
+
+warning: function `disable` is never used
+  --> src/arch/x86_shared/device/pic.rs:54:15
+   |
+54 | pub unsafe fn disable() {
+   |               ^^^^^^^
+
+warning: constant `MODE_2` is never used
+  --> src/arch/x86_shared/device/pit.rs:23:7
+   |
+23 | const MODE_2: u8 = 0b010 << 1; // Rate generator (periodic)
+   |       ^^^^^^
+
+warning: constant `GDT_NULL` is never used
+  --> src/arch/x86_shared/gdt.rs:13:11
+   |
+13 | pub const GDT_NULL: u16 = 0;
+   |           ^^^^^^^^
+
+warning: function `init` is never used
+  --> src/arch/x86_shared/gdt.rs:37:15
+   |
+37 | pub unsafe fn init() {
+   |               ^^^^
+
+warning: function `set_tss_stack` is never used
+   --> src/arch/x86_shared/gdt.rs:134:15
+    |
+134 | pub unsafe fn set_tss_stack(index: usize, stack: usize) {
+    |               ^^^^^^^^^^^^^
+
+warning: function `set_userspace_io_allowed` is never used
+   --> src/arch/x86_shared/gdt.rs:142:15
+    |
+142 | pub unsafe fn set_userspace_io_allowed(allowed: bool, pcr: &mut ProcessorControlRegion) {
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `kfx_size` is never used
+   --> src/arch/x86_shared/macros.rs:271:8
+    |
+271 | pub fn kfx_size() -> usize {
+    |        ^^^^^^^^
+
+warning: function `available_irqs_iter` is never used
+   --> src/arch/x86_shared/idt.rs:106:8
+    |
+106 | pub fn available_irqs_iter(cpu_id: LogicalCpuId) -> impl Iterator<Item = u8> + 'static {
+    |        ^^^^^^^^^^^^^^^^^^^
+
+warning: function `allocate_and_init_idt` is never used
+   --> src/arch/x86_shared/idt.rs:160:8
+    |
+160 | pub fn allocate_and_init_idt(cpu_id: LogicalCpuId) -> *mut Idt {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+
+warning: variants `Current` and `All` are never constructed
+  --> src/arch/x86_shared/ipi.rs:23:5
+   |
+21 | pub enum IpiTarget {
+   |          --------- variants in this enum
+22 |     /// The current CPU.
+23 |     Current = 1,
+   |     ^^^^^^^
+24 |     /// All CPUs.
+25 |     All = 2,
+   |     ^^^
+   |
+   = note: `IpiTarget` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: function `ipi_single` is never used
+  --> src/arch/x86_shared/ipi.rs:52:8
+   |
+52 | pub fn ipi_single(kind: IpiKind, target: &crate::percpu::PercpuBlock) {
+   |        ^^^^^^^^^^
+
+warning: constant `ENTRY_COUNT` is never used
+  --> src/arch/x86_shared/paging/mod.rs:26:11
+   |
+26 | pub const ENTRY_COUNT: usize = RmmA::PAGE_ENTRIES;
+   |           ^^^^^^^^^^^
+
+warning: associated items `range_inclusive` and `offset_from` are never used
+   --> src/arch/x86_shared/paging/mod.rs:94:12
+    |
+ 81 | impl Page {
+    | --------- associated items in this implementation
+...
+ 94 |     pub fn range_inclusive(start: Page, r#final: Page) -> PageIter {
+    |            ^^^^^^^^^^^^^^^
+...
+108 |     pub fn offset_from(self, other: Self) -> usize {
+    |            ^^^^^^^^^^^
+
+warning: struct `PageIter` is never constructed
+   --> src/arch/x86_shared/paging/mod.rs:122:12
+    |
+122 | pub struct PageIter {
+    |            ^^^^^^^^
+
+warning: function `round_down_pages` is never used
+   --> src/arch/x86_shared/paging/mod.rs:142:8
+    |
+142 | pub fn round_down_pages(number: usize) -> usize {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `round_up_pages` is never used
+   --> src/arch/x86_shared/paging/mod.rs:146:8
+    |
+146 | pub fn round_up_pages(number: usize) -> usize {
+    |        ^^^^^^^^^^^^^^
+
+warning: function `page_table_allocator` is never used
+ --> src/arch/x86_shared/paging/mapper.rs:7:15
+  |
+7 | pub unsafe fn page_table_allocator() -> Option<Frame> {
+  |               ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `map` is never used
+  --> src/arch/x86_shared/pti.rs:86:15
+   |
+86 | pub unsafe fn map() {}
+   |               ^^^
+
+warning: function `unmap` is never used
+  --> src/arch/x86_shared/pti.rs:90:26
+   |
+90 | pub unsafe extern "C" fn unmap() {}
+   |                          ^^^^^
+
+warning: function `kstart_ap` is never used
+   --> src/arch/x86_shared/start.rs:181:12
+    |
+181 |     pub fn kstart_ap();
+    |            ^^^^^^^^^
+
+warning: static `FRAMES_ALLOCATED` is never used
+  --> src/allocator/mod.rs:17:8
+   |
+17 | static FRAMES_ALLOCATED: AtomicUsize = AtomicUsize::new(0);
+   |        ^^^^^^^^^^^^^^^^
+
+warning: static `FRAME_ALLOCATOR` is never used
+  --> src/allocator/mod.rs:20:12
+   |
+20 | pub static FRAME_ALLOCATOR: Mutex<Option<FrameAllocator>> = Mutex::new(None);
+   |            ^^^^^^^^^^^^^^^
+
+warning: struct `FrameAllocator` is never constructed
+  --> src/allocator/mod.rs:22:12
+   |
+22 | pub struct FrameAllocator;
+   |            ^^^^^^^^^^^^^^
+
+warning: methods `init`, `allocate_frame`, and `deallocate_frame` are never used
+  --> src/allocator/mod.rs:26:19
+   |
+24 | impl FrameAllocator {
+   | ------------------- methods in this implementation
+25 |     // Placeholder implementation (omitted for brevity)
+26 |     pub unsafe fn init(&mut self, _base: usize, _size: usize) { /* ... */
+   |                   ^^^^
+27 |     }
+28 |     pub fn allocate_frame(&mut self) -> Option<Frame> {
+   |            ^^^^^^^^^^^^^^
+...
+31 |     pub fn deallocate_frame(&mut self, _frame: Frame) { /* ... */
+   |            ^^^^^^^^^^^^^^^^
+
+warning: function `allocate_frame_by_node` is never used
+  --> src/allocator/mod.rs:38:8
+   |
+38 | pub fn allocate_frame_by_node(node_id: NumaNodeId) -> Option<Frame> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `allocate_frame` is never used
+  --> src/allocator/mod.rs:70:8
+   |
+70 | pub fn allocate_frame() -> Option<Frame> {
+   |        ^^^^^^^^^^^^^^
+
+warning: function `deallocate_frame` is never used
+  --> src/allocator/mod.rs:76:8
+   |
+76 | pub fn deallocate_frame(_frame: Frame) {
+   |        ^^^^^^^^^^^^^^^^
+
+warning: function `allocate_frames` is never used
+  --> src/allocator/mod.rs:82:8
+   |
+82 | pub fn allocate_frames(_count: usize) -> Option<Frame> {
+   |        ^^^^^^^^^^^^^^^
+
+warning: associated function `init` is never used
+  --> src/allocator/linked_list.rs:14:19
+   |
+13 | impl Allocator {
+   | -------------- associated function in this implementation
+14 |     pub unsafe fn init(offset: usize, size: usize) {
+   |                   ^^^^
+
+warning: type alias `ContextId` is never used
+  --> src/context/mod.rs:19:10
+   |
+19 | pub type ContextId = usize;
+   |          ^^^^^^^^^
+
+warning: static `CONTEXT_SWITCH_LOCK` is never used
+  --> src/context/arch/x86_64.rs:49:12
+   |
+49 | pub static CONTEXT_SWITCH_LOCK: AtomicBool = AtomicBool::new(false);
+   |            ^^^^^^^^^^^^^^^^^^^
+
+warning: associated items `new`, `set_stack`, and `setup_initial_call` are never used
+   --> src/context/arch/x86_64.rs:82:12
+    |
+ 81 | impl Context {
+    | ------------ associated items in this implementation
+ 82 |     pub fn new() -> Context {
+    |            ^^^
+...
+ 98 |     fn set_stack(&mut self, address: usize) {
+    |        ^^^^^^^^^
+...
+102 |     pub(crate) fn setup_initial_call(
+    |                   ^^^^^^^^^^^^^^^^^^
+
+warning: multiple methods are never used
+   --> src/context/arch/x86_64.rs:133:12
+    |
+132 | impl crate::context::Context {
+    | ---------------------------- methods in this implementation
+133 |     pub fn get_fx_regs(&self) -> FloatRegisters {
+    |            ^^^^^^^^^^^
+...
+137 |     pub fn set_fx_regs(&mut self, mut new: FloatRegisters) {
+    |            ^^^^^^^^^^^
+...
+143 |     pub fn set_userspace_io_allowed(&mut self, allowed: bool) {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+167 |     pub(crate) fn read_current_env_regs(&self) -> Result<EnvRegisters> {
+    |                   ^^^^^^^^^^^^^^^^^^^^^
+...
+176 |     pub(crate) fn read_env_regs(&self) -> Result<EnvRegisters> {
+    |                   ^^^^^^^^^^^^^
+...
+183 |     pub(crate) fn write_current_env_regs(&mut self, regs: EnvRegisters) -> Result<()> {
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+...
+200 |     pub(crate) fn write_env_regs(&mut self, regs: EnvRegisters) -> Result<()> {
+    |                   ^^^^^^^^^^^^^^
+
+warning: static `EMPTY_CR3` is never used
+   --> src/context/arch/x86_64.rs:213:12
+    |
+213 | pub static EMPTY_CR3: Once<rmm::PhysicalAddress> = Once::new();
+    |            ^^^^^^^^^
+
+warning: function `empty_cr3` is never used
+   --> src/context/arch/x86_64.rs:215:15
+    |
+215 | pub unsafe fn empty_cr3() -> rmm::PhysicalAddress {
+    |               ^^^^^^^^^
+
+warning: function `switch_to` is never used
+   --> src/context/arch/x86_64.rs:233:15
+    |
+233 | pub unsafe fn switch_to(prev: &mut crate::context::Context, next: &mut crate::context::Context) {
+    |               ^^^^^^^^^
+
+warning: function `switch_to_inner` is never used
+   --> src/context/arch/x86_64.rs:341:27
+    |
+341 | unsafe extern "sysv64" fn switch_to_inner(_prev: &mut Context, _next: &mut Context) {
+    |                           ^^^^^^^^^^^^^^^
+
+warning: function `setup_new_utable` is never used
+   --> src/context/arch/x86_64.rs:378:8
+    |
+378 | pub fn setup_new_utable() -> Result<Table> {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `test_avx512_switch` is never used
+   --> src/context/arch/x86_64.rs:434:12
+    |
+434 |     pub fn test_avx512_switch() {
+    |            ^^^^^^^^^^^^^^^^^^
+
+warning: fields `offset` and `internal_flags` are never read
+  --> src/context/file.rs:17:9
+   |
+15 | pub struct FileDescription {
+   |            --------------- fields in this struct
+16 |     /// The current file offset (seek)
+17 |     pub offset: u64,
+   |         ^^^^^^
+...
+24 |     pub internal_flags: InternalFlags,
+   |         ^^^^^^^^^^^^^^
+   |
+   = note: `FileDescription` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: method `rw_flags` is never used
+  --> src/context/file.rs:33:12
+   |
+32 | impl FileDescription {
+   | -------------------- method in this implementation
+33 |     pub fn rw_flags(&self, rw: RwFlags) -> u32 {
+   |            ^^^^^^^^
+
+warning: field `cloexec` is never read
+  --> src/context/file.rs:68:9
+   |
+64 | pub struct FileDescriptor {
+   |            -------------- field in this struct
+...
+68 |     pub cloexec: bool,
+   |         ^^^^^^^
+   |
+   = note: `FileDescriptor` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: method `close` is never used
+  --> src/context/file.rs:88:12
+   |
+87 | impl FileDescriptor {
+   | ------------------- method in this implementation
+88 |     pub fn close(self, token: &mut CleanLockToken) -> Result<()> {
+   |            ^^^^^
+
+warning: function `spawn` is never used
+  --> src/context/list.rs:37:8
+   |
+37 | pub fn spawn(
+   |        ^^^^^
+
+warning: variants `RecursionLimitExceeded` and `NonfatalInternalError` are never constructed
+  --> src/context/memory.rs:23:5
+   |
+20 | pub enum PfError {
+   |          ------- variants in this enum
+...
+23 |     RecursionLimitExceeded,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+24 |     NonfatalInternalError,
+   |     ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `PfError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: multiple associated items are never used
+   --> src/context/memory.rs:51:12
+    |
+ 50 | impl Grant {
+    | ---------- associated items in this implementation
+ 51 |     pub fn new(start: Page, end: Page, flags: PageFlags<RmmA>) -> Self {
+    |            ^^^
+...
+ 62 |     pub fn phys(&self) -> Option<Frame> {
+    |            ^^^^
+...
+ 65 |     pub fn grant_flags(&self) -> MapFlags {
+    |            ^^^^^^^^^^^
+...
+ 75 |     pub fn file_ref(&self) -> Option<&GrantFileRef> {
+    |            ^^^^^^^^
+...
+ 86 |     pub fn zeroed_phys_contiguous(
+    |            ^^^^^^^^^^^^^^^^^^^^^^
+...
+105 |     pub fn physmap(
+    |            ^^^^^^^
+...
+120 |     pub fn unmap(mut self) {
+    |            ^^^^^
+...
+139 |     pub fn borrow_grant(
+    |            ^^^^^^^^^^^^
+...
+166 |     pub fn borrow_fmap(
+    |            ^^^^^^^^^^^
+...
+179 |     pub fn allocated_one_page_nomap(_page: Page, _flags: PageFlags<RmmA>) -> Grant {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+183 |     pub fn flags(&self) -> PageFlags<RmmA> {
+    |            ^^^^^
+
+warning: type alias `Table` is never used
+   --> src/context/memory.rs:253:10
+    |
+253 | pub type Table = TableWrapper;
+    |          ^^^^^
+
+warning: method `table` is never used
+   --> src/context/memory.rs:266:12
+    |
+260 | impl UTableWrapper {
+    | ------------------ method in this implementation
+...
+266 |     pub fn table(&self) -> rmm::PageTable<crate::arch::x86_shared::CurrentRmmArch> {
+    |            ^^^^^
+
+warning: associated items `new` and `try_clone` are never used
+   --> src/context/memory.rs:275:12
+    |
+274 | impl AddrSpaceWrapper {
+    | --------------------- associated items in this implementation
+275 |     pub fn new() -> SysResult<Arc<Self>> {
+    |            ^^^
+...
+311 |     pub fn try_clone(&self) -> SysResult<Arc<Self>> {
+    |            ^^^^^^^^^
+
+warning: methods `borrow_frame_enforce_rw_allocated` and `mprotect` are never used
+   --> src/context/memory.rs:321:12
+    |
+320 | impl AddrSpaceInner {
+    | ------------------- methods in this implementation
+321 |     pub fn borrow_frame_enforce_rw_allocated(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+328 |     pub fn mprotect(&mut self, _base: Page, _count: usize, _flags: MapFlags) -> SysResult<()> {
+    |            ^^^^^^^^
+
+warning: method `move` is never used
+   --> src/context/memory.rs:399:12
+    |
+398 | impl AddrSpaceInner {
+    | ------------------- method in this implementation
+399 |     pub fn r#move(
+    |            ^^^^^^
+
+warning: methods `mlock` and `munlock` are never used
+   --> src/context/memory.rs:414:12
+    |
+413 | impl AddrSpaceInner {
+    | ------------------- methods in this implementation
+414 |     pub fn mlock(&mut self, start: VirtualAddress, size: usize) -> SysResult<()> {
+    |            ^^^^^
+...
+454 |     pub fn munlock(&mut self, start: VirtualAddress, size: usize) -> SysResult<()> {
+    |            ^^^^^^^
+
+warning: fields `base_offset` and `description` are never read
+   --> src/context/memory.rs:477:9
+    |
+476 | pub struct GrantFileRef {
+    |            ------------ fields in this struct
+477 |     pub base_offset: usize,
+    |         ^^^^^^^^^^^
+478 |     pub description: Arc<RwLock<FileDescription>>,
+    |         ^^^^^^^^^^^
+    |
+    = note: `GrantFileRef` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: method `unmap` is never used
+   --> src/context/memory.rs:482:12
+    |
+481 | impl GrantFileRef {
+    | ----------------- method in this implementation
+482 |     pub fn unmap(&self, _token: &mut CleanLockToken) -> SysResult<()> {
+    |            ^^^^^
+
+warning: associated function `validate_nonempty` is never used
+   --> src/context/memory.rs:503:12
+    |
+493 | impl PageSpan {
+    | ------------- associated function in this implementation
+...
+503 |     pub fn validate_nonempty(base: VirtualAddress, size: usize) -> Option<Self> {
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: associated items `NEW_MAPPING`, `new`, `flush`, and `queue` are never used
+   --> src/context/memory.rs:514:15
+    |
+513 | impl TlbShootdownActions {
+    | ------------------------ associated items in this implementation
+514 |     pub const NEW_MAPPING: Self = Self;
+    |               ^^^^^^^^^^^
+515 |     pub fn new() -> Self {
+    |            ^^^
+...
+518 |     pub fn flush(&mut self) {}
+    |            ^^^^^
+519 |     pub fn queue(&mut self, _frame: Frame, _page: Option<Page>, _action: TlbShootdownActions) {}
+    |            ^^^^^
+
+warning: variants `Allocated`, `PhysBorrowed`, `External`, and `FmapBorrowed` are never constructed
+   --> src/context/memory.rs:524:5
+    |
+523 | pub enum Provider {
+    |          -------- variants in this enum
+524 |     Allocated { flags: PageFlags<RmmA> },
+    |     ^^^^^^^^^
+525 |     PhysBorrowed { base: Frame },
+    |     ^^^^^^^^^^^^
+526 |     External { address: usize, size: usize },
+    |     ^^^^^^^^
+527 |     FmapBorrowed { file_ref: GrantFileRef },
+    |     ^^^^^^^^^^^^
+    |
+    = note: `Provider` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: struct `BorrowedFmapSource` is never constructed
+   --> src/context/memory.rs:531:12
+    |
+531 | pub struct BorrowedFmapSource<'a> {
+    |            ^^^^^^^^^^^^^^^^^^
+
+warning: enum `MmapMode` is never used
+   --> src/context/memory.rs:539:10
+    |
+539 | pub enum MmapMode {
+    |          ^^^^^^^^
+
+warning: function `handle_notify_files` is never used
+   --> src/context/memory.rs:546:8
+    |
+546 | pub fn handle_notify_files(_files: Vec<GrantFileRef>, _token: &mut CleanLockToken) {}
+    |        ^^^^^^^^^^^^^^^^^^^
+
+warning: function `cleanup_context` is never used
+  --> src/context/reap.rs:10:8
+   |
+10 | pub fn cleanup_context(_context: &mut Context) {
+   |        ^^^^^^^^^^^^^^^
+
+warning: variant `Dead` is never constructed
+  --> src/context/context.rs:48:5
+   |
+35 | pub enum Status {
+   |          ------ variant in this enum
+...
+48 |     Dead {
+   |     ^^^^
+   |
+   = note: `Status` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: variants `Stopped` and `AwaitingMmap` are never constructed
+  --> src/context/context.rs:65:5
+   |
+63 | pub enum HardBlockedReason {
+   |          ----------------- variants in this enum
+64 |     /// "SIGSTOP", only procmgr is allowed to switch contexts this state
+65 |     Stopped,
+   |     ^^^^^^^
+66 |     AwaitingMmap {
+   |     ^^^^^^^^^^^^
+   |
+   = note: `HardBlockedReason` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: fields `syscall_debug_info`, `arch`, `owner_proc_id`, and `capabilities` are never read
+   --> src/context/context.rs:116:9
+    |
+ 92 | pub struct Context {
+    |            ------- fields in this struct
+...
+116 |     pub syscall_debug_info: crate::syscall::debug::SyscallDebugInfo,
+    |         ^^^^^^^^^^^^^^^^^^
+...
+127 |     pub arch: arch::Context,
+    |         ^^^^
+...
+148 |     pub owner_proc_id: Option<NonZeroUsize>,
+    |         ^^^^^^^^^^^^^
+...
+155 |     pub capabilities: Capabilities,
+    |         ^^^^^^^^^^^^
+    |
+    = note: `Context` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: fields `user_handler` and `excp_handler` are never read
+   --> src/context/context.rs:176:9
+    |
+174 | pub struct SignalState {
+    |            ----------- fields in this struct
+175 |     /// Offset to jump to when a signal is received.
+176 |     pub user_handler: NonZeroUsize,
+    |         ^^^^^^^^^^^^
+177 |     /// Offset to jump to when a program fault occurs. If None, the context is sigkilled.
+178 |     pub excp_handler: Option<NonZeroUsize>,
+    |         ^^^^^^^^^^^^
+    |
+    = note: `SignalState` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: multiple associated items are never used
+   --> src/context/context.rs:189:12
+    |
+188 | impl Context {
+    | ------------ associated items in this implementation
+189 |     pub fn new(owner_proc_id: Option<NonZeroUsize>) -> Result<Context> {
+    |            ^^^
+...
+249 |     pub fn set_realtime(&mut self, is_rt: bool) {
+    |            ^^^^^^^^^^^^
+...
+265 |     pub fn hard_block(&mut self, reason: HardBlockedReason) -> bool {
+    |            ^^^^^^^^^^
+...
+320 |     pub fn bulk_add_files_posix(
+    |            ^^^^^^^^^^^^^^^^^^^^
+...
+328 |     pub fn bulk_insert_files_upper(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^
+...
+336 |     pub fn bulk_insert_files_upper_manual(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+347 |     pub fn get_file(&self, i: FileHandle) -> Option<FileDescriptor> {
+    |            ^^^^^^^^
+...
+352 |     pub fn bulk_get_files(&self, handles: &[FileHandle]) -> Result<Vec<FileDescriptor>> {
+    |            ^^^^^^^^^^^^^^
+...
+369 |     pub fn bulk_remove_files(&self, handles: &[FileHandle]) -> Result<Vec<FileDescriptor>> {
+    |            ^^^^^^^^^^^^^^^^^
+...
+485 |     pub fn has_capability(&self, cap: Capabilities) -> bool {
+    |            ^^^^^^^^^^^^^^
+...
+489 |     pub fn set_entry_point(&mut self, call: extern "C" fn()) -> Result<()> {
+    |            ^^^^^^^^^^^^^^^
+
+warning: associated function `new` is never used
+   --> src/context/context.rs:598:12
+    |
+597 | impl Kstack {
+    | ----------- associated function in this implementation
+598 |     pub fn new() -> Result<Self, Enomem> {
+    |            ^^^
+
+warning: multiple associated items are never used
+   --> src/context/context.rs:630:12
+    |
+629 | impl FdTbl {
+    | ---------- associated items in this implementation
+630 |     pub fn new() -> Self {
+    |            ^^^
+...
+658 |     fn validate_handles(&self, handles: &[FileHandle]) -> Result<()> {
+    |        ^^^^^^^^^^^^^^^^
+...
+676 |     fn validate_free_slots(&self, handles: &[FileHandle]) -> Result<()> {
+    |        ^^^^^^^^^^^^^^^^^^^
+...
+727 |     fn bulk_add_files_posix(
+    |        ^^^^^^^^^^^^^^^^^^^^
+...
+779 |     fn bulk_insert_files_upper(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
+...
+803 |     fn bulk_insert_files_upper_manual(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+843 |     pub fn get_mut(&mut self, index: usize) -> Option<&mut Option<FileDescriptor>> {
+    |            ^^^^^^^
+...
+849 |     pub fn get_file(&self, i: FileHandle) -> Option<FileDescriptor> {
+    |            ^^^^^^^^
+...
+853 |     fn bulk_get_files(&self, handles: &[FileHandle]) -> Result<Vec<FileDescriptor>> {
+    |        ^^^^^^^^^^^^^^
+...
+867 |     pub fn find_by_scheme(
+    |            ^^^^^^^^^^^^^^
+...
+894 |     fn bulk_remove_files(&mut self, handles: &[FileHandle]) -> Result<Vec<FileDescriptor>> {
+    |        ^^^^^^^^^^^^^^^^^
+...
+906 |     fn find_free_posix_slots(&self, count: usize) -> Vec<FileHandle> {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+...
+926 |     fn find_free_upper_block(&mut self, len: usize) -> FileHandle {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+...
+956 |     pub fn force_close_all(&mut self, token: &mut CleanLockToken) {
+    |            ^^^^^^^^^^^^^^^
+
+warning: methods `iter` and `iter_mut` are never used
+   --> src/context/context.rs:976:12
+    |
+966 | impl FdTbl {
+    | ---------- methods in this implementation
+...
+976 |     pub fn iter(&self) -> impl Iterator<Item = &Option<FileDescriptor>> {
+    |            ^^^^
+...
+980 |     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Option<FileDescriptor>> {
+    |            ^^^^^^^^
+
+warning: associated items `all`, `contains`, `add`, `remove`, `override_from`, and `to_raw` are never used
+   --> src/cpu_set.rs:48:12
+    |
+ 41 | impl CpuSet {
+    | ----------- associated items in this implementation
+...
+ 48 |     pub fn all() -> Self {
+    |            ^^^
+...
+ 56 |     pub fn contains(&self, id: LogicalCpuId) -> bool {
+    |            ^^^^^^^^
+...
+ 66 |     pub fn add(&mut self, id: LogicalCpuId) {
+    |            ^^^
+...
+ 75 |     pub fn remove(&mut self, id: LogicalCpuId) {
+    |            ^^^^^^
+...
+108 |     pub fn override_from(&mut self, mask: &RawMask) {
+    |            ^^^^^^^^^^^^^
+...
+112 |     pub fn to_raw(&self) -> RawMask {
+    |            ^^^^^^
+
+warning: type alias `RawMask` is never used
+   --> src/cpu_set.rs:125:10
+    |
+125 | pub type RawMask = [u64; WORD_COUNT];
+    |          ^^^^^^^
+
+warning: function `mask_as_bytes` is never used
+   --> src/cpu_set.rs:127:8
+    |
+127 | pub fn mask_as_bytes(mask: &RawMask) -> &[u8] {
+    |        ^^^^^^^^^^^^^
+
+warning: enum `CpuState` is never used
+  --> src/cpu_stats.rs:17:10
+   |
+17 | pub enum CpuState {
+   |          ^^^^^^^^
+
+warning: field `state` is never read
+  --> src/cpu_stats.rs:41:5
+   |
+29 | pub struct CpuStats {
+   |            -------- field in this struct
+...
+41 |     state: AtomicU8,
+   |     ^^^^^
+   |
+   = note: `CpuStats` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: methods `set_state` and `add_time` are never used
+  --> src/cpu_stats.rs:78:12
+   |
+72 | impl CpuStats {
+   | ------------- methods in this implementation
+...
+78 |     pub fn set_state(&self, new_state: CpuState) {
+   |            ^^^^^^^^^
+...
+89 |     pub fn add_time(&self, nanos: u64) {
+   |            ^^^^^^^^
+
+warning: function `add_context_switch` is never used
+   --> src/cpu_stats.rs:141:8
+    |
+141 | pub fn add_context_switch() {
+    |        ^^^^^^^^^^^^^^^^^^
+
+warning: function `add_context` is never used
+   --> src/cpu_stats.rs:152:8
+    |
+152 | pub fn add_context() {
+    |        ^^^^^^^^^^^
+
+warning: function `debugger` is never used
+  --> src/debugger.rs:20:15
+   |
+20 | pub unsafe fn debugger(target_id: Option<*const ContextLock>, token: &mut CleanLockToken) {
+   |               ^^^^^^^^
+
+warning: function `dump_stack` is never used
+   --> src/debugger.rs:184:4
+    |
+184 | fn dump_stack(context: &Context, mut sp: usize) {
+    |    ^^^^^^^^^^
+
+warning: function `check_page_table_consistency` is never used
+   --> src/debugger.rs:215:11
+    |
+215 | unsafe fn check_page_table_consistency(
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `COM1` is never used
+ --> src/devices/uart_16550.rs:7:11
+  |
+7 | pub const COM1: u16 = 0x3F8;
+  |           ^^^^
+
+warning: constant `COM2` is never used
+ --> src/devices/uart_16550.rs:8:11
+  |
+8 | pub const COM2: u16 = 0x2F8;
+  |           ^^^^
+
+warning: static `SERIAL_PORT` is never used
+  --> src/devices/uart_16550.rs:10:12
+   |
+10 | pub static SERIAL_PORT: Mutex<Option<SerialPort<Pio<u8>>>> = Mutex::new(None);
+   |            ^^^^^^^^^^^
+
+warning: function `init` is never used
+  --> src/devices/uart_16550.rs:98:15
+   |
+98 | pub unsafe fn init() {
+   |               ^^^^
+
+warning: method `read` is never used
+  --> src/event.rs:46:12
+   |
+31 | impl EventQueue {
+   | --------------- method in this implementation
+...
+46 |     pub fn read(&self, buf: UserSliceWo, block: bool, token: &mut CleanLockToken) -> Result<usize> {
+   |            ^^^^
+
+warning: function `unregister_queue` is never used
+   --> src/event.rs:190:8
+    |
+190 | pub fn unregister_queue(queue_id: EventQueueId) {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: variant `Normal` is never constructed
+  --> src/memory/mod.rs:56:5
+   |
+55 | pub enum PlacementStrategy {
+   |          ----------------- variant in this enum
+56 |     Normal,
+   |     ^^^^^^
+   |
+   = note: `PlacementStrategy` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: function `free_frames` is never used
+  --> src/memory/mod.rs:59:8
+   |
+59 | pub fn free_frames() -> usize {
+   |        ^^^^^^^^^^^
+
+warning: function `map_device_memory` is never used
+   --> src/memory/mod.rs:239:15
+    |
+239 | pub unsafe fn map_device_memory(addr: PhysicalAddress, len: usize) -> VirtualAddress {
+    |               ^^^^^^^^^^^^^^^^^
+
+warning: method `is_aligned_to_order` is never used
+   --> src/memory/mod.rs:333:12
+    |
+310 | impl Frame {
+    | ---------- method in this implementation
+...
+333 |     pub fn is_aligned_to_order(self, order: u32) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: associated items `allocate` and `take` are never used
+   --> src/memory/mod.rs:356:12
+    |
+355 | impl RaiiFrame {
+    | -------------- associated items in this implementation
+356 |     pub fn allocate() -> Result<Self, Enomem> {
+    |            ^^^^^^^^
+...
+367 |     pub fn take(self) -> Frame {
+    |            ^^^^
+
+warning: constant `RC_MAX` is never used
+   --> src/memory/mod.rs:407:7
+    |
+407 | const RC_MAX: usize = 1 << (usize::BITS - 3);
+    |       ^^^^^^
+
+warning: constant `RC_COUNT_MASK` is never used
+   --> src/memory/mod.rs:408:7
+    |
+408 | const RC_COUNT_MASK: usize = !(RC_USED_NOT_FREE | RC_SHARED_NOT_COW);
+    |       ^^^^^^^^^^^^^
+
+warning: constant `MAX_SECTION_SIZE_BITS` is never used
+   --> src/memory/mod.rs:435:11
+    |
+435 | pub const MAX_SECTION_SIZE_BITS: u32 = 27;
+    |           ^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_SECTION_SIZE` is never used
+   --> src/memory/mod.rs:436:11
+    |
+436 | pub const MAX_SECTION_SIZE: usize = 1 << MAX_SECTION_SIZE_BITS;
+    |           ^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_SECTION_PAGE_COUNT` is never used
+   --> src/memory/mod.rs:437:11
+    |
+437 | pub const MAX_SECTION_PAGE_COUNT: usize = MAX_SECTION_SIZE / PAGE_SIZE;
+    |           ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: enum `AddRefError` is never used
+   --> src/memory/mod.rs:462:10
+    |
+462 | pub enum AddRefError {
+    |          ^^^^^^^^^^^
+
+warning: method `add_ref` is never used
+   --> src/memory/mod.rs:507:12
+    |
+468 | impl PageInfo {
+    | ------------- method in this implementation
+...
+507 |     pub fn add_ref(&self, kind: RefKind) -> Result<(), AddRefError> {
+    |            ^^^^^^^
+
+warning: enum `RefKind` is never used
+   --> src/memory/mod.rs:573:10
+    |
+573 | pub enum RefKind {
+    |          ^^^^^^^
+
+warning: struct `Segv` is never constructed
+   --> src/memory/mod.rs:630:12
+    |
+630 | pub struct Segv;
+    |            ^^^^
+
+warning: function `the_zeroed_frame` is never used
+   --> src/memory/mod.rs:698:8
+    |
+698 | pub fn the_zeroed_frame() -> (Frame, &'static PageInfo) {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `init_frame` is never used
+   --> src/memory/mod.rs:707:8
+    |
+707 | pub fn init_frame(init_rc: RefCount) -> Result<Frame, PfError> {
+    |        ^^^^^^^^^^
+
+warning: function `user_stack_trace` is never used
+   --> src/panic.rs:154:15
+    |
+154 | pub unsafe fn user_stack_trace(stack: &InterruptStack) {
+    |               ^^^^^^^^^^^^^^^^
+
+warning: fields `switch_internals`, `new_addrsp_tmp`, `inside_syscall`, and `syscall_debug_info` are never read
+  --> src/percpu.rs:31:9
+   |
+24 | pub struct PercpuBlock {
+   |            ----------- fields in this struct
+...
+31 |     pub switch_internals: ContextSwitchPercpu,
+   |         ^^^^^^^^^^^^^^^^
+...
+34 |     pub new_addrsp_tmp: Cell<Option<Arc<AddrSpaceWrapper>>>,
+   |         ^^^^^^^^^^^^^^
+...
+41 |     pub inside_syscall: Cell<bool>,
+   |         ^^^^^^^^^^^^^^
+42 |
+43 |     pub syscall_debug_info: Cell<SyscallDebugInfo>,
+   |         ^^^^^^^^^^^^^^^^^^
+
+warning: function `shootdown_tlb_ipi` is never used
+  --> src/percpu.rs:80:8
+   |
+80 | pub fn shootdown_tlb_ipi(target: Option<LogicalCpuId>) {
+   |        ^^^^^^^^^^^^^^^^^
+
+warning: function `switch_arch_hook` is never used
+   --> src/percpu.rs:135:15
+    |
+135 | pub unsafe fn switch_arch_hook() {
+    |               ^^^^^^^^^^^^^^^^
+
+warning: methods `set_breakpoint`, `is_reached`, `session_fevent_flags`, and `recv_events` are never used
+  --> src/ptrace.rs:44:12
+   |
+34 | impl SessionData {
+   | ---------------- methods in this implementation
+...
+44 |     pub fn set_breakpoint(&mut self, flags: Option<PtraceFlags>) {
+   |            ^^^^^^^^^^^^^^
+...
+53 |     pub fn is_reached(&self) -> bool {
+   |            ^^^^^^^^^^
+...
+58 |     pub fn session_fevent_flags(&self) -> EventFlags {
+   |            ^^^^^^^^^^^^^^^^^^^^
+...
+69 |     pub fn recv_events(&mut self, out: &mut [PtraceEvent]) -> usize {
+   |            ^^^^^^^^^^^
+
+warning: associated function `new` is never used
+  --> src/ptrace.rs:98:12
+   |
+88 | impl Session {
+   | ------------ associated function in this implementation
+...
+98 |     pub fn new(file_id: usize) -> Arc<Session> {
+   |            ^^^
+
+warning: function `close_session` is never used
+   --> src/ptrace.rs:113:8
+    |
+113 | pub fn close_session(session: &Session, token: &mut CleanLockToken) {
+    |        ^^^^^^^^^^^^^
+
+warning: function `close_tracee` is never used
+   --> src/ptrace.rs:124:8
+    |
+124 | pub fn close_tracee(session: &Session, token: &mut CleanLockToken) {
+    |        ^^^^^^^^^^^^
+
+warning: function `wait` is never used
+   --> src/ptrace.rs:184:8
+    |
+184 | pub fn wait(session: Arc<Session>, token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^
+
+warning: field `0` is never read
+   --> src/scheme/mod.rs:110:14
+    |
+110 |     External(Arc<RwLock<FileDescription>>),
+    |     -------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |     |
+    |     field in this variant
+    |
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+    |
+110 -     External(Arc<RwLock<FileDescription>>),
+110 +     External(()),
+    |
+
+warning: enum `StrOrBytes` is never used
+   --> src/scheme/mod.rs:113:10
+    |
+113 | pub enum StrOrBytes<'a> {
+    |          ^^^^^^^^^^
+
+warning: methods `as_bytes` and `as_str` are never used
+   --> src/scheme/mod.rs:119:12
+    |
+118 | impl<'a> StrOrBytes<'a> {
+    | ----------------------- methods in this implementation
+119 |     pub fn as_bytes(&self) -> &'a [u8] {
+    |            ^^^^^^^^
+...
+125 |     pub fn as_str(&self) -> Result<&'a str, Error> {
+    |            ^^^^^^
+
+warning: multiple methods are never used
+   --> src/scheme/mod.rs:152:8
+    |
+144 | pub trait KernelScheme: Send + Sync {
+    |           ------------ methods in this trait
+...
+152 |     fn kopenat(
+    |        ^^^^^^^
+...
+163 |     fn rmdir(&self, _path: &str, _ctx: CallerCtx, _token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^
+...
+166 |     fn unlink(&self, _path: &str, _ctx: CallerCtx, _token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^^
+...
+172 |     fn kread(
+    |        ^^^^^
+...
+182 |     fn kreadoff(
+    |        ^^^^^^^^
+...
+203 |     fn kwriteoff(
+    |        ^^^^^^^^^
+...
+214 |     fn legacy_seek(
+    |        ^^^^^^^^^^^
+...
+223 |     fn kfmap(
+    |        ^^^^^
+...
+233 |     fn kfunmap(
+    |        ^^^^^^^
+...
+243 |     fn kfstat(&self, _file: usize, _stat: UserSliceWo, _token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^^
+...
+246 |     fn kfstatvfs(
+    |        ^^^^^^^^^
+...
+262 |     fn kfutimens(
+    |        ^^^^^^^^^
+...
+270 |     fn fsize(&self, _file: usize, _token: &mut CleanLockToken) -> Result<u64> {
+    |        ^^^^^
+...
+273 |     fn fchmod(&self, _file: usize, _mode: u16, _token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^^
+...
+276 |     fn fchown(
+    |        ^^^^^^
+...
+285 |     fn fcntl(
+    |        ^^^^^
+...
+302 |     fn fsync(&self, _file: usize, _token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^
+...
+305 |     fn ftruncate(&self, _file: usize, _len: usize, _token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^^^^^
+...
+308 |     fn flink(
+    |        ^^^^^
+...
+317 |     fn frename(
+    |        ^^^^^^^
+...
+326 |     fn kdup(
+    |        ^^^^
+...
+335 |     fn kcall(
+    |        ^^^^^
+...
+345 |     fn kfdwrite(
+    |        ^^^^^^^^
+...
+356 |     fn kfdread(
+    |        ^^^^^^^
+...
+366 |     fn getdents(
+    |        ^^^^^^^^
+
+warning: associated items `new`, `get_name`, and `make_ns` are never used
+    --> src/scheme/mod.rs:1041:12
+     |
+1040 | impl SchemeList {
+     | --------------- associated items in this implementation
+1041 |     pub fn new() -> Self {
+     |            ^^^
+...
+1051 |     pub fn get_name<'a>(
+     |            ^^^^^^^^
+...
+1106 |     pub fn make_ns(
+     |            ^^^^^^^
+
+warning: constant `INO_TOPLEVEL` is never used
+  --> src/scheme/irq.rs:53:7
+   |
+53 | const INO_TOPLEVEL: u64 = 0x8002_0000_0000_0000;
+   |       ^^^^^^^^^^^^
+
+warning: constant `INO_AVAIL` is never used
+  --> src/scheme/irq.rs:54:7
+   |
+54 | const INO_AVAIL: u64 = 0x8000_0000_0000_0000;
+   |       ^^^^^^^^^
+
+warning: constant `INO_BSP` is never used
+  --> src/scheme/irq.rs:55:7
+   |
+55 | const INO_BSP: u64 = 0x8001_0000_0000_0000;
+   |       ^^^^^^^
+
+warning: constant `INO_PHANDLE` is never used
+  --> src/scheme/irq.rs:56:7
+   |
+56 | const INO_PHANDLE: u64 = 0x8003_0000_0000_0000;
+   |       ^^^^^^^^^^^
+
+warning: associated function `init` is never used
+   --> src/scheme/irq.rs:106:12
+    |
+105 | impl IrqScheme {
+    | -------------- associated function in this implementation
+106 |     pub fn init() {
+    |            ^^^^
+
+warning: function `vector_to_irq` is never used
+   --> src/scheme/irq.rs:217:10
+    |
+217 | const fn vector_to_irq(vector: u8) -> u8 {
+    |          ^^^^^^^^^^^^^
+
+warning: associated functions `fmap_anonymous` and `physmap` are never used
+   --> src/scheme/memory.rs:75:12
+    |
+ 74 | impl MemoryScheme {
+    | ----------------- associated functions in this implementation
+ 75 |     pub fn fmap_anonymous(
+    |            ^^^^^^^^^^^^^^
+...
+117 |     pub fn physmap(
+    |            ^^^^^^^
+
+warning: field `has_run_dup` is never read
+   --> src/scheme/pipe.rs:355:5
+    |
+349 | pub struct Pipe {
+    |            ---- field in this struct
+...
+355 |     has_run_dup: AtomicBool,
+    |     ^^^^^^^^^^^
+
+warning: function `read_from` is never used
+  --> src/scheme/proc.rs:44:4
+   |
+44 | fn read_from(dst: UserSliceWo, src: &[u8], offset: u64) -> Result<usize> {
+   |    ^^^^^^^^^
+
+warning: variants `Float`, `Int`, and `Env` are never constructed
+  --> src/scheme/proc.rs:97:5
+   |
+96 | enum RegsKind {
+   |      -------- variants in this enum
+97 |     Float,
+   |     ^^^^^
+98 |     Int,
+   |     ^^^
+99 |     Env,
+   |     ^^^
+   |
+   = note: `RegsKind` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: multiple variants are never constructed
+   --> src/scheme/proc.rs:106:5
+    |
+102 | enum ContextHandle {
+    |      ------------- variants in this enum
+...
+106 |     Attr,
+    |     ^^^^
+107 |
+108 |     Status {
+    |     ^^^^^^
+...
+112 |     Regs(RegsKind),
+    |     ^^^^
+113 |     Sighandler,
+    |     ^^^^^^^^^^
+114 |     Start,
+    |     ^^^^^
+115 |     NewFiletable {
+    |     ^^^^^^^^^^^^
+...
+119 |     Filetable {
+    |     ^^^^^^^^^
+...
+123 |     AddrSpace {
+    |     ^^^^^^^^^
+...
+126 |     CurrentAddrSpace,
+    |     ^^^^^^^^^^^^^^^^
+127 |
+128 |     AwaitingAddrSpaceChange {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+...
+134 |     CurrentFiletable,
+    |     ^^^^^^^^^^^^^^^^
+135 |
+136 |     AwaitingFiletableChange {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+...
+142 |     OpenViaDup,
+    |     ^^^^^^^^^^
+143 |     SchedAffinity,
+    |     ^^^^^^^^^^^^^
+144 |
+145 |     MmapMinAddr(Arc<AddrSpaceWrapper>),
+    |     ^^^^^^^^^^^
+    |
+    = note: `ContextHandle` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: function `new_handle` is never used
+   --> src/scheme/proc.rs:176:4
+    |
+176 | fn new_handle(
+    |    ^^^^^^^^^^
+
+warning: enum `OpenTy` is never used
+   --> src/scheme/proc.rs:185:6
+    |
+185 | enum OpenTy {
+    |      ^^^^^^
+
+warning: methods `openat_context` and `open_inner` are never used
+   --> src/scheme/proc.rs:191:8
+    |
+190 | impl ProcScheme {
+    | --------------- methods in this implementation
+191 |     fn openat_context(
+    |        ^^^^^^^^^^^^^^
+...
+267 |     fn open_inner(
+    |        ^^^^^^^^^^
+
+warning: function `extract_scheme_number` is never used
+   --> src/scheme/proc.rs:801:4
+    |
+801 | fn extract_scheme_number(
+    |    ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `verify_scheme` is never used
+   --> src/scheme/proc.rs:818:4
+    |
+818 | fn verify_scheme(scheme: &KernelSchemes) -> Result<()> {
+    |    ^^^^^^^^^^^^^
+
+warning: method `fsize` is never used
+   --> src/scheme/proc.rs:825:8
+    |
+824 | impl Handle {
+    | ----------- method in this implementation
+825 |     fn fsize(&self) -> Result<u64> {
+    |        ^^^^^
+
+warning: methods `kwriteoff` and `kreadoff` are never used
+    --> src/scheme/proc.rs:834:8
+     |
+ 833 | impl ContextHandle {
+     | ------------------ methods in this implementation
+ 834 |     fn kwriteoff(
+     |        ^^^^^^^^^
+...
+1196 |     fn kreadoff(
+     |        ^^^^^^^^
+
+warning: function `write_env_regs` is never used
+    --> src/scheme/proc.rs:1371:4
+     |
+1371 | fn write_env_regs(
+     |    ^^^^^^^^^^^^^^
+
+warning: function `read_env_regs` is never used
+    --> src/scheme/proc.rs:1385:4
+     |
+1385 | fn read_env_regs(context: Arc<ContextLock>, token: &mut CleanLockToken) -> Result<EnvRegisters> {
+     |    ^^^^^^^^^^^^^
+
+warning: fields `sq_entries` and `cq_entries` are never read
+  --> src/scheme/ring.rs:79:9
+   |
+76 | pub struct RingHandle {
+   |            ---------- fields in this struct
+...
+79 |     pub sq_entries: usize,
+   |         ^^^^^^^^^^
+80 |     pub cq_entries: usize,
+   |         ^^^^^^^^^^
+
+warning: field `ens` is never read
+  --> src/scheme/root.rs:34:12
+   |
+34 |     List { ens: SchemeNamespace },
+   |     ----   ^^^
+   |     |
+   |     field in this variant
+   |
+   = note: `Handle` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: field `data` is never read
+  --> src/scheme/sys/mod.rs:53:9
+   |
+51 |     Resource {
+   |     -------- field in this variant
+52 |         path: &'static str,
+53 |         data: Option<Vec<u8>>,
+   |         ^^^^
+
+warning: field `0` is never read
+  --> src/scheme/sys/mod.rs:59:8
+   |
+59 |     Wr(fn(&[u8], &mut CleanLockToken) -> Result<usize>),
+   |     -- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |     |
+   |     field in this variant
+   |
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+   |
+59 -     Wr(fn(&[u8], &mut CleanLockToken) -> Result<usize>),
+59 +     Wr(()),
+   |
+
+warning: variant `Fmap` is never constructed
+  --> src/scheme/user.rs:72:5
+   |
+64 | enum State {
+   |      ----- variant in this enum
+...
+72 |     Fmap(Weak<ContextLock>),
+   |     ^^^^
+
+warning: field `num_fds` is never read
+   --> src/scheme/user.rs:104:9
+    |
+102 |     ResponseWithMultipleFds {
+    |     ----------------------- field in this variant
+103 |         tag: u32,
+104 |         num_fds: usize,
+    |         ^^^^^^^
+
+warning: multiple associated items are never used
+    --> src/scheme/user.rs:227:12
+     |
+ 202 | impl UserInner {
+     | -------------- associated items in this implementation
+...
+ 227 |     pub fn unmount(&self, token: &mut CleanLockToken) -> Result<()> {
+     |            ^^^^^^^
+...
+ 731 |     pub fn read(&self, buf: UserSliceWo, flags: u32, token: &mut CleanLockToken) -> Result<usize> {
+     |            ^^^^
+...
+ 773 |     fn translate_sqe_to_packet(&self, sqe: &Sqe) -> Result<Packet> {
+     |        ^^^^^^^^^^^^^^^^^^^^^^^
+...
+ 917 |     pub fn request_fmap(
+     |            ^^^^^^^^^^^^
+...
+1183 |     pub fn fsync(&self) -> Result<()> {
+     |            ^^^^^
+...
+1187 |     fn fmap_inner(
+     |        ^^^^^^^^^^
+...
+1341 |     pub fn call_fdwrite(
+     |            ^^^^^^^^^^^^
+...
+1373 |     fn handle_movefd(
+     |        ^^^^^^^^^^^^^
+...
+1393 |     pub fn call_fdread(
+     |            ^^^^^^^^^^^
+...
+1431 |     fn handle_obtainfd(
+     |        ^^^^^^^^^^^^^^^
+...
+1457 |     fn bulk_add_fds(
+     |        ^^^^^^^^^^^^
+...
+1490 |     fn bulk_insert_fds(
+     |        ^^^^^^^^^^^^^^^
+
+warning: function `current_uid_gid` is never used
+    --> src/scheme/user.rs:2259:4
+     |
+2259 | fn current_uid_gid(token: &mut CleanLockToken) -> [u32; 2] {
+     |    ^^^^^^^^^^^^^^^
+
+warning: method `is_empty` is never used
+   --> src/scheduler.rs:107:12
+    |
+ 33 | impl RunQueue {
+    | ------------- method in this implementation
+...
+107 |     pub fn is_empty(&self) -> bool {
+    |            ^^^^^^^^
+
+warning: methods `context_blocked` and `context_unblocked` are never used
+   --> src/scheduler.rs:174:12
+    |
+122 | impl Scheduler {
+    | -------------- methods in this implementation
+...
+174 |     pub fn context_blocked(&mut self, context_id: usize) {
+    |            ^^^^^^^^^^^^^^^
+...
+179 |     pub fn context_unblocked(&mut self, context_ref: ContextRef, token: &mut CleanLockToken) {
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: function `add_context` is never used
+   --> src/scheduler.rs:193:8
+    |
+193 | pub fn add_context(context_ref: ContextRef, token: &mut CleanLockToken) {
+    |        ^^^^^^^^^^^
+
+warning: associated function `containing_address` is never used
+   --> src/stubs.rs:253:12
+    |
+252 | impl Frame {
+    | ---------- associated function in this implementation
+253 |     pub fn containing_address(addr: PhysicalAddress) -> Self {
+    |            ^^^^^^^^^^^^^^^^^^
+
+warning: struct `NumaNodeId` is never constructed
+  --> src/stubs.rs:10:16
+   |
+10 |     pub struct NumaNodeId(pub u8);
+   |                ^^^^^^^^^^
+
+warning: struct `CpuTopology` is never constructed
+  --> src/stubs.rs:18:16
+   |
+18 |     pub struct CpuTopology;
+   |                ^^^^^^^^^^^
+
+warning: method `get` is never used
+  --> src/stubs.rs:21:16
+   |
+20 |     impl CpuTopology {
+   |     ---------------- method in this implementation
+21 |         pub fn get(&self) -> Option<()> {
+   |                ^^^
+
+warning: static `CPU_TOPOLOGY` is never used
+  --> src/stubs.rs:26:16
+   |
+26 |     pub static CPU_TOPOLOGY: CpuTopology = CpuTopology;
+   |                ^^^^^^^^^^^^
+
+warning: constant `GDT_KERNEL_CODE` is never used
+  --> src/stubs.rs:33:15
+   |
+33 |     pub const GDT_KERNEL_CODE: u16 = 0x08;
+   |               ^^^^^^^^^^^^^^^
+
+warning: constant `GDT_USER_CODE32_UNUSED` is never used
+  --> src/stubs.rs:34:15
+   |
+34 |     pub const GDT_USER_CODE32_UNUSED: u16 = 0x18;
+   |               ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `GDT_USER_DATA` is never used
+  --> src/stubs.rs:35:15
+   |
+35 |     pub const GDT_USER_DATA: u16 = 0x20;
+   |               ^^^^^^^^^^^^^
+
+warning: constant `GDT_USER_CODE` is never used
+  --> src/stubs.rs:36:15
+   |
+36 |     pub const GDT_USER_CODE: u16 = 0x28;
+   |               ^^^^^^^^^^^^^
+
+warning: struct `ProcessorControlRegion` is never constructed
+  --> src/stubs.rs:38:16
+   |
+38 |     pub struct ProcessorControlRegion;
+   |                ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `init_bsp` is never used
+  --> src/stubs.rs:40:19
+   |
+40 |     pub unsafe fn init_bsp() {}
+   |                   ^^^^^^^^
+
+warning: function `install_pcr` is never used
+  --> src/stubs.rs:41:19
+   |
+41 |     pub unsafe fn install_pcr(_cpu_id: usize, _region: &ProcessorControlRegion) {}
+   |                   ^^^^^^^^^^^
+
+warning: function `pcr` is never used
+  --> src/stubs.rs:42:12
+   |
+42 |     pub fn pcr() -> &'static ProcessorControlRegion {
+   |            ^^^
+
+warning: function `set_tss_stack` is never used
+  --> src/stubs.rs:46:19
+   |
+46 |     pub unsafe fn set_tss_stack(_index: usize, _stack: usize) {}
+   |                   ^^^^^^^^^^^^^
+
+warning: function `set_userspace_io_allowed` is never used
+  --> src/stubs.rs:47:19
+   |
+47 |     pub unsafe fn set_userspace_io_allowed(_allowed: bool, _pcr: &ProcessorControlRegion) {}
+   |                   ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `FloatRegisters` is never constructed
+  --> src/stubs.rs:54:16
+   |
+54 |     pub struct FloatRegisters {
+   |                ^^^^^^^^^^^^^^
+
+warning: struct `IntRegisters` is never constructed
+  --> src/stubs.rs:60:16
+   |
+60 |     pub struct IntRegisters {
+   |                ^^^^^^^^^^^^
+
+warning: constant `F_DUPFD_CLOEXEC` is never used
+  --> src/stubs.rs:81:15
+   |
+81 |     pub const F_DUPFD_CLOEXEC: i32 = 1030;
+   |               ^^^^^^^^^^^^^^^
+
+warning: function `contexts_mut` is never used
+   --> src/stubs.rs:138:12
+    |
+138 |     pub fn contexts_mut(
+    |            ^^^^^^^^^^^^
+
+warning: function `switch_finish_hook` is never used
+   --> src/stubs.rs:147:12
+    |
+147 |     pub fn switch_finish_hook() {}
+    |            ^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_region` is never used
+   --> src/stubs.rs:173:12
+    |
+173 |     pub fn validate_region(_ptr: usize, _len: usize) -> crate::syscall::error::Result<PageSpan> {
+    |            ^^^^^^^^^^^^^^^
+
+warning: function `exit_this_context` is never used
+   --> src/stubs.rs:178:12
+    |
+178 |     pub fn exit_this_context(_status: usize) -> ! {
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: function `copy_path_to_buf` is never used
+   --> src/stubs.rs:182:12
+    |
+182 |     pub fn copy_path_to_buf(_path: crate::syscall::usercopy::UserSliceRo, _max_len: usize) -> crate::syscall::error::Result<alloc::string...
+    |            ^^^^^^^^^^^^^^^^
+
+warning: struct `ExceptionStack` is never constructed
+   --> src/stubs.rs:190:16
+    |
+190 |     pub struct ExceptionStack {
+    |                ^^^^^^^^^^^^^^
+
+warning: function `divide_by_zero` is never used
+   --> src/stubs.rs:199:30
+    |
+199 |     pub unsafe extern "C" fn divide_by_zero() {}
+    |                              ^^^^^^^^^^^^^^
+
+warning: function `debug` is never used
+   --> src/stubs.rs:200:30
+    |
+200 |     pub unsafe extern "C" fn debug() {}
+    |                              ^^^^^
+
+warning: function `non_maskable` is never used
+   --> src/stubs.rs:201:30
+    |
+201 |     pub unsafe extern "C" fn non_maskable() {}
+    |                              ^^^^^^^^^^^^
+
+warning: function `breakpoint` is never used
+   --> src/stubs.rs:202:30
+    |
+202 |     pub unsafe extern "C" fn breakpoint() {}
+    |                              ^^^^^^^^^^
+
+warning: function `overflow` is never used
+   --> src/stubs.rs:203:30
+    |
+203 |     pub unsafe extern "C" fn overflow() {}
+    |                              ^^^^^^^^
+
+warning: function `bound_range` is never used
+   --> src/stubs.rs:204:30
+    |
+204 |     pub unsafe extern "C" fn bound_range() {}
+    |                              ^^^^^^^^^^^
+
+warning: function `invalid_opcode` is never used
+   --> src/stubs.rs:205:30
+    |
+205 |     pub unsafe extern "C" fn invalid_opcode() {}
+    |                              ^^^^^^^^^^^^^^
+
+warning: function `device_not_available` is never used
+   --> src/stubs.rs:206:30
+    |
+206 |     pub unsafe extern "C" fn device_not_available() {}
+    |                              ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `double_fault` is never used
+   --> src/stubs.rs:207:30
+    |
+207 |     pub unsafe extern "C" fn double_fault() {}
+    |                              ^^^^^^^^^^^^
+
+warning: function `invalid_tss` is never used
+   --> src/stubs.rs:208:30
+    |
+208 |     pub unsafe extern "C" fn invalid_tss() {}
+    |                              ^^^^^^^^^^^
+
+warning: function `segment_not_present` is never used
+   --> src/stubs.rs:209:30
+    |
+209 |     pub unsafe extern "C" fn segment_not_present() {}
+    |                              ^^^^^^^^^^^^^^^^^^^
+
+warning: function `stack_segment` is never used
+   --> src/stubs.rs:210:30
+    |
+210 |     pub unsafe extern "C" fn stack_segment() {}
+    |                              ^^^^^^^^^^^^^
+
+warning: function `protection` is never used
+   --> src/stubs.rs:211:30
+    |
+211 |     pub unsafe extern "C" fn protection() {}
+    |                              ^^^^^^^^^^
+
+warning: function `page` is never used
+   --> src/stubs.rs:212:30
+    |
+212 |     pub unsafe extern "C" fn page() {}
+    |                              ^^^^
+
+warning: function `fpu_fault` is never used
+   --> src/stubs.rs:213:30
+    |
+213 |     pub unsafe extern "C" fn fpu_fault() {}
+    |                              ^^^^^^^^^
+
+warning: function `alignment_check` is never used
+   --> src/stubs.rs:214:30
+    |
+214 |     pub unsafe extern "C" fn alignment_check() {}
+    |                              ^^^^^^^^^^^^^^^
+
+warning: function `machine_check` is never used
+   --> src/stubs.rs:215:30
+    |
+215 |     pub unsafe extern "C" fn machine_check() {}
+    |                              ^^^^^^^^^^^^^
+
+warning: function `simd` is never used
+   --> src/stubs.rs:216:30
+    |
+216 |     pub unsafe extern "C" fn simd() {}
+    |                              ^^^^
+
+warning: function `virtualization` is never used
+   --> src/stubs.rs:217:30
+    |
+217 |     pub unsafe extern "C" fn virtualization() {}
+    |                              ^^^^^^^^^^^^^^
+
+warning: function `security` is never used
+   --> src/stubs.rs:218:30
+    |
+218 |     pub unsafe extern "C" fn security() {}
+    |                              ^^^^^^^^
+
+warning: function `pit_stack` is never used
+   --> src/stubs.rs:223:30
+    |
+223 |     pub unsafe extern "C" fn pit_stack() {}
+    |                              ^^^^^^^^^
+
+warning: function `keyboard` is never used
+   --> src/stubs.rs:224:30
+    |
+224 |     pub unsafe extern "C" fn keyboard() {}
+    |                              ^^^^^^^^
+
+warning: function `cascade` is never used
+   --> src/stubs.rs:225:30
+    |
+225 |     pub unsafe extern "C" fn cascade() {}
+    |                              ^^^^^^^
+
+warning: function `com2` is never used
+   --> src/stubs.rs:226:30
+    |
+226 |     pub unsafe extern "C" fn com2() {}
+    |                              ^^^^
+
+warning: function `com1` is never used
+   --> src/stubs.rs:227:30
+    |
+227 |     pub unsafe extern "C" fn com1() {}
+    |                              ^^^^
+
+warning: function `lpt2` is never used
+   --> src/stubs.rs:228:30
+    |
+228 |     pub unsafe extern "C" fn lpt2() {}
+    |                              ^^^^
+
+warning: function `floppy` is never used
+   --> src/stubs.rs:229:30
+    |
+229 |     pub unsafe extern "C" fn floppy() {}
+    |                              ^^^^^^
+
+warning: function `lpt1` is never used
+   --> src/stubs.rs:230:30
+    |
+230 |     pub unsafe extern "C" fn lpt1() {}
+    |                              ^^^^
+
+warning: function `rtc` is never used
+   --> src/stubs.rs:231:30
+    |
+231 |     pub unsafe extern "C" fn rtc() {}
+    |                              ^^^
+
+warning: function `pci1` is never used
+   --> src/stubs.rs:232:30
+    |
+232 |     pub unsafe extern "C" fn pci1() {}
+    |                              ^^^^
+
+warning: function `pci2` is never used
+   --> src/stubs.rs:233:30
+    |
+233 |     pub unsafe extern "C" fn pci2() {}
+    |                              ^^^^
+
+warning: function `pci3` is never used
+   --> src/stubs.rs:234:30
+    |
+234 |     pub unsafe extern "C" fn pci3() {}
+    |                              ^^^^
+
+warning: function `mouse` is never used
+   --> src/stubs.rs:235:30
+    |
+235 |     pub unsafe extern "C" fn mouse() {}
+    |                              ^^^^^
+
+warning: function `fpu` is never used
+   --> src/stubs.rs:236:30
+    |
+236 |     pub unsafe extern "C" fn fpu() {}
+    |                              ^^^
+
+warning: function `ata1` is never used
+   --> src/stubs.rs:237:30
+    |
+237 |     pub unsafe extern "C" fn ata1() {}
+    |                              ^^^^
+
+warning: function `ata2` is never used
+   --> src/stubs.rs:238:30
+    |
+238 |     pub unsafe extern "C" fn ata2() {}
+    |                              ^^^^
+
+warning: function `lapic_timer` is never used
+   --> src/stubs.rs:239:30
+    |
+239 |     pub unsafe extern "C" fn lapic_timer() {}
+    |                              ^^^^^^^^^^^
+
+warning: function `lapic_error` is never used
+   --> src/stubs.rs:240:30
+    |
+240 |     pub unsafe extern "C" fn lapic_error() {}
+    |                              ^^^^^^^^^^^
+
+warning: function `wakeup` is never used
+   --> src/stubs.rs:245:30
+    |
+245 |     pub unsafe extern "C" fn wakeup() {}
+    |                              ^^^^^^
+
+warning: function `switch` is never used
+   --> src/stubs.rs:246:30
+    |
+246 |     pub unsafe extern "C" fn switch() {}
+    |                              ^^^^^^
+
+warning: function `tlb` is never used
+   --> src/stubs.rs:247:30
+    |
+247 |     pub unsafe extern "C" fn tlb() {}
+    |                              ^^^
+
+warning: function `pit` is never used
+   --> src/stubs.rs:248:30
+    |
+248 |     pub unsafe extern "C" fn pit() {}
+    |                              ^^^
+
+warning: struct `TimeSpec` is never constructed
+   --> src/stubs.rs:262:16
+    |
+262 |     pub struct TimeSpec {
+    |                ^^^^^^^^
+
+warning: associated function `new` is never used
+  --> src/sync/mod.rs:52:18
+   |
+51 | impl<T> Mutex<T> {
+   | ---------------- associated function in this implementation
+52 |     pub const fn new(user_data: T) -> Self {
+   |                  ^^^
+
+warning: method `notify_boosted` is never used
+  --> src/sync/wait_condition.rs:52:12
+   |
+18 | impl WaitCondition {
+   | ------------------ method in this implementation
+...
+52 |     pub fn notify_boosted(&self, token: &mut CleanLockToken) -> usize {
+   |            ^^^^^^^^^^^^^^
+
+warning: methods `is_currently_empty` and `receive_into_user` are never used
+  --> src/sync/wait_queue.rs:26:12
+   |
+19 | impl<T> WaitQueue<T> {
+   | -------------------- methods in this implementation
+...
+26 |     pub fn is_currently_empty(&self) -> bool {
+   |            ^^^^^^^^^^^^^^^^^^
+...
+57 |     pub fn receive_into_user(
+   |            ^^^^^^^^^^^^^^^^^
+
+warning: method `len_approx` is never used
+   --> src/sync/lockfree_queue.rs:167:12
+    |
+ 41 | impl<T> LockFreeQueue<T> {
+    | ------------------------ method in this implementation
+...
+167 |     pub fn len_approx(&self) -> usize {
+    |            ^^^^^^^^^^
+
+warning: methods `receive` and `len` are never used
+   --> src/sync/optimized_wait_queue.rs:44:12
+    |
+ 25 | impl<T> OptimizedWaitQueue<T> {
+    | ----------------------------- methods in this implementation
+...
+ 44 |     pub fn receive(
+    |            ^^^^^^^
+...
+134 |     pub fn len(&self) -> usize {
+    |            ^^^
+
+warning: method `receive_into_user` is never used
+   --> src/sync/optimized_wait_queue.rs:146:12
+    |
+145 | impl<T: Copy> OptimizedWaitQueue<T> {
+    | ----------------------------------- method in this implementation
+146 |     pub fn receive_into_user(
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: variants `Realtime` and `Low` are never constructed
+  --> src/sync/priority.rs:15:5
+   |
+13 | pub enum Priority {
+   |          -------- variants in this enum
+14 |     /// Real-time critical (IPC servers, interrupt handlers)
+15 |     Realtime = 0,
+   |     ^^^^^^^^
+...
+21 |     Low = 139,
+   |     ^^^
+   |
+   = note: `Priority` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: associated items `from_u8` and `as_u8` are never used
+  --> src/sync/priority.rs:26:12
+   |
+24 | impl Priority {
+   | ------------- associated items in this implementation
+25 |     #[inline]
+26 |     pub fn from_u8(val: u8) -> Self {
+   |            ^^^^^^^
+...
+36 |     pub fn as_u8(self) -> u8 {
+   |            ^^^^^
+
+warning: methods `is_ipc_critical` and `set_base_priority` are never used
+   --> src/sync/priority.rs:130:12
+    |
+ 54 | impl PriorityTracker {
+    | -------------------- methods in this implementation
+...
+130 |     pub fn is_ipc_critical(&self) -> bool {
+    |            ^^^^^^^^^^^^^^^
+...
+166 |     pub fn set_base_priority(&self, priority: Priority) {
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: method `format_call` is never used
+ --> src/syscall/debug.rs:9:12
+  |
+8 | impl SyscallDebugInfo {
+  | --------------------- method in this implementation
+9 |     pub fn format_call(
+  |            ^^^^^^^^^^^
+
+warning: function `file_op_generic` is never used
+  --> src/syscall/fs.rs:22:8
+   |
+22 | pub fn file_op_generic<T>(
+   |        ^^^^^^^^^^^^^^^
+
+warning: function `file_op_generic_ext` is never used
+  --> src/syscall/fs.rs:29:8
+   |
+29 | pub fn file_op_generic_ext<T>(
+   |        ^^^^^^^^^^^^^^^^^^^
+
+warning: function `copy_path_to_buf` is never used
+  --> src/syscall/fs.rs:56:8
+   |
+56 | pub fn copy_path_to_buf(raw_path: UserSliceRo, max_len: usize) -> Result<String> {
+   |        ^^^^^^^^^^^^^^^^
+
+warning: constant `PATH_MAX` is never used
+  --> src/syscall/fs.rs:67:7
+   |
+67 | const PATH_MAX: usize = PAGE_SIZE;
+   |       ^^^^^^^^
+
+warning: function `is_legacy` is never used
+  --> src/syscall/fs.rs:70:4
+   |
+70 | fn is_legacy(path_buf: &String) -> bool {
+   |    ^^^^^^^^^
+
+warning: function `open` is never used
+  --> src/syscall/fs.rs:79:8
+   |
+79 | pub fn open(raw_path: UserSliceRo, flags: usize, token: &mut CleanLockToken) -> Result<FileHandle> {
+   |        ^^^^
+
+warning: constant `F_DUPFD_CLOEXEC` is never used
+   --> src/syscall/fs.rs:144:11
+    |
+144 | pub const F_DUPFD_CLOEXEC: usize = 1030;
+    |           ^^^^^^^^^^^^^^^
+
+warning: function `openat` is never used
+   --> src/syscall/fs.rs:146:8
+    |
+146 | pub fn openat(
+    |        ^^^^^^
+
+warning: function `rmdir` is never used
+   --> src/syscall/fs.rs:208:8
+    |
+208 | pub fn rmdir(raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^
+
+warning: function `unlink` is never used
+   --> src/syscall/fs.rs:234:8
+    |
+234 | pub fn unlink(raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^^
+
+warning: function `close` is never used
+   --> src/syscall/fs.rs:259:8
+    |
+259 | pub fn close(fd: FileHandle, token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^
+
+warning: function `duplicate_file` is never used
+   --> src/syscall/fs.rs:269:4
+    |
+269 | fn duplicate_file(
+    |    ^^^^^^^^^^^^^^
+
+warning: function `dup` is never used
+   --> src/syscall/fs.rs:321:8
+    |
+321 | pub fn dup(fd: FileHandle, buf: UserSliceRo, token: &mut CleanLockToken) -> Result<FileHandle> {
+    |        ^^^
+
+warning: function `dup2` is never used
+   --> src/syscall/fs.rs:331:8
+    |
+331 | pub fn dup2(
+    |        ^^^^
+
+warning: function `call` is never used
+   --> src/syscall/fs.rs:351:8
+    |
+351 | pub fn call(
+    |        ^^^^
+
+warning: function `call_normal` is never used
+   --> src/syscall/fs.rs:376:4
+    |
+376 | fn call_normal(
+    |    ^^^^^^^^^^^
+
+warning: function `call_fdwrite` is never used
+   --> src/syscall/fs.rs:405:4
+    |
+405 | fn call_fdwrite(
+    |    ^^^^^^^^^^^^
+
+warning: function `fdwrite_inner` is never used
+   --> src/syscall/fs.rs:427:4
+    |
+427 | fn fdwrite_inner(
+    |    ^^^^^^^^^^^^^
+
+warning: function `call_fdread` is never used
+   --> src/syscall/fs.rs:484:4
+    |
+484 | fn call_fdread(
+    |    ^^^^^^^^^^^
+
+warning: function `sendfd` is never used
+   --> src/syscall/fs.rs:511:8
+    |
+511 | pub fn sendfd(
+    |        ^^^^^^
+
+warning: function `fcntl` is never used
+   --> src/syscall/fs.rs:530:8
+    |
+530 | pub fn fcntl(fd: FileHandle, cmd: usize, arg: usize, token: &mut CleanLockToken) -> Result<usize> {
+    |        ^^^^^
+
+warning: function `flink` is never used
+   --> src/syscall/fs.rs:596:8
+    |
+596 | pub fn flink(fd: FileHandle, raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^
+
+warning: function `frename` is never used
+   --> src/syscall/fs.rs:632:8
+    |
+632 | pub fn frename(fd: FileHandle, raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^^^
+
+warning: function `fstat` is never used
+   --> src/syscall/fs.rs:669:8
+    |
+669 | pub fn fstat(fd: FileHandle, user_buf: UserSliceWo, token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^
+
+warning: function `funmap` is never used
+   --> src/syscall/fs.rs:691:8
+    |
+691 | pub fn funmap(virtual_address: usize, length: usize, token: &mut CleanLockToken) -> Result<usize> {
+    |        ^^^^^^
+
+warning: function `mremap` is never used
+   --> src/syscall/fs.rs:719:8
+    |
+719 | pub fn mremap(
+    |        ^^^^^^
+
+warning: function `lseek` is never used
+   --> src/syscall/fs.rs:806:8
+    |
+806 | pub fn lseek(fd: FileHandle, pos: i64, whence: usize, token: &mut CleanLockToken) -> Result<usize> {
+    |        ^^^^^
+
+warning: function `sys_read` is never used
+   --> src/syscall/fs.rs:843:8
+    |
+843 | pub fn sys_read(fd: FileHandle, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
+    |        ^^^^^^^^
+
+warning: function `sys_write` is never used
+   --> src/syscall/fs.rs:863:8
+    |
+863 | pub fn sys_write(fd: FileHandle, buf: UserSliceRo, token: &mut CleanLockToken) -> Result<usize> {
+    |        ^^^^^^^^^
+
+warning: function `sys_mlock` is never used
+   --> src/syscall/fs.rs:885:8
+    |
+885 | pub fn sys_mlock(addr: usize, len: usize, token: &mut CleanLockToken) -> Result<usize> {
+    |        ^^^^^^^^^
+
+warning: function `sys_munlock` is never used
+   --> src/syscall/fs.rs:898:8
+    |
+898 | pub fn sys_munlock(addr: usize, len: usize, token: &mut CleanLockToken) -> Result<usize> {
+    |        ^^^^^^^^^^^
+
+warning: type alias `FutexList` is never used
+  --> src/syscall/futex.rs:36:6
+   |
+36 | type FutexList = HashMap<PhysicalAddress, Vec<FutexEntry>>;
+   |      ^^^^^^^^^
+
+warning: struct `FutexEntry` is never constructed
+  --> src/syscall/futex.rs:38:12
+   |
+38 | pub struct FutexEntry {
+   |            ^^^^^^^^^^
+
+warning: static `FUTEXES` is never used
+  --> src/syscall/futex.rs:53:8
+   |
+53 | static FUTEXES: OrderedMutex<L1, FutexList> =
+   |        ^^^^^^^
+
+warning: function `validate_and_translate_virt` is never used
+  --> src/syscall/futex.rs:56:4
+   |
+56 | fn validate_and_translate_virt(
+   |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `futex` is never used
+  --> src/syscall/futex.rs:73:8
+   |
+73 | pub fn futex(
+   |        ^^^^^
+
+warning: function `mkns` is never used
+  --> src/syscall/privilege.rs:10:8
+   |
+10 | pub fn mkns(mut user_buf: UserSliceRo, token: &mut CleanLockToken) -> Result<usize> {
+   |        ^^^^
+
+warning: function `exit_this_context` is never used
+  --> src/syscall/process.rs:29:8
+   |
+29 | pub fn exit_this_context(excp: Option<syscall::Exception>, token: &mut CleanLockToken) -> ! {
+   |        ^^^^^^^^^^^^^^^^^
+
+warning: function `mprotect` is never used
+  --> src/syscall/process.rs:70:8
+   |
+70 | pub fn mprotect(
+   |        ^^^^^^^^
+
+warning: constant `CLOCK_REALTIME` is never used
+ --> src/syscall/time.rs:6:11
+  |
+6 | pub const CLOCK_REALTIME: usize = 0;
+  |           ^^^^^^^^^^^^^^
+
+warning: constant `CLOCK_MONOTONIC` is never used
+ --> src/syscall/time.rs:7:11
+  |
+7 | pub const CLOCK_MONOTONIC: usize = 1;
+  |           ^^^^^^^^^^^^^^^
+
+warning: function `clock_gettime` is never used
+ --> src/syscall/time.rs:9:8
+  |
+9 | pub fn clock_gettime(clock_id: usize, time: &mut time::TimeSpec) -> Result<usize> {
+  |        ^^^^^^^^^^^^^
+
+warning: method `none_if_null` is never used
+  --> src/syscall/usercopy.rs:64:12
+   |
+22 | impl<const READ: bool, const WRITE: bool> UserSlice<READ, WRITE> {
+   | ---------------------------------------------------------------- method in this implementation
+...
+64 |     pub fn none_if_null(self) -> Option<Self> {
+   |            ^^^^^^^^^^^^
+
+warning: methods `read_u32`, `read_u64`, and `usizes` are never used
+   --> src/syscall/usercopy.rs:141:12
+    |
+ 96 | impl<const WRITE: bool> UserSlice<true, WRITE> {
+    | ---------------------------------------------- methods in this implementation
+...
+141 |     pub fn read_u32(self) -> Result<u32> {
+    |            ^^^^^^^^
+...
+148 |     pub fn read_u64(self) -> Result<u64> {
+    |            ^^^^^^^^
+...
+155 |     pub fn usizes(self) -> impl Iterator<Item = Result<usize>> {
+    |            ^^^^^^
+
+warning: method `write_u32` is never used
+   --> src/syscall/usercopy.rs:194:12
+    |
+160 | impl<const READ: bool> UserSlice<READ, true> {
+    | -------------------------------------------- method in this implementation
+...
+194 |     pub fn write_u32(self, int: u32) -> Result<()> {
+    |            ^^^^^^^^^
+
+warning: associated function `ro` is never used
+   --> src/syscall/usercopy.rs:203:12
+    |
+202 | impl UserSliceRo {
+    | ---------------- associated function in this implementation
+203 |     pub fn ro(base: usize, size: usize) -> Result<Self> {
+    |            ^^
+
+warning: function `validate_region` is never used
+   --> src/syscall/usercopy.rs:231:8
+    |
+231 | pub fn validate_region(address: usize, size: usize) -> Result<PageSpan> {
+    |        ^^^^^^^^^^^^^^^
+
+warning: function `thread_set_affinity` is never used
+  --> src/topology/mod.rs:11:8
+   |
+11 | pub fn thread_set_affinity(
+   |        ^^^^^^^^^^^^^^^^^^^
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/context/memory.rs:295:25
+    |
+295 |     pub fn acquire_read(&self) -> spin::RwLockReadGuard<AddrSpaceInner> {
+    |                         ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                         |
+    |                         the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+295 |     pub fn acquire_read(&self) -> spin::RwLockReadGuard<'_, AddrSpaceInner> {
+    |                                                         +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/context/memory.rs:299:26
+    |
+299 |     pub fn acquire_write(&self) -> spin::RwLockWriteGuard<AddrSpaceInner> {
+    |                          ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                          |
+    |                          the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+299 |     pub fn acquire_write(&self) -> spin::RwLockWriteGuard<'_, AddrSpaceInner> {
+    |                                                           +++
+
+warning: calls to `std::mem::drop` with a reference instead of an owned value does nothing
+   --> src/debugger.rs:150:5
+    |
+150 |     drop(contexts_guard);
+    |     ^^^^^--------------^
+    |          |
+    |          argument has type `&spin::rwlock::RwLock<BTreeMap<usize, Arc<ordered::RwLock<L2, context::context::Context>>>>`
+    |
+    = note: `#[warn(dropping_references)]` on by default
+help: use `let _ = ...` to ignore the expression or result
+    |
+150 -     drop(contexts_guard);
+150 +     let _ = contexts_guard;
+    |
+
+error: linking with `rust-lld` failed: exit status: 1
+  |
+  = note:  "rust-lld" "-flavor" "gnu" "/tmp/rustc0QIZkh/symbols.o" "<181 object files omitted>" "--as-needed" "-Bstatic" "/app/target/x86_64-unknown-none/debug/deps/{liblog-a79b3e36eeb8ddf5,libredox_path-c2398278b0a34bec,libslab-2f0e86b6b0594655,librustc_demangle-dfeb581c37b51d82,libobject-33b7d94e85570e01,libmemchr-c750ced9fc782db5,libarrayvec-661a38275d6fbba1,liblinked_list_allocator-cedf2351e5c18342,libspinning_top-3befe13f6549a321,libsyscall-607b4fbdd0f271b2,libhashbrown-694c8576ad7a0ce0,libahash-82418cccf354392f,libonce_cell-26273244fad1f1e3,libcfg_if-f0bb59febdc3e412,libzerocopy-5d4f31147c72c766,librmm-61633d245feb5607,libspin-99fb45affa0b07ec,liblock_api-6d02d55e34925d37,libscopeguard-775274db31aaa85e,libx86-4653ad84bb3c0797,libraw_cpuid-65fae51275455255,libbit_field-ccfc9eb75f3d88ce,libbitflags-cb90348826b4f75a,libbitflags-2bc98a8f11a1574d}.rlib" "<sysroot>/lib/rustlib/x86_64-unknown-none/lib/{liballoc-*,libcore-*,libcompiler_builtins-*}.rlib" "-L" "/tmp/rustc0QIZkh/raw-dylibs" "-Bdynamic" "--eh-frame-hdr" "-z" "noexecstack" "-L" "/app/target/x86_64-unknown-none/debug/build/kernel-44370f9df9361c5a/out" "-o" "/app/target/x86_64-unknown-none/debug/deps/kernel-09f6e06ad155aec9" "--gc-sections" "-pie" "-z" "relro" "-z" "now" "-Tx86_64.ld"
+  = note: some arguments are omitted. use `--verbose` to show all linker arguments
+  = note: rust-lld: error: undefined symbol: __usercopy_start
+          >>> referenced by cmp.rs:1905 (/home/jules/.rustup/toolchains/nightly-2025-10-03-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:1905)
+          >>>               /app/target/x86_64-unknown-none/debug/deps/kernel-09f6e06ad155aec9.12p657ur70ifvb76jgg2w9ypr.060winy.rcgu.o:(kernel::arch::x86_shared::interrupt::exception::page::inner::h0cc1a1b4236911c7)
+
+          rust-lld: error: undefined symbol: __usercopy_end
+          >>> referenced by range.rs:847 (/home/jules/.rustup/toolchains/nightly-2025-10-03-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/range.rs:847)
+          >>>               /app/target/x86_64-unknown-none/debug/deps/kernel-09f6e06ad155aec9.12p657ur70ifvb76jgg2w9ypr.060winy.rcgu.o:(kernel::arch::x86_shared::interrupt::exception::page::inner::h0cc1a1b4236911c7)
+
+
+For more information about this error, try `rustc --explain E0133`.
+warning: `kernel` (bin "kernel") generated 445 warnings
+warning: kernel@0.2.0: config.toml not found, using config.toml.example
+error: could not compile `kernel` (bin "kernel") due to 1 previous error; 445 warnings emitted

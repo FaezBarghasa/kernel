@@ -65,9 +65,9 @@ fn validate_and_translate_virt(
     let page = Page::containing_address(addr);
     let off = addr.data() - page.start_address().data();
 
-    let (frame, _) = space.table.utable.translate(page.start_address())?;
+    let phys = space.table.utable.translate(page.start_address())?;
 
-    Some(frame.add(off))
+    Some(phys.add(off))
 }
 
 pub fn futex(
@@ -78,7 +78,7 @@ pub fn futex(
     _addr2: usize,
     token: &mut CleanLockToken,
 ) -> Result<usize> {
-    let current_addrsp = AddrSpace::current()?;
+    let current_addrsp = AddrSpace::current(token)?;
 
     // Keep the address space locked so we can safely read from the physical address. Unlock it
     // before context switching.
@@ -170,7 +170,7 @@ pub fn futex(
 
             drop(addr_space_guard);
 
-            context::switch(token);
+            unsafe { context::switch(token) };
 
             if timeout_opt.is_some() {
                 context::current().write(token.token()).wake = None;

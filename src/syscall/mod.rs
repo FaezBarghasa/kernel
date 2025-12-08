@@ -14,8 +14,10 @@
 //! - `usercopy`: Utilities for copying data between user and kernel space.
 
 pub use self::debug::*;
-pub use crate::stubs::{syscall_helpers::*, syscall_types::*};
+pub use crate::stubs::syscall_helpers::*;
 pub use ::syscall::{data, error, flag, io, number};
+pub use ::syscall::{EnvRegisters, FloatRegisters, IntRegisters};
+pub use ::syscall::flag::EventFlags;
 
 pub mod debug;
 pub mod fs;

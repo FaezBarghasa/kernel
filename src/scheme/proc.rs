@@ -12,7 +12,7 @@ use crate::{
     scheme::{self, FileHandle, KernelScheme},
     sync::{CleanLockToken, RwLock, L1},
     syscall::{
-        data::{GrantDesc, Map, SetSighandlerData, Stat},
+        data::{GrantDesc, GrantFlags, Map, SetSighandlerData, Stat},
         error::*,
         flag::*,
         usercopy::{UserSliceRo, UserSliceRw, UserSliceWo},
@@ -485,7 +485,7 @@ impl KernelScheme for ProcScheme {
 
                 // TODO: Validate flags
                 let result_base = if consume {
-                    dst_addr_space.r#move(
+                    dst_addr_space.acquire_write().r#move(
                         Some((addrspace, &mut *src_addr_space)),
                         src_span,
                         requested_dst_base,
@@ -494,8 +494,7 @@ impl KernelScheme for ProcScheme {
                         &mut notify_files,
                     )?
                 } else {
-                    dst_addr_space.mmap(
-                        dst_addr_space,
+                    dst_addr_space.acquire_write().mmap(
                         requested_dst_base,
                         src_page_count,
                         map.flags,
@@ -523,26 +522,28 @@ impl KernelScheme for ProcScheme {
                 Ok(result_base.start_address().data())
             }
             ContextHandle::Sighandler => {
-                let context = context.read(token.token());
-                let sig = context.sig.as_ref().ok_or(Error::new(EBADF))?;
+                let (sig_thread, sig_proc) = {
+                    let context = context.read(token.token());
+                    let sig = context.sig.as_ref().ok_or(Error::new(EBADF))?;
+                    (sig.thread_control.get(), sig.proc_control.get())
+                };
                 let frame = match map.offset {
                     // tctl
-                    0 => &sig.thread_control,
+                    0 => sig_thread,
                     // pctl
-                    PAGE_SIZE => &sig.proc_control,
+                    PAGE_SIZE => sig_proc,
                     _ => return Err(Error::new(EINVAL)),
                 };
                 // TODO: Allocated or AllocatedShared?
                 let addrsp = AddrSpace::current(token)?;
-                let page = addrsp.mmap(
-                    &addrsp,
+                let page = addrsp.acquire_write().mmap(
                     None,
                     NonZeroUsize::new(1).unwrap(),
                     MapFlags::PROT_READ | MapFlags::PROT_WRITE,
                     &mut Vec::new(),
                     |page, flags, mapper, flusher| {
                         Grant::allocated_shared_one_page(
-                            frame.get(),
+                            frame,
                             page,
                             flags,
                             mapper,
@@ -807,7 +808,7 @@ fn extract_scheme_number(
         .ok_or(Error::new(EBADF))?;
     let desc = file_descriptor.description.read();
     let (scheme_id, number) = (desc.scheme, desc.number);
-    let scheme = scheme::schemes(token.token())
+    let scheme = scheme::schemes(&token.token())
         .get(scheme_id)
         .ok_or(Error::new(ENODEV))?
         .clone();
@@ -877,13 +878,13 @@ impl ContextHandle {
                         let page_span = crate::syscall::validate_region(next()??, next()??)?;
 
                         let unpin = false;
-                        addrspace.munmap(page_span, unpin)?;
+                        addrspace.acquire_write().munmap(page_span, unpin)?;
                     }
                     ADDRSPACE_OP_MPROTECT => {
                         let page_span = crate::syscall::validate_region(next()??, next()??)?;
                         let flags = MapFlags::from_bits(next()??).ok_or(Error::new(EINVAL))?;
 
-                        addrspace.mprotect(page_span.base, page_span.count, flags)?;
+                        addrspace.acquire_write().mprotect(page_span.base, page_span.count, flags)?;
                     }
                     _ => return Err(Error::new(EINVAL)),
                 }
@@ -966,11 +967,11 @@ impl ContextHandle {
                         user_handler: NonZeroUsize::new(data.user_handler)
                             .ok_or(Error::new(EINVAL))?,
                         excp_handler: NonZeroUsize::new(data.excp_handler),
-                        thread_control: addrsp.borrow_frame_enforce_rw_allocated(
+                        thread_control: addrsp.acquire_write().borrow_frame_enforce_rw_allocated(
                             Page::containing_address(VirtualAddress::new(data.thread_control_addr)),
                             token,
                         )?,
-                        proc_control: addrsp.borrow_frame_enforce_rw_allocated(
+                        proc_control: addrsp.acquire_write().borrow_frame_enforce_rw_allocated(
                             Page::containing_address(VirtualAddress::new(data.proc_control_addr)),
                             token,
                         )?,
@@ -1270,7 +1271,7 @@ impl ContextHandle {
                     *dst = GrantDesc {
                         base: grant_base.start_address().data(),
                         size: grant_info.page_count() * PAGE_SIZE,
-                        flags: grant_info.grant_flags(),
+                        flags: GrantFlags::from_bits_truncate(grant_info.grant_flags().bits()),
                         // The !0 is not a sentinel value; the availability of `offset` is
                         // indicated by the GRANT_SCHEME flag.
                         offset: grant_info.file_ref().map_or(!0, |f| f.base_offset as u64),

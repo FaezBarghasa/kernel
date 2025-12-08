@@ -78,7 +78,7 @@ impl KernelScheme for RootScheme {
 
             let inner = {
                 let path_box = path.to_string().into_boxed_str();
-                let mut schemes = scheme::schemes_mut(token.token());
+                let mut schemes = scheme::schemes_mut(&token.token());
 
                 let v2 = flags & O_FSYNC == O_FSYNC;
                 let new_close = flags & O_EXLOCK == O_EXLOCK;
@@ -107,10 +107,10 @@ impl KernelScheme for RootScheme {
                             flags,
                             context,
                         ));
-                        (
+                        Ok((
                             KernelSchemes::User(UserScheme::new(Arc::downgrade(&inner))),
                             inner,
-                        )
+                        ))
                     })?;
 
                 inner
@@ -246,7 +246,7 @@ impl KernelScheme for RootScheme {
             .remove(&file)
             .ok_or(Error::new(EBADF))?;
         if let Handle::Scheme(inner) = handle {
-            scheme::schemes_mut(token.token()).remove(inner.scheme_id);
+            scheme::schemes_mut(&token.token()).remove(inner.scheme_id);
         }
         Ok(())
     }
@@ -290,12 +290,12 @@ impl KernelScheme for RootScheme {
 
         let mut buf = DirentBuf::new(buf, header_size).ok_or(Error::new(EIO))?;
         {
-            let schemes = scheme::schemes(token.token());
+            let schemes = scheme::schemes(&token.token());
             for (i, (name, _)) in schemes
                 .iter_name(ens)
                 .enumerate()
                 .skip_while(|(i, _)| (*i as u64) < opaque)
-                .filter(|(_, (name, _)): (_, (&Box<str>, _))| !name.is_empty())
+                .filter(|(_, (name, _))| !name.is_empty())
             {
                 buf.entry(DirEntry {
                     kind: DirentKind::Unspecified,

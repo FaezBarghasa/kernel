@@ -22,9 +22,9 @@ fn inner(fpath_user: UserSliceRw, token: &mut CleanLockToken) -> Result<Vec<u8>>
     {
         let mut rows = Vec::new();
         {
-            let mut contexts = context::contexts(token.token());
-            let (contexts, mut token) = contexts.token_split();
-            for context_ref in contexts.values() {
+            let contexts = context::contexts();
+            let contexts_guard = contexts.read();
+            for context_ref in contexts_guard.values() {
                 let context = context_ref.read(token.token());
                 rows.push((context.pid, context.name, context.files.read().clone()));
             }
@@ -57,9 +57,9 @@ fn inner(fpath_user: UserSliceRw, token: &mut CleanLockToken) -> Result<Vec<u8>>
                 );
 
                 let scheme: Arc<dyn scheme::KernelScheme> = {
-                    let schemes = scheme::schemes(token.token());
+                    let schemes = scheme::schemes(&token.token());
                     match schemes.get(description.scheme) {
-                        Some(scheme) => Arc::clone(scheme),
+                        Some(scheme) => Arc::clone(scheme) as Arc<dyn scheme::KernelScheme>,
                         None => {
                             let _ = writeln!(string, "no scheme",);
                             continue;
@@ -93,7 +93,6 @@ pub fn resource(token: &mut CleanLockToken) -> Result<Vec<u8>> {
     let fpath_page = {
         let addr_space = Arc::clone(context::current().read(token.token()).addr_space()?);
         addr_space.acquire_write().mmap(
-            &addr_space,
             None,
             page_count,
             MapFlags::PROT_READ | MapFlags::PROT_WRITE,
@@ -116,7 +115,7 @@ pub fn resource(token: &mut CleanLockToken) -> Result<Vec<u8>> {
 
     {
         let addr_space = Arc::clone(context::current().read(token.token()).addr_space()?);
-        addr_space.munmap(PageSpan::new(fpath_page, page_count.get()), false)?;
+        addr_space.acquire_write().munmap(PageSpan::new(crate::paging::Page::containing_address(fpath_page.start_address()), page_count.get()), false)?;
     }
 
     res

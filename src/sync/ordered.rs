@@ -190,19 +190,20 @@ impl<L: Level, T> Mutex<L, T> {
             // Lock is held, check for priority inversion
             let holder_context_ref_opt = self.holder.lock().clone();
             if let Some(holder_context_ref) = holder_context_ref_opt {
+                let mut clean = unsafe { CleanLockToken::new() };
                 let current_priority = current_context_ref
-                    .read(lock_token.token())
+                    .read(clean.token())
                     .priority
                     .effective_priority();
                 let holder_priority = holder_context_ref
-                    .read(lock_token.token())
+                    .read(clean.token())
                     .priority
                     .effective_priority();
 
                 if current_priority < holder_priority {
                     // Current thread has higher priority than holder, perform priority inheritance
                     holder_context_ref
-                        .read(lock_token.token())
+                        .read(clean.token())
                         .priority
                         .inherit_priority(current_priority);
                 }
@@ -239,19 +240,20 @@ impl<L: Level, T> Mutex<L, T> {
             // Lock is held, check for priority inversion
             let holder_context_ref_opt = self.holder.lock().clone();
             if let Some(holder_context_ref) = holder_context_ref_opt {
+                let mut clean = unsafe { CleanLockToken::new() };
                 let current_priority = current_context_ref
-                    .read(lock_token.token())
+                    .read(clean.token())
                     .priority
                     .effective_priority();
                 let holder_priority = holder_context_ref
-                    .read(lock_token.token())
+                    .read(clean.token())
                     .priority
                     .effective_priority();
 
                 if current_priority < holder_priority {
                     // Current thread has higher priority than holder, perform priority inheritance
                     holder_context_ref
-                        .read(lock_token.token())
+                        .read(clean.token())
                         .priority
                         .inherit_priority(current_priority);
                 }
@@ -316,6 +318,7 @@ impl<'a, L: Level, T: ?Sized + 'a> Drop for MutexGuard<'a, L, T> {
     }
 }
 
+#[derive(Debug)]
 pub struct RwLock<L: Level, T: ?Sized> {
     _phantom: PhantomData<L>,
     /// The context currently holding the write lock, for priority inheritance
@@ -384,36 +387,38 @@ impl<L: Level, T> RwLock<L, T> {
             // Lock is held, check for priority inversion
             let writer_context_ref_opt = self.writer_holder.lock().clone();
             if let Some(writer_context_ref) = writer_context_ref_opt {
+                let mut clean = unsafe { CleanLockToken::new() };
                 let current_priority = current_context_ref
-                    .read(lock_token.token())
+                    .read(clean.token())
                     .priority
                     .effective_priority();
                 let writer_priority = writer_context_ref
-                    .read(lock_token.token())
+                    .read(clean.token())
                     .priority
                     .effective_priority();
 
                 if current_priority < writer_priority {
                     writer_context_ref
-                        .read(lock_token.token())
+                        .read(clean.token())
                         .priority
                         .inherit_priority(current_priority);
                 }
             }
             // Also check readers
             for reader_context_ref in self.reader_holders.lock().iter() {
+                let mut clean = unsafe { CleanLockToken::new() };
                 let current_priority = current_context_ref
-                    .read(lock_token.token())
+                    .read(clean.token())
                     .priority
                     .effective_priority();
                 let reader_priority = reader_context_ref
-                    .read(lock_token.token())
+                    .read(clean.token())
                     .priority
                     .effective_priority();
 
                 if current_priority < reader_priority {
                     reader_context_ref
-                        .read(lock_token.token())
+                        .read(clean.token())
                         .priority
                         .inherit_priority(current_priority);
                 }
@@ -451,18 +456,19 @@ impl<L: Level, T> RwLock<L, T> {
             // Lock is held, check for priority inversion
             let writer_context_ref_opt = self.writer_holder.lock().clone();
             if let Some(writer_context_ref) = writer_context_ref_opt {
+                let mut clean = unsafe { CleanLockToken::new() };
                 let current_priority = current_context_ref
-                    .read(lock_token.token())
+                    .read(clean.token())
                     .priority
                     .effective_priority();
                 let writer_priority = writer_context_ref
-                    .read(lock_token.token())
+                    .read(clean.token())
                     .priority
                     .effective_priority();
 
                 if current_priority < writer_priority {
                     writer_context_ref
-                        .read(lock_token.token())
+                        .read(clean.token())
                         .priority
                         .inherit_priority(current_priority);
                 }

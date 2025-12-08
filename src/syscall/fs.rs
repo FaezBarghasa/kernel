@@ -9,7 +9,7 @@ use crate::{
     context::{
         self,
         file::{FileDescription, FileDescriptor, InternalFlags},
-        memory::{AddrSpace, GenericFlusher, Grant, PageSpan, TlbShootdownActions},
+        memory::{AddrSpace, Grant, PageSpan, TlbShootdownActions},
     },
     paging::{Page, VirtualAddress, PAGE_SIZE},
     scheme::{self, CallerCtx, FileHandle, KernelScheme, OpenResult, StrOrBytes},
@@ -225,7 +225,7 @@ pub fn rmdir(raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
         let (_scheme_id, scheme) = schemes_guard
             .get_name(scheme_ns, scheme_name.as_ref())
             .ok_or(Error::new(ENODEV))?;
-        Arc::clone(scheme)
+        scheme.clone()
     };
     scheme.rmdir(reference.as_ref(), caller_ctx, token)
 }
@@ -250,7 +250,7 @@ pub fn unlink(raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
         let (_scheme_id, scheme) = schemes_guard
             .get_name(scheme_ns, scheme_name.as_ref())
             .ok_or(Error::new(ENODEV))?;
-        Arc::clone(scheme)
+        scheme.clone()
     };
     scheme.unlink(reference.as_ref(), caller_ctx, token)
 }
@@ -762,10 +762,9 @@ pub fn mremap(
             return Err(Error::new(EOPNOTSUPP));
         }
 
-        let raii_frame = addr_space.borrow_frame_enforce_rw_allocated(src_span.base, token)?;
+        let raii_frame = addr_space.acquire_write().borrow_frame_enforce_rw_allocated(src_span.base, token)?;
 
-        let base = addr_space.mmap(
-            &addr_space,
+        let base = addr_space.acquire_write().mmap(
             requested_dst_base,
             NonZeroUsize::new(1).unwrap(),
             map_flags,
@@ -776,6 +775,8 @@ pub fn mremap(
                 // The page does not get unref-ed as we call take() on the `raii_frame`.
                 unsafe {
                     mapper
+                            .get_mut()
+                            .expect("failed to get mutable mapper")
                         .map_phys(page.start_address(), frame.base(), page_flags)
                         .ok_or(Error::new(ENOMEM))?
                         .ignore();
@@ -789,7 +790,7 @@ pub fn mremap(
 
         Ok(base.start_address().data())
     } else {
-        let base = addr_space.r#move(
+        let base = addr_space.acquire_write().r#move(
             None,
             src_span,
             requested_dst_base,
@@ -885,7 +886,7 @@ pub fn sys_mlock(addr: usize, len: usize, token: &mut CleanLockToken) -> Result<
     let current_context_ref = context::current();
     let addr_space = Arc::clone(current_context_ref.read(token.token()).addr_space()?);
 
-    addr_space.mlock(VirtualAddress::new(addr), len)?;
+    addr_space.acquire_write().mlock(VirtualAddress::new(addr), len)?;
 
     let count = current_context_ref.read(token.token()).memory_locked_count;
     current_context_ref.write(token.token()).memory_locked_count = count.saturating_add(1);
@@ -898,7 +899,7 @@ pub fn sys_munlock(addr: usize, len: usize, token: &mut CleanLockToken) -> Resul
     let current_context_ref = context::current();
     let addr_space = Arc::clone(current_context_ref.read(token.token()).addr_space()?);
 
-    addr_space.munlock(VirtualAddress::new(addr), len)?;
+    addr_space.acquire_write().munlock(VirtualAddress::new(addr), len)?;
 
     let count = current_context_ref.read(token.token()).memory_locked_count;
     current_context_ref.write(token.token()).memory_locked_count = count.saturating_sub(1);

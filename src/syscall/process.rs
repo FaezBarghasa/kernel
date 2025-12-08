@@ -78,7 +78,7 @@ pub fn mprotect(
     let span = PageSpan::validate_nonempty(VirtualAddress::new(address), size)
         .ok_or(Error::new(EINVAL))?;
 
-    AddrSpace::current(token)?.mprotect(span, flags)
+    AddrSpace::current(token)?.acquire_write().mprotect(span.base, span.count * PAGE_SIZE, flags)
 }
 
 pub unsafe fn usermode_bootstrap(bootstrap: &Bootstrap, token: &mut CleanLockToken) {
@@ -101,9 +101,8 @@ pub unsafe fn usermode_bootstrap(bootstrap: &Bootstrap, token: &mut CleanLockTok
         let page_count =
             NonZeroUsize::new(bootstrap.page_count).expect("bootstrap contained no pages!");
 
-        let _base_page = addr_space
+        let _base_page = addr_space.acquire_write()
             .mmap(
-                &addr_space,
                 Some(base),
                 page_count,
                 flags,
