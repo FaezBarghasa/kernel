@@ -883,7 +883,7 @@ impl ContextHandle {
                         let page_span = crate::syscall::validate_region(next()??, next()??)?;
                         let flags = MapFlags::from_bits(next()??).ok_or(Error::new(EINVAL))?;
 
-                        addrspace.mprotect(page_span, flags)?;
+                        addrspace.mprotect(page_span.base, page_span.count, flags)?;
                     }
                     _ => return Err(Error::new(EINVAL)),
                 }

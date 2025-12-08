@@ -96,7 +96,7 @@ where
 }
 
 pub unsafe fn init() {
-    let mut serial = unsafe { SerialPort::new(COM1) };
-    serial.init();
+    let mut serial = unsafe { SerialPort::<Pio<u8>>::new(COM1) };
+    unsafe { serial.init(); }
     *SERIAL_PORT.lock() = Some(serial);
 }

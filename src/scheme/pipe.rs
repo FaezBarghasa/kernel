@@ -249,6 +249,7 @@ impl KernelScheme for PipeScheme {
                     GlobalSchemes::Pipe.scheme_id(),
                     key | WRITE_NOT_READ_BIT,
                     EVENT_WRITE,
+                    token,
                 );
                 pipe.write_condition.notify(token);
 

@@ -45,10 +45,11 @@ pub fn file_op_generic_ext<T>(
         (file, desc)
     };
 
-    let scheme = scheme::schemes(&token.token())
+    let schemes_guard = scheme::schemes(&token.token());
+    let scheme = schemes_guard
         .get(desc.scheme)
         .ok_or(Error::new(EBADF))?;
-    let scheme_clone: Arc<dyn KernelScheme> = Arc::clone(scheme);
+    let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
     op(&*scheme_clone, file.description, desc, token)
 }
@@ -105,8 +106,8 @@ pub fn open(raw_path: UserSliceRo, flags: usize, token: &mut CleanLockToken) -> 
 
     let description = {
         let (scheme_id, scheme) = {
-            let schemes = scheme::schemes(&token.token());
-            let (scheme_id, scheme) = schemes
+            let schemes_guard = scheme::schemes(&token.token());
+            let (scheme_id, scheme) = schemes_guard
                 .get_name(scheme_ns, scheme_name.as_ref())
                 .ok_or(Error::new(ENODEV))?;
             (scheme_id, Arc::clone(scheme) as Arc<dyn KernelScheme>)
@@ -166,10 +167,11 @@ pub fn openat(
     let caller_ctx = context::current().read(token.token()).caller_ctx();
 
     let new_description = {
-        let scheme = scheme::schemes(&token.token())
+        let schemes_guard = scheme::schemes(&token.token());
+        let scheme = schemes_guard
             .get(description.scheme)
             .ok_or(Error::new(EBADF))?;
-        let scheme_clone: Arc<dyn KernelScheme> = Arc::clone(scheme);
+        let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
         let res = scheme_clone.kopenat(
             description.number,
@@ -219,8 +221,8 @@ pub fn rmdir(raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
     let (scheme_name, reference) = path.as_parts().ok_or(Error::new(EINVAL))?;
 
     let scheme: Arc<dyn KernelScheme> = {
-        let schemes = scheme::schemes(&token.token());
-        let (_scheme_id, scheme) = schemes
+        let schemes_guard = scheme::schemes(&token.token());
+        let (_scheme_id, scheme) = schemes_guard
             .get_name(scheme_ns, scheme_name.as_ref())
             .ok_or(Error::new(ENODEV))?;
         Arc::clone(scheme)
@@ -244,8 +246,8 @@ pub fn unlink(raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
     let (scheme_name, reference) = path.as_parts().ok_or(Error::new(EINVAL))?;
 
     let scheme: Arc<dyn KernelScheme> = {
-        let schemes = scheme::schemes(&token.token());
-        let (_scheme_id, scheme) = schemes
+        let schemes_guard = scheme::schemes(&token.token());
+        let (_scheme_id, scheme) = schemes_guard
             .get_name(scheme_ns, scheme_name.as_ref())
             .ok_or(Error::new(ENODEV))?;
         Arc::clone(scheme)
@@ -288,10 +290,11 @@ fn duplicate_file(
         let description = { *file.description.read() };
 
         let new_description = {
-            let scheme = scheme::schemes(&token.token())
+            let schemes_guard = scheme::schemes(&token.token());
+            let scheme = schemes_guard
                 .get(description.scheme)
                 .ok_or(Error::new(EBADF))?;
-            let scheme_clone: Arc<dyn KernelScheme> = Arc::clone(scheme);
+            let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
             match scheme_clone.kdup(description.number, user_buf, caller_ctx, token)? {
                 OpenResult::SchemeLocal(number, internal_flags) => {
@@ -390,10 +393,11 @@ fn call_normal(
         let desc = file.description.read();
         (desc.scheme, desc.number)
     };
-    let scheme = scheme::schemes(&token.token())
+    let schemes_guard = scheme::schemes(&token.token());
+    let scheme = schemes_guard
         .get(scheme_id)
         .ok_or(Error::new(EBADFD))?;
-    let scheme_clone: Arc<dyn KernelScheme> = Arc::clone(scheme);
+    let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
     scheme_clone.kcall(number, payload, flags, metadata, token)
 }
@@ -437,10 +441,11 @@ fn fdwrite_inner(
             let desc = &file_descriptor.description.read();
             (desc.scheme, desc.number)
         };
-        let scheme = scheme::schemes(&token.token())
+        let schemes_guard = scheme::schemes(&token.token());
+        let scheme = schemes_guard
             .get(scheme)
             .ok_or(Error::new(ENODEV))?;
-        let scheme_clone: Arc<dyn KernelScheme> = Arc::clone(scheme);
+        let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
         let current_lock = context::current();
         let current = current_lock.read(token.token());
@@ -491,10 +496,11 @@ fn call_fdread(
             let desc = file_descriptor.description.read();
             (desc.scheme, desc.number)
         };
-        let scheme = scheme::schemes(&token.token())
+        let schemes_guard = scheme::schemes(&token.token());
+        let scheme = schemes_guard
             .get(scheme)
             .ok_or(Error::new(ENODEV))?;
-        let scheme_clone: Arc<dyn KernelScheme> = Arc::clone(scheme);
+        let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
         (scheme_clone, number)
     };
@@ -544,10 +550,11 @@ pub fn fcntl(fd: FileHandle, cmd: usize, arg: usize, token: &mut CleanLockToken)
 
     // Communicate fcntl with scheme
     if cmd != F_GETFD && cmd != F_SETFD {
-        let scheme = scheme::schemes(&token.token())
+        let schemes_guard = scheme::schemes(&token.token());
+        let scheme = schemes_guard
             .get(description.scheme)
             .ok_or(Error::new(EBADF))?;
-        let scheme_clone: Arc<dyn KernelScheme> = Arc::clone(scheme);
+        let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
         scheme_clone.fcntl(description.number, cmd, arg, token)?;
     };
@@ -606,8 +613,8 @@ pub fn flink(fd: FileHandle, raw_path: UserSliceRo, token: &mut CleanLockToken) 
     let (scheme_name, reference) = path.as_parts().ok_or(Error::new(EINVAL))?;
 
     let (scheme_id, scheme) = {
-        let schemes = scheme::schemes(&token.token());
-        let (scheme_id, scheme) = schemes
+        let schemes_guard = scheme::schemes(&token.token());
+        let (scheme_id, scheme) = schemes_guard
             .get_name(scheme_ns, scheme_name.as_ref())
             .ok_or(Error::new(ENODEV))?;
         (scheme_id, Arc::clone(scheme) as Arc<dyn KernelScheme>)
@@ -642,8 +649,8 @@ pub fn frename(fd: FileHandle, raw_path: UserSliceRo, token: &mut CleanLockToken
     let (scheme_name, reference) = path.as_parts().ok_or(Error::new(EINVAL))?;
 
     let (scheme_id, scheme) = {
-        let schemes = scheme::schemes(&token.token());
-        let (scheme_id, scheme) = schemes
+        let schemes_guard = scheme::schemes(&token.token());
+        let (scheme_id, scheme) = schemes_guard
             .get_name(scheme_ns, scheme_name.as_ref())
             .ok_or(Error::new(ENODEV))?;
         (scheme_id, Arc::clone(scheme) as Arc<dyn KernelScheme>)

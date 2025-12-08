@@ -259,7 +259,7 @@ unsafe fn check_page_table_consistency(
 
                     let (base, grant) = match addr_space
                         .grants
-                        .contains_key(&Page::containing_address(address))
+                        .get_key_value(&Page::containing_address(address))
                     {
                         Some(g) => g,
                         None => {
@@ -282,7 +282,7 @@ unsafe fn check_page_table_consistency(
                             grant.flags(),
                             flags,
                             address.data() as *const u8,
-                            PageSpan::new(base, grant.page_count())
+                            PageSpan::new(*base, grant.page_count())
                         );
                     }
                     let p = matches!(
@@ -317,7 +317,7 @@ unsafe fn check_page_table_consistency(
     }
 
     /*for (base, info) in addr_space.grants.iter() {
-        let span = PageSpan::new(base, info.page_count());
+        let span = PageSpan::new(*base, info.page_count());
         for page in span.pages() {
             let _entry = match addr_space.table.utable.translate(page.start_address()) {
                 Some(e) => e,

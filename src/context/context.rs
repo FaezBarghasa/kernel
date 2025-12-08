@@ -791,7 +791,7 @@ impl FdTbl {
         }
 
         self.active_count += count;
-        Ok(handles)
+        Some(handles)
     }
 
     fn bulk_insert_files_upper_manual(
