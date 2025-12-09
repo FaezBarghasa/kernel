@@ -75,137 +75,258 @@ This TODO list is divided into several sections:
 
 ## TODOs and FIXMEs from code
 
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/device/serial.rs**: FIXME remove serial_debug feature once ACPI SPCR is respected on UEFI boots.
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/mod.rs**: TODO: Support having all page tables compile on all architectures
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/acpi/spcr.rs**: TODO: support more types!
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/interrupt/exception.rs**: FIXME use align(4)
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/idt.rs**: TODO: use_default_irqs! but also the legacy IRQs that are only needed on one CPU
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/main.rs**: TODO: Allow allocations up to maximum pageable size
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/emulate.rs**: TODO: allow reading past page boundaries
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_64/interrupt/syscall.rs**: TODO: Should we unconditionally jump or avoid jumping, to hint to the branch predictor that
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/acpi/rsdp.rs**: TODO: Validate
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/device/irqchip/irq_bcm2835.rs**: TODO: support smp self.read(LOCAL_IRQ_PENDING + 4 * cpu)
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/start.rs**: FIXME use extern "custom"
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/dtb/mod.rs**: FIXME assumes all the devices are connected to CPUs via the /soc bus
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/page/mapper.rs**: TODO: correct flags?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/paging/mapper.rs**: TODO: Push to TLB "mailbox" or tell it to reload CR3 if there are too many entries.
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/interrupt/exception.rs**: TODO: RMW instructions may "involve" writing to (possibly invalid) memory, but AArch64
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/device/system76_ec.rs**: TODO: timeout
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/page/mapper.rs**: TODO: Use a counter? This would reduce the remaining number of available bits, bu
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/acpi/madt/mod.rs**: TODO: optional field introduced in ACPI 6.5: pub trbe_interrupt: u16,
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/mod.rs**: TODO: this stub only works on x86_64, maybe make the arch implement this?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/device/irqchip/plic.rs**: TODO spread irqs over all the cores when we have them?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86/interrupt/handler.rs**: TODO: Unmap PTI (split "add esp, 8" into two "add esp, 4"s maybe?)
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/aarch64.rs**: TODO
-- [ ] **/home.jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/device/serial.rs**: COM1.lock().enable_irq();  FIXME receive int is enabled by default in 16550. Disable by
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/device/mod.rs**: TODO: fix HPET on i686
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/time.rs**: TODO: aarch64 generic timer counter
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/acpi/mod.rs**: TODO: support this on any arch
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/device/irqchip/gicv3.rs**: TODO: GICC, GICH, GICV?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/device/irqchip/irq_bcm2835.rs**: TODO: check bank && irq
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/device/irqchip/clint_sbi.rs**: TODO IPI
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/acpi/spcr.rs**: TODO: these fields are optional based on the table revision
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/x86_64.rs**: TODO: 5-level paging
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/interrupt/irq.rs**: TODO
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/paging/mod.rs**: TODO assert!(address.data() < 0x0000_8000_0000_0000 || address.data() >= 0xffff_8000_0000_
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/stop.rs**: TODO: Waitpid with timeout? Because, what if the ACPI driver would crash?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/ipi.rs**: FIXME implement
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/device/serial.rs**: FIXME remove explicit LPSS handling once ACPI SPCR is supported
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/page/mapper.rs**: TODO: check for overwriting entry
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/allocator/frame/buddy.rs**: TODO: sort areas?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/device/serial.rs**: TODO: what should chip index be?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/device/irqchip/clint_sbi.rs**: FIXME dirty hack map M-mode interrupts (handled by SBI) to S-mode interrupts we get f
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_64/interrupt/syscall.rs**: TODO: Map PTI
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86/interrupt/handler.rs**: FIXME: The interrupt stack on which this is called, is always from userspace, but make
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/device/tsc.rs**: TODO: Implement KVM paravirtualized TSC reading
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/paging/mapper.rs**: TODO: Push to TLB "mailbox" or tell it to reload CR3 if there are too many entries.
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/stop.rs**: TODO: Switch directly to whichever process is handling the kstop pipe. We would add an
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/paging/mapper.rs**: TODO: cpu id
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/emulate.rs**: TODO: cleanup
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/acpi/hpet.rs**: TODO: x86 use assumes only one HPET and only one GenericAddressStructure
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/device/serial.rs**: TODO: Make this configurable
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/page/mapper.rs**: TODO: verify virt is aligned
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/page/mapper.rs**: TODO: Higher-level PageEntry::new interface?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86/interrupt/handler.rs**: TODO: Unmap PTI
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/ipi.rs**: FIXME implement
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/dtb/irqchip.rs**: TODO: support multi level interrupt constrollers
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/cpuid.rs**: FIXME check for cpuid availability during early boot and error out if it doesn't exist.
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/start.rs**: FIXME bringup AP HARTs
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/aarch64.rs**: TODO: what makes an address valid on aarch64?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/interrupt/irq.rs**: FIXME add_irq accepts a u8 as irq number
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/acpi/mod.rs**: TODO: Let userspace setup HPET, and then provide an interface to specify which timer 
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/device/ioapic.rs**: FIXME: With ACPI moved to userspace, we should instead allow userspace to check whether t
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/dtb/irqchip.rs**: FIXME use the helper when fixed (see gh#37)
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86/interrupt/handler.rs**: TODO: Map PTI
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/device/serial.rs**: TODO: get actual register size from device tree
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/acpi/spcr.rs**: TODO: enable IRQ on more platforms and interrupt types
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/device/irqchip/gicv3.rs**: TODO: deinit?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/interrupt/exception.rs**: TODO
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/page/mapper.rs**: TODO: verify virt and phys are aligned
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/page/flush.rs**: TODO: Might remove Drop and add #[must_use] again, but ergonomically I prefer being able to pass
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/acpi/mod.rs**: TODO: Enumerate processors in userspace, and then provide an ACPI-independent interfa
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/acpi/mod.rs**: TODO: Don't touch ACPI tables in kernel?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86/interrupt/handler.rs**: TODO: Unmap PTI
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/riscv64/sv48.rs**: (address.data() >> Self::PAGE_SHIFT);  Convert to PPN (TODO: ensure alignment)
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/interrupt/handler.rs**: TODO
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/emulate.rs**: TODO: allow writing past page boundaries
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/acpi/madt/arch/aarch64.rs**: TODO: get GICRs
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_64/interrupt/syscall.rs**: TODO: Which one is faster?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/emulate.rs**: TODO: Don't see why an emulated arch would have any problems with canonicalness...
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/interrupt/exception.rs**: FIXME use extern "custom"
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/interrupt/exception.rs**: FIXME retrieve from percpu area
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/interrupt/exception.rs**: FIXME can these conditions be distinguished? Should they be?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/paging/mod.rs**: TODO: detect Svpbmt present/enabled and override device memory with PBMT=IO
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/interrupt/exception.rs**: kind: 0,  TODO
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/time.rs**: TODO: improve performance
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/x86.rs**: TODO: USE PAE
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/dtb/irqchip.rs**: FIXME use interrupts() helper when fixed (see gh#12)
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/start.rs**: TODO: use env {DTB,RSDT}_{BASE,SIZE}?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_64/interrupt/syscall.rs**: TODO: macro?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/acpi/madt/arch/x86.rs**: TODO: do not have writable and executable!
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/main.rs**: TODO: This causes fragmentation, since neighbors are not identified
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/lib.rs**: TODO: Use this throughout the code
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/device/serial.rs**: TODO: get actual register size from device tree
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/paging/mod.rs**: TODO assert!(address.data() < 0x0000_8000_0000_0000 || address.data() >= 0xffff_8000_0000_
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/page/mapper.rs**: TODO: verify flags have correct bits
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_64/interrupt/syscall.rs**: TODO: Unmap PTI
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/page/flags.rs**: TODO: write xor execute?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/device/serial.rs**: TODO: find actual serial device, not just any PL011
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/acpi/madt/arch/aarch64.rs**: TODO: support more GICCs
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/aarch64.rs**: TODO: Separate the two?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/page/mapper.rs**: TODO: This is a bad idea for architectures where the kernel mappings are done in the p
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/acpi/madt/arch/x86.rs**: TODO: Is this necessary (this fence)?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/riscv64/sv39.rs**: (address.data() >> Self::PAGE_SHIFT);  Convert to PPN (TODO: ensure alignment)
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/time.rs**: TODO: handle rollover?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/main.rs**: TODO: remainders less than PAGE_SIZE will be lost
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/idt.rs**: TODO: VecMap?
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/dtb/mod.rs**: FIXME traverse device tree up
+### `../rmm/src/allocator/frame/buddy.rs`
+- [ ] TODO: sort areas?
+
+### `../rmm/src/arch/aarch64.rs`
+- [ ] TODO
+- [ ] TODO: what makes an address valid on aarch64?
+- [ ] TODO: Separate the two?
+
+### `../rmm/src/arch/emulate.rs`
+- [ ] TODO: allow reading past page boundaries
+- [ ] TODO: cleanup
+- [ ] TODO: allow writing past page boundaries
+- [ ] TODO: Don't see why an emulated arch would have any problems with canonicalness...
+
+### `../rmm/src/arch/mod.rs`
+- [ ] TODO: Support having all page tables compile on all architectures
+- [ ] TODO: this stub only works on x86_64, maybe make the arch implement this?
+
+### `../rmm/src/arch/riscv64/sv39.rs`
+- [ ] (address.data() >> Self::PAGE_SHIFT);  Convert to PPN (TODO: ensure alignment)
+
+### `../rmm/src/arch/riscv64/sv48.rs`
+- [ ] (address.data() >> Self::PAGE_SHIFT);  Convert to PPN (TODO: ensure alignment)
+
+### `../rmm/src/arch/x86.rs`
+- [ ] TODO: USE PAE
+
+### `../rmm/src/arch/x86_64.rs`
+- [ ] TODO: 5-level paging
+
+### `../rmm/src/lib.rs`
+- [ ] TODO: Use this throughout the code
+
+### `../rmm/src/main.rs`
+- [ ] TODO: Allow allocations up to maximum pageable size
+- [ ] TODO: This causes fragmentation, since neighbors are not identified
+- [ ] TODO: remainders less than PAGE_SIZE will be lost
+
+### `../rmm/src/page/flags.rs`
+- [ ] TODO: write xor execute?
+
+### `../rmm/src/page/flush.rs`
+- [ ] TODO: Might remove Drop and add #[must_use] again, but ergonomically I prefer being able to pass
+
+### `../rmm/src/page/mapper.rs`
+- [ ] TODO: correct flags?
+- [ ] TODO: Use a counter? This would reduce the remaining number of available bits, bu
+- [ ] TODO: check for overwriting entry
+- [ ] TODO: verify virt is aligned
+- [ ] TODO: Higher-level PageEntry::new interface?
+- [ ] TODO: verify virt and phys are aligned
+- [ ] TODO: verify flags have correct bits
+- [ ] TODO: This is a bad idea for architectures where the kernel mappings are done in the p
+
+### `src/acpi/hpet.rs`
+- [ ] TODO: x86 use assumes only one HPET and only one GenericAddressStructure
+
+### `src/acpi/madt/arch/aarch64.rs`
+- [ ] TODO: get GICRs
+- [ ] TODO: support more GICCs
+
+### `src/acpi/madt/arch/x86.rs`
+- [ ] TODO: do not have writable and executable!
+- [ ] TODO: Is this necessary (this fence)?
+
+### `src/acpi/madt/mod.rs`
+- [ ] TODO: optional field introduced in ACPI 6.5: pub trbe_interrupt: u16,
+
+### `src/acpi/mod.rs`
+- [ ] TODO: support this on any arch
+- [ ] TODO: Let userspace setup HPET, and then provide an interface to specify which timer
+- [ ] TODO: Enumerate processors in userspace, and then provide an ACPI-independent interfa
+- [ ] TODO: Don't touch ACPI tables in kernel?
+
+### `src/acpi/rsdp.rs`
+- [ ] TODO: Validate
+
+### `src/acpi/spcr.rs`
+- [ ] TODO: support more types!
+- [ ] TODO: these fields are optional based on the table revision
+- [ ] TODO: enable IRQ on more platforms and interrupt types
+
+### `src/arch/aarch64/device/irqchip/gicv3.rs`
+- [ ] TODO: GICC, GICH, GICV?
+- [ ] TODO: deinit?
+
+### `src/arch/aarch64/device/irqchip/irq_bcm2835.rs`
+- [ ] TODO: support smp self.read(LOCAL_IRQ_PENDING + 4 * cpu)
+- [ ] TODO: check bank && irq
+
+### `src/arch/aarch64/device/serial.rs`
+- [ ] TODO: what should chip index be?
+- [ ] TODO: get actual register size from device tree
+- [ ] TODO: find actual serial device, not just any PL011
+
+### `src/arch/aarch64/interrupt/exception.rs`
+- [ ] TODO: RMW instructions may "involve" writing to (possibly invalid) memory, but AArch64
+- [ ] kind: 0,  TODO
+
+### `src/arch/aarch64/interrupt/irq.rs`
+- [ ] TODO
+- [ ] FIXME add_irq accepts a u8 as irq number
+
+### `src/arch/aarch64/ipi.rs`
+- [ ] FIXME implement
+
+### `src/arch/aarch64/paging/mapper.rs`
+- [ ] TODO: Push to TLB "mailbox" or tell it to reload CR3 if there are too many entries.
+
+### `src/arch/aarch64/paging/mod.rs`
+- [ ] TODO assert!(address.data() < 0x0000_8000_0000_0000 || address.data() >= 0xffff_8000_0000_
+
+### `src/arch/aarch64/start.rs`
+- [ ] TODO: use env {DTB,RSDT}_{BASE,SIZE}?
+
+### `src/arch/aarch64/time.rs`
+- [ ] TODO: aarch64 generic timer counter
+
+### `src/arch/riscv64/device/irqchip/clint_sbi.rs`
+- [ ] TODO IPI
+- [ ] FIXME dirty hack map M-mode interrupts (handled by SBI) to S-mode interrupts we get f
+
+### `src/arch/riscv64/device/irqchip/plic.rs`
+- [ ] TODO spread irqs over all the cores when we have them?
+
+### `src/arch/riscv64/device/serial.rs`
+- [ ] COM1.lock().enable_irq();  FIXME receive int is enabled by default in 16550. Disable by
+- [ ] TODO: get actual register size from device tree
+
+### `src/arch/riscv64/interrupt/exception.rs`
+- [ ] FIXME use align(4)
+- [ ] TODO
+- [ ] FIXME use extern "custom"
+- [ ] FIXME retrieve from percpu area
+- [ ] FIXME can these conditions be distinguished? Should they be?
+
+### `src/arch/riscv64/interrupt/handler.rs`
+- [ ] TODO
+
+### `src/arch/riscv64/ipi.rs`
+- [ ] FIXME implement
+
+### `src/arch/riscv64/paging/mapper.rs`
+- [ ] TODO: Push to TLB "mailbox" or tell it to reload CR3 if there are too many entries.
+- [ ] TODO: cpu id
+
+### `src/arch/riscv64/paging/mod.rs`
+- [ ] TODO: detect Svpbmt present/enabled and override device memory with PBMT=IO
+
+### `src/arch/riscv64/start.rs`
+- [ ] FIXME bringup AP HARTs
+
+### `src/arch/x86/interrupt/handler.rs`
+- [ ] TODO: Unmap PTI (split "add esp, 8" into two "add esp, 4"s maybe?)
+- [ ] FIXME: The interrupt stack on which this is called, is always from userspace, but make
+- [ ] TODO: Unmap PTI
+- [ ] TODO: Map PTI
+
+### `src/arch/x86_64/interrupt/syscall.rs`
+- [ ] TODO: Should we unconditionally jump or avoid jumping, to hint to the branch predictor that
+- [ ] TODO: Map PTI
+- [ ] TODO: Which one is faster?
+- [ ] TODO: macro?
+- [ ] TODO: Unmap PTI
+
+### `src/arch/x86_shared/cpuid.rs`
+- [ ] FIXME check for cpuid availability during early boot and error out if it doesn't exist.
+
+### `src/arch/x86_shared/device/ioapic.rs`
+- [ ] FIXME: With ACPI moved to userspace, we should instead allow userspace to check whether t
+
+### `src/arch/x86_shared/device/mod.rs`
+- [ ] TODO: fix HPET on i686
+
+### `src/arch/x86_shared/device/serial.rs`
+- [ ] FIXME remove serial_debug feature once ACPI SPCR is respected on UEFI boots.
+- [ ] FIXME remove explicit LPSS handling once ACPI SPCR is supported
+- [ ] TODO: Make this configurable
+
+### `src/arch/x86_shared/device/system76_ec.rs`
+- [ ] TODO: timeout
+
+### `src/arch/x86_shared/device/tsc.rs`
+- [ ] TODO: Implement KVM paravirtualized TSC reading
+
+### `src/arch/x86_shared/idt.rs`
+- [ ] TODO: use_default_irqs! but also the legacy IRQs that are only needed on one CPU
+- [ ] TODO: VecMap?
+
+### `src/arch/x86_shared/paging/mod.rs`
+- [ ] TODO assert!(address.data() < 0x0000_8000_0000_0000 || address.data() >= 0xffff_8000_0000_
+
+### `src/arch/x86_shared/start.rs`
+- [ ] FIXME use extern "custom"
+
+### `src/arch/x86_shared/stop.rs`
+- [ ] TODO: Waitpid with timeout? Because, what if the ACPI driver would crash?
+- [ ] TODO: Switch directly to whichever process is handling the kstop pipe. We would add an
+
+### `src/arch/x86_shared/time.rs`
+- [ ] TODO: improve performance
+- [ ] TODO: handle rollover?
+
+### `src/dtb/irqchip.rs`
+- [ ] TODO: support multi level interrupt constrollers
+- [ ] FIXME use the helper when fixed (see gh#37)
+- [ ] FIXME use interrupts() helper when fixed (see gh#12)
+
+### `src/dtb/mod.rs`
+- [ ] FIXME assumes all the devices are connected to CPUs via the /soc bus
+- [ ] FIXME traverse device tree up
 
 ## Unimplemented code
 
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/riscv64/sv39.rs**: unimplemented!("RiscV64Sv39Arch::init unimplemented");
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/x86_64.rs**: unimplemented!("X8664Arch::init unimplemented");
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/riscv64/sv48.rs**: unimplemented!("RiscV64Sv48Arch::init unimplemented");
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/device/irqchip/null.rs**: unimplemented!()
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/allocator/frame/bump.rs**: unimplemented!("BumpAllocator::free not implemented");
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/context/arch/riscv64.rs**: unimplemented!()
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/rmm.rs**: unimplemented!()
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/x86.rs**: unimplemented!("X86Arch::init unimplemented");
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/stop.rs**: unimplemented!()
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/device/cpu/mod.rs**: unimplemented!()
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/aarch64.rs**: unimplemented!("AArch64Arch::init unimplemented");
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/emulate.rs**: unimplemented!("EmulateArch::invalidate not implemented");
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/scheme/proc.rs**: todo!(),
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/riscv64/sv39.rs**: unimplemented!("RiscV64Sv39Arch::init unimplemented");
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/x86_64.rs**: unimplemented!("X8664Arch::init unimplemented");
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/device/irqchip/null.rs**: unimplemented!()
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/allocator/frame/bump.rs**: unimplemented!("BumpAllocator::free not implemented");
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/context/arch/riscv64.rs**: unimplemented!()
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/stop.rs**: unimplemented!()
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/rmm.rs**: unimplemented!()
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/aarch64.rs**: unimplemented!("AArch64Arch::init unimplemented");
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/interrupt/irq.rs**: IrqMethod::Apic => Ok(Vec::from(&b"(not implemented for APIC yet)"[..])),
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/riscv64/sv48.rs**: unimplemented!("RiscV64Sv48Arch::init unimplemented");
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/x86.rs**: unimplemented!("X86Arch::init unimplemented");
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/device/cpu/mod.rs**: unimplemented!()
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/emulate.rs**: unimplemented!("EmulateArch::invalidate not implemented");
+### `../rmm/src/allocator/frame/bump.rs`
+- [ ] unimplemented!("BumpAllocator::free not implemented");
+
+### `../rmm/src/arch/aarch64.rs`
+- [ ] unimplemented!("AArch64Arch::init unimplemented");
+
+### `../rmm/src/arch/emulate.rs`
+- [ ] unimplemented!("EmulateArch::invalidate not implemented");
+
+### `../rmm/src/arch/riscv64/sv39.rs`
+- [ ] unimplemented!("RiscV64Sv39Arch::init unimplemented");
+
+### `../rmm/src/arch/riscv64/sv48.rs`
+- [ ] unimplemented!("RiscV64Sv48Arch::init unimplemented");
+
+### `../rmm/src/arch/x86.rs`
+- [ ] unimplemented!("X86Arch::init unimplemented");
+
+### `../rmm/src/arch/x86_64.rs`
+- [ ] unimplemented!("X8664Arch::init unimplemented");
+
+### `src/arch/aarch64/device/irqchip/null.rs`
+- [ ] unimplemented!()
+
+### `src/arch/riscv64/device/cpu/mod.rs`
+- [ ] unimplemented!()
+
+### `src/arch/riscv64/rmm.rs`
+- [ ] unimplemented!()
+
+### `src/arch/riscv64/stop.rs`
+- [ ] unimplemented!()
+
+### `src/arch/x86_shared/interrupt/irq.rs`
+- [ ] IrqMethod::Apic => Ok(Vec::from(&b"(not implemented for APIC yet)"[..])),
+
+### `src/context/arch/riscv64.rs`
+- [ ] unimplemented!()
+
+### `src/scheme/proc.rs`
+- [ ] todo!(),

@@ -7,7 +7,7 @@ edition = "2024"
 bitflags = "2.4.1"
 linked_list_allocator = "0.10.5"
 log = "0.4.20"
-rmm = { path = "rmm", default-features = false }
+rmm = { git = "https://github.com/FaezBarghasa/rmm", default-features = false }
 spin = "0.9.8"
 # parking_lot = { version = "0.12", default-features = false } # Removed due to build errors
 rustc-demangle = "0.1.23"

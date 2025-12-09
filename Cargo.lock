@@ -204,6 +204,7 @@ dependencies = [
 [[package]]
 name = "rmm"
 version = "0.1.0"
+source = "git+https://github.com/FaezBarghasa/rmm#4299dac6d3a5b64a90f4485d27e13e9115f70df2"
 
 [[package]]
 name = "rustc-demangle"
