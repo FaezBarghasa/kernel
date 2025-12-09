@@ -185,3 +185,16 @@ This document tracks the tasks required to fix the current build state, address 
 - [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/aarch64.rs**: unimplemented!("AArch64Arch::init unimplemented");
 - [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/emulate.rs**: unimplemented!("EmulateArch::invalidate not implemented");
 - [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/scheme/proc.rs**: todo!(),
+- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/riscv64/sv39.rs**: unimplemented!("RiscV64Sv39Arch::init unimplemented");
+- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/x86_64.rs**: unimplemented!("X8664Arch::init unimplemented");
+- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/device/irqchip/null.rs**: unimplemented!()
+- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/allocator/frame/bump.rs**: unimplemented!("BumpAllocator::free not implemented");
+- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/context/arch/riscv64.rs**: unimplemented!()
+- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/stop.rs**: unimplemented!()
+- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/rmm.rs**: unimplemented!()
+- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/aarch64.rs**: unimplemented!("AArch64Arch::init unimplemented");
+- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/interrupt/irq.rs**: IrqMethod::Apic => Ok(Vec::from(&b"(not implemented for APIC yet)"[..])),
+- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/riscv64/sv48.rs**: unimplemented!("RiscV64Sv48Arch::init unimplemented");
+- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/x86.rs**: unimplemented!("X86Arch::init unimplemented");
+- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/device/cpu/mod.rs**: unimplemented!()
+- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/emulate.rs**: unimplemented!("EmulateArch::invalidate not implemented");
