@@ -3,15 +3,11 @@
 
 #![allow(dead_code)]
 
-//! This create implement compiletime ordering of locks into levels, [`L1`], [`L2`], [`L3`], [`L4`] and [`L5`].
+//! This create implement compiletime ordering of locks into levels.
 //! In order to acquire a lock at level `i` only locks at level `i-1` or below may be held.
 //!
 //! If locks are alwayes acquired in level order on all threads, then one cannot have a deadlock
 //! involving only acquireng locks.
-//!
-//! At some point in time we would want Level to be replaced by usize, however
-//! with current cont generics (rust 1.55), we cannot compare const generic arguments
-//! so we are left with this mess.
 use alloc::{sync::Arc, vec::Vec};
 use core::{marker::PhantomData, sync::atomic::Ordering};
 
@@ -39,45 +35,14 @@ pub struct L1 {}
 #[derive(Debug)]
 pub struct L2 {}
 
-#[derive(Debug)]
-pub struct L3 {}
-
-#[derive(Debug)]
-pub struct L4 {}
-
-#[derive(Debug)]
-pub struct L5 {}
-
 impl Level for L0 {}
 impl Level for L1 {}
 impl Level for L2 {}
-impl Level for L3 {}
-impl Level for L4 {}
-impl Level for L5 {}
 
 impl Lower<L1> for L0 {}
 impl Lower<L2> for L0 {}
-impl Lower<L3> for L0 {}
-impl Lower<L4> for L0 {}
-impl Lower<L5> for L0 {}
 
 impl Lower<L2> for L1 {}
-impl Lower<L3> for L1 {}
-impl Lower<L4> for L1 {}
-impl Lower<L5> for L1 {}
-
-impl Lower<L3> for L2 {}
-impl Lower<L4> for L2 {}
-impl Lower<L5> for L2 {}
-
-impl Lower<L4> for L3 {}
-impl Lower<L5> for L3 {}
-
-impl Lower<L5> for L4 {}
-
-/// Indicate that the implementor is higher that the level O
-pub trait Higher<O: Level>: Level {}
-impl<L1: Level, L2: Level> Higher<L2> for L1 where L2: Lower<L1> {}
 
 /// While this exists only locks with a level higher than L, may be locked.
 /// These tokens are carried around the call stack to indicate tho current locking level.
@@ -87,11 +52,6 @@ pub struct LockToken<'a, L: Level>(PhantomData<&'a mut L>);
 impl<'a, L: Level> LockToken<'a, L> {
     /// Create a borrowed copy of self
     pub fn token(&mut self) -> LockToken<'_, L> {
-        LockToken(Default::default())
-    }
-
-    /// Create a borrowed copy of self, on a higher level
-    pub fn downgrade<LC: Higher<L>>(&mut self) -> LockToken<'_, LC> {
         LockToken(Default::default())
     }
 
@@ -477,63 +437,6 @@ impl<L: Level, T> RwLock<L, T> {
             unsafe { crate::context::switch(&mut CleanLockToken::new()) };
         }
     }
-
-    // Unsafe due to not using token, currently required by context::switch
-    pub unsafe fn write_arc(self: &Arc<Self>) -> ArcRwLockWriteGuard<L, T> {
-        let current_context_ref = context::current();
-        loop {
-            if let Some(guard) = self.inner.try_write() {
-                *self.writer_holder.lock() = Some(current_context_ref.clone());
-                core::mem::forget(guard); // Manually manage guard
-                return ArcRwLockWriteGuard {
-                    rwlock: self.clone(),
-                };
-            }
-
-            let writer_context_ref_opt = self.writer_holder.lock().clone();
-            if let Some(writer_context_ref) = writer_context_ref_opt {
-                let current_priority = current_context_ref
-                    .inner
-                    .read()
-                    .priority
-                    .effective_priority();
-                let writer_priority = writer_context_ref
-                    .inner
-                    .read()
-                    .priority
-                    .effective_priority();
-
-                if current_priority < writer_priority {
-                    writer_context_ref
-                        .inner
-                        .read()
-                        .priority
-                        .inherit_priority(current_priority);
-                }
-            }
-            for reader_context_ref in self.reader_holders.lock().iter() {
-                let current_priority = current_context_ref
-                    .inner
-                    .read()
-                    .priority
-                    .effective_priority();
-                let reader_priority = reader_context_ref
-                    .inner
-                    .read()
-                    .priority
-                    .effective_priority();
-
-                if current_priority < reader_priority {
-                    reader_context_ref
-                        .inner
-                        .read()
-                        .priority
-                        .inherit_priority(current_priority);
-                }
-            }
-            unsafe { crate::context::switch(&mut CleanLockToken::new()) };
-        }
-    }
 }
 
 /// RAII structure used to release the exclusive write access of a lock when dropped
@@ -611,47 +514,6 @@ impl<'a, L: Level, T> Drop for RwLockReadGuard<'a, L, T> {
             .read()
             .priority
             .restore_base_priority();
-    }
-}
-
-pub struct ArcRwLockWriteGuard<L: Level + 'static, T> {
-    rwlock: Arc<RwLock<L, T>>,
-}
-
-impl<L: Level, T> ArcRwLockWriteGuard<L, T> {
-    pub fn rwlock(s: &Self) -> &Arc<RwLock<L, T>> {
-        &s.rwlock
-    }
-}
-
-impl<L: Level, T> core::ops::Deref for ArcRwLockWriteGuard<L, T> {
-    type Target = T;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        unsafe { &*self.rwlock.inner.as_mut_ptr() }
-    }
-}
-
-impl<L: Level, T> core::ops::DerefMut for ArcRwLockWriteGuard<L, T> {
-    #[inline]
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { &mut *self.rwlock.inner.as_mut_ptr() }
-    }
-}
-
-impl<L: Level, T> Drop for ArcRwLockWriteGuard<L, T> {
-    #[inline]
-    fn drop(&mut self) {
-        *self.rwlock.writer_holder.lock() = None;
-        context::current()
-            .inner
-            .read()
-            .priority
-            .restore_base_priority();
-        unsafe {
-            self.rwlock.inner.force_write_unlock();
-        }
     }
 }
 

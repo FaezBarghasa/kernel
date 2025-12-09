@@ -10,6 +10,7 @@ use crate::{
         usercopy::UserSliceWo,
     },
 };
+use alloc::sync::Arc;
 use core::sync::atomic::{AtomicBool, Ordering};
 
 #[derive(Debug)]
@@ -61,14 +62,30 @@ impl<T> OptimizedWaitQueue<T> {
             // Mark that we have waiters for wake optimization
             self.has_waiters.store(true, Ordering::Release);
 
+            let current_context_ref = crate::context::current();
+
+            // Register for notification BEFORE final check to avoid lost wakeup
+            {
+                let effective_priority = current_context_ref
+                    .read(token.token())
+                    .priority
+                    .effective_priority();
+
+                let mut contexts = self.condition.contexts.lock(token.token());
+                contexts
+                    .entry(effective_priority)
+                    .or_default()
+                    .push(Arc::downgrade(&current_context_ref));
+            }
+
             // Double-check queue before waiting (avoid lost wakeup)
             if let Some(value) = self.queue.dequeue() {
-                self.has_waiters.store(false, Ordering::Relaxed);
+                // Do NOT clear has_waiters here as there might be other waiters.
+                // Stale entry in condition.contexts will be cleaned up by notify.
                 return Ok(value);
             }
 
             // Block on condition variable
-            let current_context_ref = crate::context::current();
             {
                 current_context_ref.write(token.token()).block(reason);
             }
@@ -78,8 +95,7 @@ impl<T> OptimizedWaitQueue<T> {
             // and the current context is in a valid state for switching.
             unsafe { crate::context::switch(token) };
 
-            // Clear waiters flag if we're the last one
-            self.has_waiters.store(false, Ordering::Relaxed);
+            // Do NOT clear waiters flag here blindly.
 
             // Check for signals
             {

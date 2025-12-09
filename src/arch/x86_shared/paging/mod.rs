@@ -5,6 +5,8 @@ use core::fmt::Debug;
 
 use x86::msr;
 
+use crate::memory::Frame;
+
 pub use super::CurrentRmmArch as RmmA;
 pub use rmm::{Arch as RmmArch, PageFlags, PageFlush, PhysicalAddress, TableKind, VirtualAddress};
 
@@ -145,4 +147,16 @@ pub fn round_down_pages(number: usize) -> usize {
 /// Round up to the nearest multiple of page size
 pub fn round_up_pages(number: usize) -> usize {
     number.next_multiple_of(PAGE_SIZE)
+}
+
+#[derive(Debug)]
+pub struct TlbShootdownActions;
+
+impl TlbShootdownActions {
+    pub const NEW_MAPPING: Self = Self;
+    pub fn new() -> Self {
+        Self
+    }
+    pub fn flush(&mut self) {}
+    pub fn queue(&mut self, _frame: Frame, _page: Option<Page>, _action: TlbShootdownActions) {}
 }

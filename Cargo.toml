@@ -49,6 +49,7 @@ lpss_debug = []
 system76_ec_debug = []
 x86_kvm_pv = []
 pti = []
+stress_test = []
 
 x86 = []
 x86_64 = []
