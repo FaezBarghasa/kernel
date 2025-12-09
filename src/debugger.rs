@@ -31,11 +31,11 @@ pub unsafe fn debugger(target_id: Option<*const ContextLock>, token: &mut CleanL
     let contexts_guard = crate::context::contexts();
     let contexts = contexts_guard.read();
     for (id, context_lock) in contexts.iter() {
-        if target_id.map_or(false, |target_id| Arc::as_ptr(&context_lock.0) != target_id) {
+        if target_id.map_or(false, |target_id| Arc::as_ptr(context_lock) != target_id) {
             continue;
         }
-        let context = context_lock.0.read(token.token());
-        println!("{:p}: {}", Arc::as_ptr(&context_lock.0), context.name);
+        let context = context_lock.read(token.token());
+        println!("{:p}: {}", Arc::as_ptr(context_lock), context.name);
 
         let mut mark_frame_use = |frame| {
             tree.entry(frame).or_insert((0, false)).0 += 1;
@@ -123,19 +123,19 @@ pub unsafe fn debugger(target_id: Option<*const ContextLock>, token: &mut CleanL
             regs.dump();
 
             #[cfg(target_arch = "aarch64")]
-            dump_stack(&*context, regs.iret.sp_el0);
+            dump_stack(&*context, regs.sp_el0);
 
             // FIXME riscv64 implementation
 
             #[cfg(target_arch = "x86")]
-            dump_stack(&*context, regs.iret.esp);
+            dump_stack(&*context, regs.esp);
 
             #[cfg(target_arch = "x86_64")]
             {
                 unsafe {
                     x86::bits64::rflags::stac();
                 }
-                dump_stack(&*context, regs.iret.rsp);
+                dump_stack(&*context, regs.rsp as usize);
                 unsafe {
                     x86::bits64::rflags::clac();
                 }
@@ -213,7 +213,7 @@ fn dump_stack(context: &Context, mut sp: usize) {
 
 #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
 unsafe fn check_page_table_consistency(
-    addr_space: &mut crate::context::memory::AddrSpace,
+    addr_space: &mut crate::context::memory::AddrSpaceInner,
     new_as: bool,
     tree: &mut HashMap<Frame, (usize, bool)>,
 ) {
@@ -259,7 +259,7 @@ unsafe fn check_page_table_consistency(
 
                     let (base, grant) = match addr_space
                         .grants
-                        .contains_key(&Page::containing_address(address))
+                        .get_key_value(&Page::containing_address(address))
                     {
                         Some(g) => g,
                         None => {
@@ -282,7 +282,7 @@ unsafe fn check_page_table_consistency(
                             grant.flags(),
                             flags,
                             address.data() as *const u8,
-                            PageSpan::new(base, grant.page_count())
+                            PageSpan::new(*base, grant.page_count())
                         );
                     }
                     let p = matches!(
@@ -317,7 +317,7 @@ unsafe fn check_page_table_consistency(
     }
 
     /*for (base, info) in addr_space.grants.iter() {
-        let span = PageSpan::new(base, info.page_count());
+        let span = PageSpan::new(*base, info.page_count());
         for page in span.pages() {
             let _entry = match addr_space.table.utable.translate(page.start_address()) {
                 Some(e) => e,

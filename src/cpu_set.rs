@@ -19,7 +19,7 @@ impl core::fmt::Display for LogicalCpuId {
 
 impl LogicalCpuId {
     pub const BSP: LogicalCpuId = LogicalCpuId(0);
-    pub fn new(id: u32) -> Self {
+    pub const fn new(id: u32) -> Self {
         Self(id)
     }
     pub fn get(&self) -> u32 {
@@ -30,6 +30,12 @@ impl LogicalCpuId {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct CpuSet {
     mask: [Word; WORD_COUNT],
+}
+
+impl core::fmt::Display for CpuSet {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{:?}", self.mask)
+    }
 }
 
 impl CpuSet {

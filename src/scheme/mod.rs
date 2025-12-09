@@ -56,6 +56,11 @@ impl From<usize> for SchemeId {
         Self(id)
     }
 }
+impl From<SchemeNamespace> for usize {
+    fn from(ns: SchemeNamespace) -> Self {
+        ns.0
+    }
+}
 impl From<SchemeId> for usize {
     fn from(id: SchemeId) -> Self {
         id.0
@@ -1075,6 +1080,36 @@ impl SchemeList {
             .insert(name, id);
         id
     }
+
+    pub fn insert_and_pass<T, F>(&mut self, ns: SchemeNamespace, name: &str, f: F) -> Result<(SchemeId, T)>
+    where
+        F: FnOnce(SchemeId) -> Result<(KernelSchemes, T)>,
+    {
+        let id = SchemeId(self.next_id.fetch_add(1, Ordering::Relaxed));
+        let (scheme, t) = f(id)?;
+        self.map.insert(id, Arc::new(scheme));
+        self.names
+            .entry(ns)
+            .or_default()
+            .insert(Box::from(name), id);
+        Ok((id, t))
+    }
+
+    pub fn remove(&mut self, id: SchemeId) {
+        if self.map.remove(&id).is_some() {
+            for names in self.names.values_mut() {
+                names.retain(|_, v| *v != id);
+            }
+        }
+    }
+
+    pub fn make_ns(
+        &mut self,
+        _from: SchemeNamespace,
+        _names: Vec<Box<str>>,
+    ) -> Result<SchemeNamespace> {
+        Ok(SchemeNamespace(0)) // Placeholder
+    }
 }
 
 pub static SCHEMES: RwLock<SchemeList> = RwLock::new(SchemeList {
@@ -1083,15 +1118,15 @@ pub static SCHEMES: RwLock<SchemeList> = RwLock::new(SchemeList {
     next_id: AtomicUsize::new(1),
 });
 
-pub fn schemes<'a, L: crate::sync::Level>(
-    _token: &'a crate::sync::LockToken<'a, L>,
-) -> spin::RwLockReadGuard<'a, SchemeList> {
+pub fn schemes<L: crate::sync::Level>(
+    _token: &crate::sync::LockToken<'_, L>,
+) -> spin::RwLockReadGuard<'static, SchemeList> {
     SCHEMES.read()
 }
 
-pub fn schemes_mut<'a, L: crate::sync::Level>(
-    _token: &'a crate::sync::LockToken<'a, L>,
-) -> spin::RwLockWriteGuard<'a, SchemeList> {
+pub fn schemes_mut<L: crate::sync::Level>(
+    _token: &crate::sync::LockToken<'_, L>,
+) -> spin::RwLockWriteGuard<'static, SchemeList> {
     SCHEMES.write()
 }
 

@@ -232,7 +232,7 @@ impl UserInner {
         self.todo.wake_one();
 
         // Tell the scheme handler to read
-        event::trigger(self.root_id, self.handle_id, EVENT_READ);
+        event::trigger(self.root_id, self.handle_id, EVENT_READ, token);
 
         //TODO: wait for all todo and done to be processed?
         Ok(())
@@ -324,10 +324,10 @@ impl UserInner {
         }
         self.todo.send(sqe, token);
 
-        event::trigger(self.root_id, self.handle_id, EVENT_READ);
+        event::trigger(self.root_id, self.handle_id, EVENT_READ, token);
 
         loop {
-            context::switch(token);
+            unsafe { context::switch(token) };
 
             {
                 let mut eintr_if_sigkill = |callee_responsible: &mut PageSpan| {
@@ -400,7 +400,7 @@ impl UserInner {
                                 },
                                 token,
                             );
-                            event::trigger(self.root_id, self.handle_id, EVENT_READ);
+                            event::trigger(self.root_id, self.handle_id, EVENT_READ, token);
                             context::current()
                                 .write(token.token())
                                 .block("UserInner::call");
@@ -457,7 +457,6 @@ impl UserInner {
         let is_pinned = true;
         let dst_page = {
             dst_addr_space.acquire_write().mmap_anywhere(
-                &dst_addr_space,
                 ONE,
                 PROT_READ,
                 |dst_page, flags, mapper, flusher| {
@@ -531,7 +530,7 @@ impl UserInner {
             });
         }
 
-        let cur_space_lock = AddrSpace::current()?;
+        let cur_space_lock = AddrSpace::current(token)?;
         let dst_space_lock = {
             Arc::clone(
                 context_weak
@@ -571,8 +570,7 @@ impl UserInner {
         let mut dst_space = dst_space_lock.acquire_write();
 
         let free_span = dst_space
-            .grants
-            .find_free(dst_space.mmap_min, page_count)
+            .find_free_span(dst_space.mmap_min, page_count)
             .ok_or(Error::new(ENOMEM))?;
 
         let head = if !head_part_of_buf.is_empty() {
@@ -597,7 +595,6 @@ impl UserInner {
             }
 
             dst_space.mmap(
-                &dst_space_lock,
                 Some(free_span.base),
                 ONE,
                 map_flags | MAP_FIXED_NOREPLACE,
@@ -635,7 +632,6 @@ impl UserInner {
 
         if let Some(middle_page_count) = NonZeroUsize::new(middle_page_count) {
             dst_space.mmap(
-                &dst_space_lock,
                 Some(first_middle_dst_page),
                 middle_page_count,
                 map_flags | MAP_FIXED_NOREPLACE,
@@ -655,8 +651,6 @@ impl UserInner {
                     let is_pinned_userscheme_borrow = true;
 
                     Grant::borrow(
-                        Arc::clone(&cur_space_lock),
-                        &mut cur_space_lock.acquire_write(),
                         first_middle_src_page,
                         dst_page,
                         middle_page_count.get(),
@@ -666,6 +660,7 @@ impl UserInner {
                         eager,
                         allow_phys,
                         is_pinned_userscheme_borrow,
+                        Some(&mut cur_space_lock.acquire_write()),
                     )
                 },
             )?;
@@ -693,7 +688,6 @@ impl UserInner {
             }
 
             dst_space.mmap(
-                &dst_space_lock,
                 Some(tail_dst_page),
                 ONE,
                 map_flags | MAP_FIXED_NOREPLACE,
@@ -967,7 +961,7 @@ impl UserInner {
             },
             token,
         );
-        event::trigger(self.root_id, self.handle_id, EVENT_READ);
+        event::trigger(self.root_id, self.handle_id, EVENT_READ, token);
 
         Ok(())
     }
@@ -1076,7 +1070,7 @@ impl UserInner {
 
                 let context = context.upgrade().ok_or(Error::new(ESRCH))?;
 
-                let (frame, _) = AddrSpace::current()?
+                let frame = AddrSpace::current(token)?
                     .acquire_read()
                     .table
                     .utable
@@ -1095,7 +1089,7 @@ impl UserInner {
                 }
             }
             ParsedCqe::TriggerFevent { number, flags } => {
-                event::trigger(self.scheme_id, number, flags)
+                event::trigger(self.scheme_id, number, flags, token)
             }
         }
         Ok(())
@@ -1162,7 +1156,7 @@ impl UserInner {
                         }
 
                         let unpin = true;
-                        AddrSpace::current()?.munmap(callee_responsible, unpin)?;
+                        AddrSpace::current(token)?.munmap(callee_responsible, unpin)?;
                     }
                 },
                 // invalid state
@@ -1280,14 +1274,13 @@ impl UserInner {
         let mapping_is_lazy = false;
 
         let base_page_opt = match response {
-            Some(Response::Regular(code, _)) => (!mapping_is_lazy).then_some(Error::demux(code)?),
-            Some(Response::Fd(_)) => {
+            Response::Regular(code, _) => (!mapping_is_lazy).then_some(Error::demux(code)?),
+            Response::Fd(_) => {
                 debug!("Scheme incorrectly returned an fd for fmap.");
 
                 return Err(Error::new(EIO));
             }
-            Some(Response::MultipleFds(_)) => return Err(Error::new(EIO)),
-            None => return Err(Error::new(EIO)),
+            Response::MultipleFds(_) => return Err(Error::new(EIO)),
         };
 
         let file_ref = GrantFileRef {
@@ -1303,7 +1296,7 @@ impl UserInner {
                 let addr_space_lock = &src_address_space;
                 BorrowedFmapSource {
                     src_base: Page::containing_address(VirtualAddress::new(base_addr)),
-                    addr_space_lock,
+                    addr_space_lock: src_address_space.clone(),
                     addr_space_guard: addr_space_lock.acquire_write(),
                     mode: if map.flags.contains(MapFlags::MAP_SHARED) {
                         MmapMode::Shared
@@ -1319,7 +1312,6 @@ impl UserInner {
         let mut notify_files = Vec::new();
         let dst_base = {
             dst_addr_space.acquire_write().mmap(
-                &dst_addr_space,
                 dst_base,
                 page_count_nz,
                 map.flags,
@@ -1868,7 +1860,7 @@ impl KernelScheme for UserScheme {
             token,
         );
 
-        event::trigger(inner.root_id, inner.handle_id, EVENT_READ);
+        event::trigger(inner.root_id, inner.handle_id, EVENT_READ, token);
 
         Ok(())
     }

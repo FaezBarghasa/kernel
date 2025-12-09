@@ -8,43 +8,41 @@ macro_rules! interrupt {
             use super::*;
 
             #[unsafe(naked)]
-            #[unsafe(no_mangle)]
             pub unsafe extern "C" fn wrapper() {
                 core::arch::naked_asm!(
-                    "push rax",
-                    "push rcx",
-                    "push rdx",
-                    "push rsi",
-                    "push rdi",
-                    "push r8",
-                    "push r9",
-                    "push r10",
-                    "push r11",
-                    "push fs",
-                    "mov rax, 0x18",
-                    "mov fs, ax",
-                    "push rbp",
-                    "mov rbp, rsp",
-                    "push rbp",
-                    "call {inner}",
-                    "pop rbp",
-                    "pop rbp",
-                    "pop fs",
-                    "pop r11",
-                    "pop r10",
-                    "pop r9",
-                    "pop r8",
-                    "pop rdi",
-                    "pop rsi",
-                    "pop rdx",
-                    "pop rcx",
-                    "pop rax",
-                    "iretq",
+                    "push rax
+                    push rcx
+                    push rdx
+                    push rsi
+                    push rdi
+                    push r8
+                    push r9
+                    push r10
+                    push r11
+                    push fs
+                    mov rax, 0x18
+                    mov fs, ax
+                    push rbp
+                    mov rbp, rsp
+                    push rbp
+                    call {inner}
+                    pop rbp
+                    pop rbp
+                    pop fs
+                    pop r11
+                    pop r10
+                    pop r9
+                    pop r8
+                    pop rdi
+                    pop rsi
+                    pop rdx
+                    pop rcx
+                    pop rax
+                    iretq",
                     inner = sym inner
                 );
             }
 
-            #[unsafe(no_mangle)]
             pub unsafe extern "C" fn inner() {
                 $code
             }
@@ -60,15 +58,16 @@ macro_rules! interrupt_stack {
             use super::*;
 
             #[unsafe(naked)]
-            #[unsafe(no_mangle)]
             pub unsafe extern "C" fn wrapper() {
                 core::arch::naked_asm!(
                     push_scratch!(),
-                    "mov rax, 0x18",
-                    "mov fs, ax",
+                    "mov rax, 0x18
+                    mov fs, ax
+                    ",
                     push_preserved!(),
-                    "mov rdi, rsp",
-                    "call {inner}",
+                    "mov rdi, rsp
+                    call {inner}
+                    ",
                     pop_preserved!(),
                     pop_scratch!(),
                     "iretq",
@@ -76,7 +75,6 @@ macro_rules! interrupt_stack {
                 );
             }
 
-            #[unsafe(no_mangle)]
             pub unsafe extern "C" fn inner($stack: &mut $crate::arch::x86_64::interrupt::handler::InterruptStack) {
                 $code
             }
@@ -88,15 +86,16 @@ macro_rules! interrupt_stack {
             use super::*;
 
             #[unsafe(naked)]
-            #[unsafe(no_mangle)]
             pub unsafe extern "C" fn wrapper() {
                 core::arch::naked_asm!(
                     push_scratch!(),
-                    "mov rax, 0x18",
-                    "mov fs, ax",
+                    "mov rax, 0x18
+                    mov fs, ax
+                    ",
                     push_preserved!(),
-                    "mov rdi, rsp",
-                    "call {inner}",
+                    "mov rdi, rsp
+                    call {inner}
+                    ",
                     pop_preserved!(),
                     pop_scratch!(),
                     "iretq",
@@ -104,7 +103,6 @@ macro_rules! interrupt_stack {
                 );
             }
 
-            #[unsafe(no_mangle)]
             pub unsafe extern "C" fn inner($stack: &mut $crate::arch::x86_64::interrupt::handler::InterruptStack) {
                 $code
             }
@@ -120,25 +118,25 @@ macro_rules! interrupt_error {
             use super::*;
 
             #[unsafe(naked)]
-            #[unsafe(no_mangle)]
             pub unsafe extern "C" fn wrapper() {
                 core::arch::naked_asm!(
                     push_scratch!(),
-                    "mov rax, 0x18",
-                    "mov fs, ax",
+                    "mov rax, 0x18
+                    mov fs, ax
+                    ",
                     push_preserved!(),
-                    "mov rdi, rsp",
-                    "mov rsi, [rsp + 128]", // Error code at offset 128 (80 scratch + 48 preserved)
-                    "call {inner}",
+                    "mov rdi, rsp
+                    mov rsi, [rsp + 128]
+                    call {inner}
+                    ",
                     pop_preserved!(),
                     pop_scratch!(),
-                    "add rsp, 8", // pop error code
-                    "iretq",
+                    "add rsp, 8
+                    iretq",
                     inner = sym inner
                 );
             }
 
-            #[unsafe(no_mangle)]
             pub unsafe extern "C" fn inner($stack: &mut $crate::arch::x86_64::interrupt::handler::InterruptStack, $code: usize) {
                 $code_block
             }
@@ -159,7 +157,8 @@ macro_rules! push_scratch {
         push r9
         push r10
         push r11
-        push fs"
+        push fs
+        "
     };
 }
 
@@ -175,7 +174,8 @@ macro_rules! pop_scratch {
         pop rsi
         pop rdx
         pop rcx
-        pop rax"
+        pop rax
+        "
     };
 }
 
@@ -187,7 +187,8 @@ macro_rules! push_preserved {
         push r12
         push r13
         push r14
-        push r15"
+        push r15
+        "
     };
 }
 
@@ -199,7 +200,8 @@ macro_rules! pop_preserved {
         pop r13
         pop r12
         pop rbp
-        pop rbx"
+        pop rbx
+        "
     };
 }
 

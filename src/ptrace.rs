@@ -125,7 +125,7 @@ pub fn close_tracee(session: &Session, token: &mut CleanLockToken) {
     session.tracer.notify(token);
 
     let file_id = {
-        let data = session.data.lock(token);
+        let data = session.data.lock();
         data.file_id
     };
     proc_trigger_event(file_id, EVENT_READ, token);
@@ -141,7 +141,7 @@ fn proc_trigger_event(file_id: usize, flags: EventFlags, token: &mut CleanLockTo
 /// event was sent.
 pub fn send_event(event: PtraceEvent, token: &mut CleanLockToken) -> Option<()> {
     let session = Session::current()?;
-    let mut data = session.data.lock(token);
+    let mut data = session.data.lock();
     let breakpoint = data.breakpoint.as_ref()?;
 
     if event.cause & breakpoint.flags != event.cause {
@@ -185,7 +185,7 @@ pub fn wait(session: Arc<Session>, token: &mut CleanLockToken) -> Result<()> {
     loop {
         // Lock the data, to make sure we're reading the final value before going
         // to sleep.
-        let data = session.data.lock(token);
+        let data = session.data.lock();
 
         // Wake up if a breakpoint is already reached or there's an unread event
         if data.breakpoint.as_ref().map(|b| b.reached).unwrap_or(false) || !data.events.is_empty() {
@@ -224,7 +224,7 @@ pub fn breakpoint_callback(
 
         let session = percpu.ptrace_session.borrow().as_ref()?.upgrade()?;
 
-        let mut data = session.data.lock(token);
+        let mut data = session.data.lock();
         let breakpoint = data.breakpoint?; // only go to sleep if there's a breakpoint
 
         // In case no tracer is waiting, make sure the next one gets the memo
@@ -243,7 +243,7 @@ pub fn breakpoint_callback(
         if trigger {
             drop(data);
             proc_trigger_event(file_id, EVENT_READ, token);
-            data = session.data.lock(token);
+            data = session.data.lock();
         }
 
         if session
@@ -252,6 +252,7 @@ pub fn breakpoint_callback(
         {
             // We successfully waited, wake up!
             // We need to re-check breakpoint because we might have dropped lock
+            let data = session.data.lock();
             if let Some(bp) = data.breakpoint {
                 break Some(bp.flags);
             }
@@ -267,7 +268,7 @@ pub fn next_breakpoint(token: &mut CleanLockToken) -> Option<PtraceFlags> {
     //  TODO: Make this function arch-independent (probably requires moving
     //  some stuff from the syscall handler)
     let session = Session::current()?;
-    let data = session.data.lock(token);
+    let data = session.data.lock();
     let breakpoint = data.breakpoint?;
 
     Some(breakpoint.flags)

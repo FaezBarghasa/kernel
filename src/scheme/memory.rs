@@ -90,7 +90,6 @@ impl MemoryScheme {
         }
 
         let page = addr_space.acquire_write().mmap(
-            addr_space,
             (map.address != 0).then_some(span.base),
             page_count,
             map.flags,
@@ -141,7 +140,6 @@ impl MemoryScheme {
         let current_addrsp = AddrSpace::current(token)?;
 
         let base_page = current_addrsp.acquire_write().mmap_anywhere(
-            &current_addrsp,
             page_count,
             flags,
             |dst_page, mut page_flags, dst_mapper, dst_flusher| {

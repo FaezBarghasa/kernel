@@ -69,7 +69,7 @@ pub fn allocate_frame_by_node(node_id: NumaNodeId) -> Option<Frame> {
 /// Generic function to allocate a single frame (defaults to Node 0 or general pool)
 pub fn allocate_frame() -> Option<Frame> {
     // Default or best-effort allocation
-    allocate_frame_by_node(0)
+    allocate_frame_by_node(NumaNodeId(0))
 }
 
 /// Deallocates a physical frame.

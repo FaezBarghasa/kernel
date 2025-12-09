@@ -65,7 +65,7 @@ pub fn register_kstop(token: &mut CleanLockToken) -> bool {
         .iter()
         .filter(|(_, handle)| handle.kind == HandleKind::ShutdownPipe)
     {
-        event::trigger(GlobalSchemes::Acpi.scheme_id(), fd, EVENT_READ);
+        event::trigger(GlobalSchemes::Acpi.scheme_id(), fd, EVENT_READ, token);
         waiters_awoken += 1;
     }
 

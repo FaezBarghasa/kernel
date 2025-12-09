@@ -2,3 +2,4 @@ target
 /config.toml
 .gitlab-ci-local/
 /AGENTS.md
+!/rmm/

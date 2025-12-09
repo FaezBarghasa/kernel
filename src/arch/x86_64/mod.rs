@@ -79,3 +79,14 @@ pub fn init() {
     }
     // ... rest of init logic
 }
+
+// Define usercopy symbols required by src/memory/mod.rs
+// Since we use a Rust implementation for copy_to/from_user, these are dummy labels.
+core::arch::global_asm!(
+    "
+    .global __usercopy_start
+    __usercopy_start:
+    .global __usercopy_end
+    __usercopy_end:
+    "
+);

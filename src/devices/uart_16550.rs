@@ -9,6 +9,7 @@ pub const COM2: u16 = 0x2F8;
 
 pub static SERIAL_PORT: Mutex<Option<SerialPort<Pio<u8>>>> = Mutex::new(None);
 
+#[repr(C)]
 pub struct SerialPort<T: Io> {
     data: T,
     int_en: T,
@@ -32,15 +33,8 @@ impl SerialPort<Pio<u8>> {
 }
 
 impl SerialPort<Mmio<u32>> {
-    pub unsafe fn new(base: usize) -> Self {
-        Self {
-            data: Mmio::new(base),
-            int_en: Mmio::new(base + 4),
-            fifo_ctrl: Mmio::new(base + 8),
-            line_ctrl: Mmio::new(base + 12),
-            modem_ctrl: Mmio::new(base + 16),
-            line_sts: Mmio::new(base + 20),
-        }
+    pub unsafe fn new(base: usize) -> &'static mut Self {
+        &mut *(base as *mut Self)
     }
 }
 
@@ -102,7 +96,7 @@ where
 }
 
 pub unsafe fn init() {
-    let mut serial = unsafe { SerialPort::new(COM1) };
-    serial.init();
+    let mut serial = unsafe { SerialPort::<Pio<u8>>::new(COM1) };
+    unsafe { let _ = serial.init(); }
     *SERIAL_PORT.lock() = Some(serial);
 }

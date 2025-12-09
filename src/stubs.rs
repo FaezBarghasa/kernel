@@ -4,10 +4,24 @@ use crate::{context::memory::PageSpan, memory::Frame, paging::PhysicalAddress};
 
 /// Topology types
 pub mod topology {
+    use core::fmt;
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct NumaNodeId(pub u8);
 
+    impl fmt::Display for NumaNodeId {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+
     pub struct CpuTopology;
+
+    impl CpuTopology {
+        pub fn get(&self) -> Option<()> {
+            Some(())
+        }
+    }
 
     pub static CPU_TOPOLOGY: CpuTopology = CpuTopology;
 }
@@ -64,20 +78,6 @@ pub mod syscall_types {
         pub rflags: usize,
     }
 
-    #[repr(C)]
-    #[derive(Debug, Clone, Copy)]
-    pub struct EnvRegisters {
-        pub fsbase: u64,
-        pub gsbase: u64,
-    }
-
-    bitflags::bitflags! {
-        pub struct EventFlags: u64 {
-            const EVENT_READ = 1;
-            const EVENT_WRITE = 2;
-        }
-    }
-
     pub const F_DUPFD_CLOEXEC: i32 = 1030;
 
     #[macro_export]
@@ -120,11 +120,11 @@ pub mod context_helpers {
         _owner: Option<core::num::NonZeroUsize>,
         _func: F,
         _token: &mut CleanLockToken,
-    ) -> Result<Arc<ContextLock>, ()>
+    ) -> crate::syscall::error::Result<Arc<ContextLock>>
     where
         F: FnOnce() + 'static,
     {
-        Err(())
+        Err(crate::syscall::error::Error::new(crate::syscall::error::ENOMEM))
     }
 
     pub fn is_current(_context: &Arc<ContextLock>) -> bool {
@@ -150,11 +150,14 @@ pub mod context_helpers {
         use syscall::Exception;
 
         pub fn excp_handler(exception: Exception) {
+            let kind = exception.kind;
+            let code = exception.code;
+            let address = exception.address;
             log::error!(
-                "Exception: kind={}, code={}, info={:#x}",
-                exception.kind,
-                exception.code,
-                exception.info
+                "Exception: kind={}, code={}, address={:#x}",
+                kind,
+                code,
+                address
             );
 
             // For now, panic on exceptions
@@ -167,17 +170,17 @@ pub mod context_helpers {
 /// Syscall helpers
 pub mod syscall_helpers {
     use crate::context::memory::PageSpan;
-    pub fn validate_region(_ptr: *const u8, _len: usize) -> Result<PageSpan, ()> {
+    pub fn validate_region(_ptr: usize, _len: usize) -> crate::syscall::error::Result<PageSpan> {
         // Placeholder returning a dummy PageSpan or error
-        Err(())
+        Err(crate::syscall::error::Error::new(crate::syscall::error::ENOMEM))
     }
 
     pub fn exit_this_context(_status: usize) -> ! {
         loop {}
     }
 
-    pub fn copy_path_to_buf(_path: &str, _buf: &mut [u8]) -> Result<usize, ()> {
-        Ok(0)
+    pub fn copy_path_to_buf(_path: crate::syscall::usercopy::UserSliceRo, _max_len: usize) -> crate::syscall::error::Result<alloc::string::String> {
+        Ok(alloc::string::String::new())
     }
 }
 

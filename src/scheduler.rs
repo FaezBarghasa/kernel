@@ -25,9 +25,9 @@ const BASE_TIME_SLICE_NS: u64 = 1_000_000; // 1ms
 /// This will hold runnable contexts, ordered by their virtual deadline.
 pub struct RunQueue {
     /// Real-time tasks, ordered by virtual deadline.
-    rt_queue: VecDeque<ContextRef>,
+    rt_queue: VecDeque<(usize, ContextRef)>,
     /// Non-real-time tasks, ordered by virtual deadline.
-    non_rt_queue: VecDeque<ContextRef>,
+    non_rt_queue: VecDeque<(usize, ContextRef)>,
 }
 
 impl RunQueue {
@@ -42,9 +42,10 @@ impl RunQueue {
     ///
     /// The context is inserted into the queue based on its virtual deadline,
     /// maintaining the sorted order.
-    pub fn add(&mut self, context_ref: ContextRef) {
-        let new_deadline = context_ref.read().virtual_deadline;
-        let is_realtime = context_ref.read().is_realtime;
+    pub fn add(&mut self, context_ref: ContextRef, token: &mut CleanLockToken) {
+        let new_deadline = context_ref.read(token.token()).virtual_deadline;
+        let is_realtime = context_ref.read(token.token()).is_realtime;
+        let id = context_ref.read(token.token()).id();
 
         let queue = if is_realtime {
             &mut self.rt_queue
@@ -55,46 +56,52 @@ impl RunQueue {
         // Find the correct position to insert based on virtual_deadline
         let mut i = 0;
         while i < queue.len() {
-            if new_deadline < queue[i].read().virtual_deadline {
+            // We need to read the context in the queue to check deadline.
+            // But if the context in queue IS the context we are currently holding a write lock on (e.g. rescheduling self),
+            // reading it will deadlock if we use the same token?
+            // Actually, add() is usually called when we DON'T hold the lock (e.g. unblock, spawn).
+            // But if we do, we need to be careful.
+            // Assuming add() is safe.
+            if new_deadline < queue[i].1.read(token.token()).virtual_deadline {
                 break;
             }
             i += 1;
         }
-        queue.insert(i, context_ref);
+        queue.insert(i, (id, context_ref));
     }
 
     /// Removes and returns the next context to run.
     ///
     /// This will prioritize real-time tasks.
     pub fn next(&mut self) -> Option<ContextRef> {
-        if let Some(ctx) = self.rt_queue.pop_front() {
+        if let Some((_, ctx)) = self.rt_queue.pop_front() {
             Some(ctx)
         } else {
-            self.non_rt_queue.pop_front()
+            self.non_rt_queue.pop_front().map(|(_, ctx)| ctx)
         }
     }
 
     /// Removes a specific context from the run queue.
     pub fn remove(&mut self, context_id: usize) -> Option<ContextRef> {
         let mut found_idx = None;
-        for (i, c) in self.rt_queue.iter().enumerate() {
-            if c.read().id() == context_id {
+        for (i, (id, _)) in self.rt_queue.iter().enumerate() {
+            if *id == context_id {
                 found_idx = Some(i);
                 break;
             }
         }
         if let Some(i) = found_idx {
-            return self.rt_queue.remove(i);
+            return self.rt_queue.remove(i).map(|(_, ctx)| ctx);
         }
 
         found_idx = None;
-        for (i, c) in self.non_rt_queue.iter().enumerate() {
-            if c.read().id() == context_id {
+        for (i, (id, _)) in self.non_rt_queue.iter().enumerate() {
+            if *id == context_id {
                 found_idx = Some(i);
                 break;
             }
         }
-        found_idx.map(|i| self.non_rt_queue.remove(i).unwrap())
+        found_idx.map(|i| self.non_rt_queue.remove(i).unwrap().1)
     }
 
     pub fn is_empty(&self) -> bool {
@@ -146,7 +153,7 @@ impl Scheduler {
             // If the context is still runnable, add it back to the run queue
             if current_ctx.status.is_runnable() {
                 drop(current_ctx); // Drop the write lock before cloning Arc
-                self.run_queue.add(current_ctx_ref.clone());
+                self.run_queue.add(current_ctx_ref.clone(), token);
             }
         }
 
@@ -169,8 +176,8 @@ impl Scheduler {
     }
 
     /// Called when a context becomes runnable.
-    pub fn context_unblocked(&mut self, context_ref: ContextRef) {
-        self.run_queue.add(context_ref);
+    pub fn context_unblocked(&mut self, context_ref: ContextRef, token: &mut CleanLockToken) {
+        self.run_queue.add(context_ref, token);
     }
 }
 
@@ -183,27 +190,27 @@ pub fn schedule_next(token: &mut CleanLockToken) -> Option<ContextRef> {
     scheduler().schedule(token)
 }
 
-pub fn add_context(context_ref: ContextRef) {
+pub fn add_context(context_ref: ContextRef, token: &mut CleanLockToken) {
     // Determine which CPU's run queue to add the context to
     let target_cpu = {
-        let context = context_ref.read();
+        let context = context_ref.read(token.token());
         context.last_cpu_id.unwrap_or_else(crate::cpu_id)
     };
 
     // Initialize virtual_deadline for new contexts
     {
-        let mut context = context_ref.write();
+        let mut context = context_ref.write(token.token());
         context.virtual_deadline = PercpuBlock::current().scheduler.current_virtual_deadline.load(Ordering::Relaxed);
     }
 
     // TODO: Implement proper load balancing if target_cpu's queue is overloaded
     if target_cpu == crate::cpu_id() {
-        scheduler().run_queue.add(context_ref);
+        scheduler().run_queue.add(context_ref, token);
     } else {
         // For now, if not the current CPU, just add to current CPU's queue
         // In a real implementation, this would involve inter-processor interrupts (IPIs)
         // to add to the target CPU's run queue.
-        scheduler().run_queue.add(context_ref);
+        scheduler().run_queue.add(context_ref, token);
     }
 }
 

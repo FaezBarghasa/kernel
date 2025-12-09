@@ -127,7 +127,7 @@ impl PercpuBlock {
         }
 
         if let Some(addrsp) = &*self.current_addrsp.borrow() {
-            addrsp.tlb_ack.fetch_add(1, Ordering::Release);
+            addrsp.acquire_read().tlb_ack.fetch_add(1, Ordering::Release);
         }
     }
 }
@@ -175,7 +175,7 @@ pub unsafe fn switch_arch_hook() {
     }
 }
 impl PercpuBlock {
-    pub const fn init(cpu_id: LogicalCpuId) -> Self {
+    pub fn init(cpu_id: LogicalCpuId) -> Self {
         Self {
             cpu_id,
             context_id: Cell::new(0),
@@ -192,6 +192,8 @@ impl PercpuBlock {
             profiling: None,
 
             misc_arch_info: ArchPercpuMisc::default(),
+
+            stats: CpuStats::default(),
 
             scheduler: Scheduler::new(),
         }

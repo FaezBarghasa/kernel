@@ -44,7 +44,7 @@ pub fn spawn(
     let context_id = {
         let mut context = context_ref.write(token.token());
         context.userspace = userspace;
-        context.arch.set_entry_point(call);
+        context.set_entry_point(unsafe { core::mem::transmute(call) })?;
         context.id()
     };
 
@@ -53,7 +53,7 @@ pub fn spawn(
         contexts.insert(context_id, Arc::clone(&context_ref));
     }
 
-    scheduler::add_context(context_ref.clone());
+    scheduler::add_context(context_ref.clone(), token);
 
     Ok(context_ref)
 }

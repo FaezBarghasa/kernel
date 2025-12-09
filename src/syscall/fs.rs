@@ -9,7 +9,7 @@ use crate::{
     context::{
         self,
         file::{FileDescription, FileDescriptor, InternalFlags},
-        memory::{AddrSpace, GenericFlusher, Grant, PageSpan, TlbShootdownActions},
+        memory::{AddrSpace, Grant, PageSpan, TlbShootdownActions},
     },
     paging::{Page, VirtualAddress, PAGE_SIZE},
     scheme::{self, CallerCtx, FileHandle, KernelScheme, OpenResult, StrOrBytes},
@@ -38,17 +38,18 @@ pub fn file_op_generic_ext<T>(
 ) -> Result<T> {
     let (file, desc) = {
         let file = context::current()
-            .read()
+            .read(token.token())
             .get_file(fd)
             .ok_or(Error::new(EBADF))?;
         let desc = *file.description.read();
         (file, desc)
     };
 
-    let scheme = scheme::schemes(token.token())
+    let schemes_guard = scheme::schemes(&token.token());
+    let scheme = schemes_guard
         .get(desc.scheme)
         .ok_or(Error::new(EBADF))?;
-    let scheme_clone: Arc<dyn KernelScheme> = Arc::clone(scheme);
+    let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
     op(&*scheme_clone, file.description, desc, token)
 }
@@ -78,7 +79,7 @@ fn is_legacy(path_buf: &String) -> bool {
 pub fn open(raw_path: UserSliceRo, flags: usize, token: &mut CleanLockToken) -> Result<FileHandle> {
     let (pid, uid, gid, scheme_ns) = {
         let ctx = context::current();
-        let cx = &ctx.read();
+        let cx = &ctx.read(token.token());
         (cx.pid, cx.euid, cx.egid, cx.ens)
     };
 
@@ -93,7 +94,7 @@ pub fn open(raw_path: UserSliceRo, flags: usize, token: &mut CleanLockToken) -> 
     // Display a deprecation warning for any usage of the legacy scheme syntax (scheme:/path)
     // FIXME remove entries from this list as the respective programs get updated
     if path_buf.contains(':') && !is_legacy(&path_buf) {
-        let name = context::current().read().name;
+        let name = context::current().read(token.token()).name;
         if path_buf == "event:" || path_buf.starts_with("time:") {
             // FIXME winit issues
         } else {
@@ -105,8 +106,8 @@ pub fn open(raw_path: UserSliceRo, flags: usize, token: &mut CleanLockToken) -> 
 
     let description = {
         let (scheme_id, scheme) = {
-            let schemes = scheme::schemes(token.token());
-            let (scheme_id, scheme) = schemes
+            let schemes_guard = scheme::schemes(&token.token());
+            let (scheme_id, scheme) = schemes_guard
                 .get_name(scheme_ns, scheme_name.as_ref())
                 .ok_or(Error::new(ENODEV))?;
             (scheme_id, Arc::clone(scheme) as Arc<dyn KernelScheme>)
@@ -132,7 +133,7 @@ pub fn open(raw_path: UserSliceRo, flags: usize, token: &mut CleanLockToken) -> 
     };
     //drop(path_buf);
     context::current()
-        .read()
+        .read(token.token())
         .add_file(FileDescriptor {
             description,
             cloexec: flags & O_CLOEXEC == O_CLOEXEC,
@@ -157,19 +158,20 @@ pub fn openat(
     }
 
     let pipe = context::current()
-        .read()
+        .read(token.token())
         .get_file(fh)
         .ok_or(Error::new(EBADF))?;
 
     let description = pipe.description.read();
 
-    let caller_ctx = context::current().read().caller_ctx();
+    let caller_ctx = context::current().read(token.token()).caller_ctx();
 
     let new_description = {
-        let scheme = scheme::schemes(token.token())
+        let schemes_guard = scheme::schemes(&token.token());
+        let scheme = schemes_guard
             .get(description.scheme)
             .ok_or(Error::new(EBADF))?;
-        let scheme_clone: Arc<dyn KernelScheme> = Arc::clone(scheme);
+        let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
         let res = scheme_clone.kopenat(
             description.number,
@@ -195,7 +197,7 @@ pub fn openat(
     };
 
     context::current()
-        .read()
+        .read(token.token())
         .add_file(FileDescriptor {
             description: new_description,
             cloexec: false,
@@ -206,7 +208,7 @@ pub fn openat(
 pub fn rmdir(raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
     let (scheme_ns, caller_ctx) = {
         let ctx = context::current();
-        let cx = &ctx.read();
+        let cx = &ctx.read(token.token());
         (cx.ens, cx.caller_ctx())
     };
 
@@ -219,11 +221,11 @@ pub fn rmdir(raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
     let (scheme_name, reference) = path.as_parts().ok_or(Error::new(EINVAL))?;
 
     let scheme: Arc<dyn KernelScheme> = {
-        let schemes = scheme::schemes(token.token());
-        let (_scheme_id, scheme) = schemes
+        let schemes_guard = scheme::schemes(&token.token());
+        let (_scheme_id, scheme) = schemes_guard
             .get_name(scheme_ns, scheme_name.as_ref())
             .ok_or(Error::new(ENODEV))?;
-        Arc::clone(scheme)
+        scheme.clone()
     };
     scheme.rmdir(reference.as_ref(), caller_ctx, token)
 }
@@ -232,7 +234,7 @@ pub fn rmdir(raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
 pub fn unlink(raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
     let (scheme_ns, caller_ctx) = {
         let ctx = context::current();
-        let cx = &ctx.read();
+        let cx = &ctx.read(token.token());
         (cx.ens, cx.caller_ctx())
     };
     /*
@@ -244,11 +246,11 @@ pub fn unlink(raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
     let (scheme_name, reference) = path.as_parts().ok_or(Error::new(EINVAL))?;
 
     let scheme: Arc<dyn KernelScheme> = {
-        let schemes = scheme::schemes(token.token());
-        let (_scheme_id, scheme) = schemes
+        let schemes_guard = scheme::schemes(&token.token());
+        let (_scheme_id, scheme) = schemes_guard
             .get_name(scheme_ns, scheme_name.as_ref())
             .ok_or(Error::new(ENODEV))?;
-        Arc::clone(scheme)
+        scheme.clone()
     };
     scheme.unlink(reference.as_ref(), caller_ctx, token)
 }
@@ -257,7 +259,7 @@ pub fn unlink(raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
 pub fn close(fd: FileHandle, token: &mut CleanLockToken) -> Result<()> {
     let file = {
         let context_lock = context::current();
-        let context = context_lock.read();
+        let context = context_lock.read(token.token());
         context.remove_file(fd).ok_or(Error::new(EBADF))?
     };
 
@@ -272,7 +274,7 @@ fn duplicate_file(
 ) -> Result<FileDescriptor> {
     let (caller_ctx, file) = {
         let context_lock = context::current();
-        let context = context_lock.read();
+        let context = context_lock.read(token.token());
         (
             context.caller_ctx(),
             context.get_file(fd).ok_or(Error::new(EBADF))?,
@@ -288,10 +290,11 @@ fn duplicate_file(
         let description = { *file.description.read() };
 
         let new_description = {
-            let scheme = scheme::schemes(token.token())
+            let schemes_guard = scheme::schemes(&token.token());
+            let scheme = schemes_guard
                 .get(description.scheme)
                 .ok_or(Error::new(EBADF))?;
-            let scheme_clone: Arc<dyn KernelScheme> = Arc::clone(scheme);
+            let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
             match scheme_clone.kdup(description.number, user_buf, caller_ctx, token)? {
                 OpenResult::SchemeLocal(number, internal_flags) => {
@@ -319,7 +322,7 @@ pub fn dup(fd: FileHandle, buf: UserSliceRo, token: &mut CleanLockToken) -> Resu
     let new_file = duplicate_file(fd, buf, false, token)?;
 
     context::current()
-        .read()
+        .read(token.token())
         .add_file(new_file)
         .ok_or(Error::new(EMFILE))
 }
@@ -338,7 +341,7 @@ pub fn dup2(
         let new_file = duplicate_file(fd, buf, false, token)?;
 
         let context_ref = context::current();
-        let context = context_ref.read();
+        let context = context_ref.read(token.token());
 
         context
             .insert_file(new_fd, new_file)
@@ -378,7 +381,7 @@ fn call_normal(
     token: &mut CleanLockToken,
 ) -> Result<usize> {
     let file = (match (
-        context::current().read(),
+        context::current().read(token.token()),
         flags.contains(CallFlags::CONSUME),
     ) {
         (ctxt, true) => ctxt.remove_file(fd),
@@ -390,10 +393,11 @@ fn call_normal(
         let desc = file.description.read();
         (desc.scheme, desc.number)
     };
-    let scheme = scheme::schemes(token.token())
+    let schemes_guard = scheme::schemes(&token.token());
+    let scheme = schemes_guard
         .get(scheme_id)
         .ok_or(Error::new(EBADFD))?;
-    let scheme_clone: Arc<dyn KernelScheme> = Arc::clone(scheme);
+    let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
     scheme_clone.kcall(number, payload, flags, metadata, token)
 }
@@ -432,18 +436,19 @@ fn fdwrite_inner(
     let (scheme, number, descs_to_send) = {
         let (scheme, number) = {
             let current_lock = context::current();
-            let current = current_lock.read();
+            let current = current_lock.read(token.token());
             let file_descriptor = current.get_file(socket).ok_or(Error::new(EBADF))?;
             let desc = &file_descriptor.description.read();
             (desc.scheme, desc.number)
         };
-        let scheme = scheme::schemes(token.token())
+        let schemes_guard = scheme::schemes(&token.token());
+        let scheme = schemes_guard
             .get(scheme)
             .ok_or(Error::new(ENODEV))?;
-        let scheme_clone: Arc<dyn KernelScheme> = Arc::clone(scheme);
+        let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
         let current_lock = context::current();
-        let current = current_lock.read();
+        let current = current_lock.read(token.token());
         (
             scheme_clone,
             number,
@@ -486,15 +491,16 @@ fn call_fdread(
     let (scheme, number) = {
         let (scheme, number) = {
             let current_lock = context::current();
-            let current = current_lock.read();
+            let current = current_lock.read(token.token());
             let file_descriptor = current.get_file(fd).ok_or(Error::new(EBADF))?;
             let desc = file_descriptor.description.read();
             (desc.scheme, desc.number)
         };
-        let scheme = scheme::schemes(token.token())
+        let schemes_guard = scheme::schemes(&token.token());
+        let scheme = schemes_guard
             .get(scheme)
             .ok_or(Error::new(ENODEV))?;
-        let scheme_clone: Arc<dyn KernelScheme> = Arc::clone(scheme);
+        let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
         (scheme_clone, number)
     };
@@ -523,7 +529,7 @@ pub fn sendfd(
 /// File descriptor controls
 pub fn fcntl(fd: FileHandle, cmd: usize, arg: usize, token: &mut CleanLockToken) -> Result<usize> {
     let file = context::current()
-        .read()
+        .read(token.token())
         .get_file(fd)
         .ok_or(Error::new(EBADF))?;
 
@@ -534,7 +540,7 @@ pub fn fcntl(fd: FileHandle, cmd: usize, arg: usize, token: &mut CleanLockToken)
         let new_file = duplicate_file(fd, UserSlice::empty(), cmd == F_DUPFD_CLOEXEC, token)?;
 
         let context_lock = context::current();
-        let context = context_lock.read();
+        let context = context_lock.read(token.token());
 
         return context
             .add_file_min(new_file, arg)
@@ -544,10 +550,11 @@ pub fn fcntl(fd: FileHandle, cmd: usize, arg: usize, token: &mut CleanLockToken)
 
     // Communicate fcntl with scheme
     if cmd != F_GETFD && cmd != F_SETFD {
-        let scheme = scheme::schemes(token.token())
+        let schemes_guard = scheme::schemes(&token.token());
+        let scheme = schemes_guard
             .get(description.scheme)
             .ok_or(Error::new(EBADF))?;
-        let scheme_clone: Arc<dyn KernelScheme> = Arc::clone(scheme);
+        let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
         scheme_clone.fcntl(description.number, cmd, arg, token)?;
     };
@@ -555,7 +562,7 @@ pub fn fcntl(fd: FileHandle, cmd: usize, arg: usize, token: &mut CleanLockToken)
     // Perform kernel operation if scheme agrees
     {
         let context_lock = context::current();
-        let context = context_lock.read();
+        let context = context_lock.read(token.token());
 
         let mut files = context.files.write();
         match *files.get_mut(fd.get()).ok_or(Error::new(EBADF))? {
@@ -589,11 +596,11 @@ pub fn fcntl(fd: FileHandle, cmd: usize, arg: usize, token: &mut CleanLockToken)
 pub fn flink(fd: FileHandle, raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
     let (caller_ctx, scheme_ns) = {
         let ctx = context::current();
-        let cx = &ctx.read();
+        let cx = &ctx.read(token.token());
         (cx.caller_ctx(), cx.ens)
     };
     let file = context::current()
-        .read()
+        .read(token.token())
         .get_file(fd)
         .ok_or(Error::new(EBADF))?;
 
@@ -606,8 +613,8 @@ pub fn flink(fd: FileHandle, raw_path: UserSliceRo, token: &mut CleanLockToken) 
     let (scheme_name, reference) = path.as_parts().ok_or(Error::new(EINVAL))?;
 
     let (scheme_id, scheme) = {
-        let schemes = scheme::schemes(token.token());
-        let (scheme_id, scheme) = schemes
+        let schemes_guard = scheme::schemes(&token.token());
+        let (scheme_id, scheme) = schemes_guard
             .get_name(scheme_ns, scheme_name.as_ref())
             .ok_or(Error::new(ENODEV))?;
         (scheme_id, Arc::clone(scheme) as Arc<dyn KernelScheme>)
@@ -625,11 +632,11 @@ pub fn flink(fd: FileHandle, raw_path: UserSliceRo, token: &mut CleanLockToken) 
 pub fn frename(fd: FileHandle, raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
     let (caller_ctx, scheme_ns) = {
         let ctx = context::current();
-        let cx = &ctx.read();
+        let cx = &ctx.read(token.token());
         (cx.caller_ctx(), cx.ens)
     };
     let file = context::current()
-        .read()
+        .read(token.token())
         .get_file(fd)
         .ok_or(Error::new(EBADF))?;
 
@@ -642,8 +649,8 @@ pub fn frename(fd: FileHandle, raw_path: UserSliceRo, token: &mut CleanLockToken
     let (scheme_name, reference) = path.as_parts().ok_or(Error::new(EINVAL))?;
 
     let (scheme_id, scheme) = {
-        let schemes = scheme::schemes(token.token());
-        let (scheme_id, scheme) = schemes
+        let schemes_guard = scheme::schemes(&token.token());
+        let (scheme_id, scheme) = schemes_guard
             .get_name(scheme_ns, scheme_name.as_ref())
             .ok_or(Error::new(ENODEV))?;
         (scheme_id, Arc::clone(scheme) as Arc<dyn KernelScheme>)
@@ -696,7 +703,7 @@ pub fn funmap(virtual_address: usize, length: usize, token: &mut CleanLockToken)
         );
     }
 
-    let addr_space = Arc::clone(context::current().read().addr_space()?);
+    let addr_space = Arc::clone(context::current().read(token.token()).addr_space()?);
     let span = PageSpan::validate_nonempty(VirtualAddress::new(virtual_address), length_aligned)
         .ok_or(Error::new(EINVAL))?;
     let unpin = false;
@@ -743,7 +750,7 @@ pub fn mremap(
         MapFlags::empty()
     } | prot_flags;
 
-    let addr_space = AddrSpace::current()?;
+    let addr_space = AddrSpace::current(token)?;
     let src_span = PageSpan::new(old_base, old_size.div_ceil(PAGE_SIZE));
     let new_page_count = new_size.div_ceil(PAGE_SIZE);
     let requested_dst_base = Some(new_base).filter(|_| new_address != 0);
@@ -755,10 +762,9 @@ pub fn mremap(
             return Err(Error::new(EOPNOTSUPP));
         }
 
-        let raii_frame = addr_space.borrow_frame_enforce_rw_allocated(src_span.base, token)?;
+        let raii_frame = addr_space.acquire_write().borrow_frame_enforce_rw_allocated(src_span.base, token)?;
 
         let base = addr_space.acquire_write().mmap(
-            &addr_space,
             requested_dst_base,
             NonZeroUsize::new(1).unwrap(),
             map_flags,
@@ -769,6 +775,8 @@ pub fn mremap(
                 // The page does not get unref-ed as we call take() on the `raii_frame`.
                 unsafe {
                     mapper
+                            .get_mut()
+                            .expect("failed to get mutable mapper")
                         .map_phys(page.start_address(), frame.base(), page_flags)
                         .ok_or(Error::new(ENOMEM))?
                         .ignore();
@@ -782,7 +790,7 @@ pub fn mremap(
 
         Ok(base.start_address().data())
     } else {
-        let base = addr_space.r#move(
+        let base = addr_space.acquire_write().r#move(
             None,
             src_span,
             requested_dst_base,
@@ -876,11 +884,12 @@ pub fn sys_write(fd: FileHandle, buf: UserSliceRo, token: &mut CleanLockToken) -
 /// mlock syscall
 pub fn sys_mlock(addr: usize, len: usize, token: &mut CleanLockToken) -> Result<usize> {
     let current_context_ref = context::current();
-    let addr_space = Arc::clone(current_context_ref.read().addr_space()?);
+    let addr_space = Arc::clone(current_context_ref.read(token.token()).addr_space()?);
 
-    addr_space.mlock(VirtualAddress::new(addr), len)?;
+    addr_space.acquire_write().mlock(VirtualAddress::new(addr), len)?;
 
-    current_context_ref.write().memory_locked_count = current_context_ref.read().memory_locked_count.saturating_add(1);
+    let count = current_context_ref.read(token.token()).memory_locked_count;
+    current_context_ref.write(token.token()).memory_locked_count = count.saturating_add(1);
 
     Ok(0)
 }
@@ -888,11 +897,12 @@ pub fn sys_mlock(addr: usize, len: usize, token: &mut CleanLockToken) -> Result<
 /// munlock syscall
 pub fn sys_munlock(addr: usize, len: usize, token: &mut CleanLockToken) -> Result<usize> {
     let current_context_ref = context::current();
-    let addr_space = Arc::clone(current_context_ref.read().addr_space()?);
+    let addr_space = Arc::clone(current_context_ref.read(token.token()).addr_space()?);
 
-    addr_space.munlock(VirtualAddress::new(addr), len)?;
+    addr_space.acquire_write().munlock(VirtualAddress::new(addr), len)?;
 
-    current_context_ref.write().memory_locked_count = current_context_ref.read().memory_locked_count.saturating_sub(1);
+    let count = current_context_ref.read(token.token()).memory_locked_count;
+    current_context_ref.write(token.token()).memory_locked_count = count.saturating_sub(1);
 
     Ok(0)
 }

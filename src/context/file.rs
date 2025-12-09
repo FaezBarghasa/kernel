@@ -2,7 +2,7 @@
 
 use crate::{
     event,
-    scheme::{self, SchemeId},
+    scheme::{self, KernelScheme, SchemeId},
     sync::CleanLockToken,
     syscall::error::{Error, Result, EBADF},
 };
@@ -74,7 +74,8 @@ impl FileDescription {
     pub fn try_close(self, token: &mut CleanLockToken) -> Result<()> {
         event::unregister_file(self.scheme, self.number);
 
-        let scheme = scheme::schemes(token.token())
+        let schemes_guard = scheme::schemes(&token.token());
+        let scheme = schemes_guard
             .get(self.scheme)
             .ok_or(Error::new(EBADF))?
             .clone();

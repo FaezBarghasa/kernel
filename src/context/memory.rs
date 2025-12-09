@@ -4,6 +4,7 @@ use alloc::{sync::Arc, vec::Vec};
 use spin::RwLock;
 
 use crate::{
+    context::file::FileDescription,
     memory::{self, Enomem, Frame, RaiiFrame},
     paging::{Page, PageFlags, RmmA, VirtualAddress, PAGE_SIZE},
     sync::CleanLockToken,
@@ -85,8 +86,8 @@ impl Grant {
     pub fn zeroed_phys_contiguous(
         _span: PageSpan,
         _flags: PageFlags<RmmA>,
-        _mapper: &mut Mapper,
-        _flusher: &mut GenericFlusher,
+        _mapper: &mut crate::memory::KernelMapper,
+        _flusher: &mut TlbShootdownActions,
     ) -> SysResult<Self> {
         Err(Error::new(crate::syscall::error::ENOMEM))
     }
@@ -94,8 +95,8 @@ impl Grant {
     pub fn zeroed(
         _span: PageSpan,
         _flags: PageFlags<RmmA>,
-        _mapper: &mut Mapper,
-        _flusher: &mut GenericFlusher,
+        _mapper: &mut crate::memory::KernelMapper,
+        _flusher: &mut TlbShootdownActions,
         _shared: bool,
     ) -> SysResult<Self> {
         Err(Error::new(crate::syscall::error::ENOMEM))
@@ -105,8 +106,8 @@ impl Grant {
         _phys: Frame,
         _span: PageSpan,
         _flags: PageFlags<RmmA>,
-        _mapper: &mut Mapper,
-        _flusher: &mut GenericFlusher,
+        _mapper: &mut crate::memory::KernelMapper,
+        _flusher: &mut TlbShootdownActions,
     ) -> SysResult<Self> {
         Err(Error::new(crate::syscall::error::ENOMEM))
     }
@@ -120,15 +121,30 @@ impl Grant {
         drop(self.phys.take());
     }
 
-    pub fn borrow_grant(
-        _owner: Arc<AddrSpaceWrapper>,
-        _src_addr_space: &mut AddrSpaceWrapper,
+    pub fn borrow(
         _src_base: Page,
         _dst_base: Page,
         _count: usize,
         _flags: MapFlags,
-        _mapper: &mut Mapper,
-        _flusher: &mut GenericFlusher,
+        _mapper: &mut crate::memory::KernelMapper,
+        _flusher: &mut TlbShootdownActions,
+        _cow: bool,
+        _shared: bool,
+        _zeromap: bool,
+        _src_inner: Option<&mut AddrSpaceInner>,
+    ) -> SysResult<Grant> {
+        Err(Error::new(crate::syscall::error::ENOMEM))
+    }
+
+    pub fn borrow_grant(
+        _owner: Arc<AddrSpaceWrapper>,
+        _src_addr_space: &mut AddrSpaceInner,
+        _src_base: Page,
+        _dst_base: Page,
+        _count: usize,
+        _flags: MapFlags,
+        _mapper: &mut crate::memory::KernelMapper,
+        _flusher: &mut TlbShootdownActions,
         _cow: bool,
         _shared: bool,
         _zeromap: bool,
@@ -139,10 +155,23 @@ impl Grant {
     pub fn allocated_shared_one_page(
         _frame: Frame,
         _page: Page,
-        _flags: MapFlags,
-        _mapper: &mut Mapper,
-        _flusher: &mut GenericFlusher,
+        _flags: PageFlags<RmmA>,
+        _mapper: &mut crate::memory::KernelMapper,
+        _flusher: &mut TlbShootdownActions,
         _shared: bool,
+    ) -> SysResult<Grant> {
+        Err(Error::new(crate::syscall::error::ENOMEM))
+    }
+
+    pub fn borrow_fmap(
+        _span: PageSpan,
+        _flags: PageFlags<RmmA>,
+        _file_ref: GrantFileRef,
+        _src: Option<BorrowedFmapSource>,
+        _dst_addr_space: &Arc<AddrSpaceWrapper>,
+        _mapper: &mut crate::memory::KernelMapper,
+        _flusher: &mut TlbShootdownActions,
+        _token: &mut CleanLockToken,
     ) -> SysResult<Grant> {
         Err(Error::new(crate::syscall::error::ENOMEM))
     }
@@ -200,6 +229,7 @@ pub fn try_correcting_page_tables(
 
 // --- Added missing types ---
 
+#[derive(Debug)]
 pub struct AddrSpaceWrapper {
     pub inner: RwLock<AddrSpaceInner>,
 }
@@ -285,10 +315,25 @@ impl AddrSpaceWrapper {
     pub fn munmap(&self, _span: PageSpan, _unpin: bool) -> SysResult<Vec<Grant>> {
         Ok(Vec::new())
     }
+}
+
+impl AddrSpaceInner {
+    pub fn borrow_frame_enforce_rw_allocated(
+        &mut self,
+        _base: Page,
+        _token: &mut CleanLockToken,
+    ) -> SysResult<RaiiFrame> {
+        Err(Error::new(crate::syscall::error::ENOMEM))
+    }
+    pub fn mprotect(&mut self, _base: Page, _count: usize, _flags: MapFlags) -> SysResult<()> {
+        Err(Error::new(crate::syscall::error::ENOSYS))
+    }
+    pub fn munmap(&mut self, _span: PageSpan, _unpin: bool) -> SysResult<Vec<Grant>> {
+        Ok(Vec::new())
+    }
 
     pub fn mmap(
-        &self,
-        _addr_space: &Arc<Self>,
+        &mut self,
         _base: Option<Page>,
         _count: core::num::NonZeroUsize,
         _flags: MapFlags,
@@ -304,8 +349,7 @@ impl AddrSpaceWrapper {
     }
 
     pub fn mmap_anywhere(
-        &self,
-        addr_space: &Arc<Self>,
+        &mut self,
         count: core::num::NonZeroUsize,
         flags: MapFlags,
         func: impl FnOnce(
@@ -315,12 +359,46 @@ impl AddrSpaceWrapper {
             &mut TlbShootdownActions,
         ) -> SysResult<Grant>,
     ) -> SysResult<Grant> {
-        self.mmap(addr_space, None, count, flags, &mut Vec::new(), func)
+        self.mmap(None, count, flags, &mut Vec::new(), func)
     }
 
+    pub fn find_free_span(&self, min_address: usize, page_count: usize) -> Option<PageSpan> {
+        let mut start = Page::containing_address(VirtualAddress::new(min_address));
+
+        for grant in self.grants.values() {
+            let grant_start = grant.start;
+            let grant_end = grant.end;
+
+            if grant_start.start_address().data() >= start.start_address().data() {
+                let gap_size = grant_start.start_address().data() - start.start_address().data();
+                let gap_pages = gap_size / PAGE_SIZE;
+                if gap_pages >= page_count {
+                    return Some(PageSpan::new(start, page_count));
+                }
+            }
+
+            if grant_end.start_address().data() > start.start_address().data() {
+                start = grant_end;
+            }
+        }
+
+        // Check gap after last grant up to USER_END_OFFSET
+        let user_end = crate::consts::USER_END_OFFSET;
+        if user_end >= start.start_address().data() {
+            let remaining = user_end - start.start_address().data();
+            if remaining / PAGE_SIZE >= page_count {
+                return Some(PageSpan::new(start, page_count));
+            }
+        }
+
+        None
+    }
+}
+
+impl AddrSpaceInner {
     pub fn r#move(
-        &self,
-        _target: Option<&Arc<Self>>,
+        &mut self,
+        _target: Option<(&Arc<AddrSpaceWrapper>, &mut AddrSpaceInner)>,
         _src: PageSpan,
         _dst: Option<Page>,
         _count: usize,
@@ -330,25 +408,15 @@ impl AddrSpaceWrapper {
         Err(Error::new(crate::syscall::error::ENOMEM))
     }
 
-    pub fn borrow_frame_enforce_rw_allocated(
-        &self,
-        _base: Page,
-        _token: &mut CleanLockToken,
-    ) -> SysResult<RaiiFrame> {
-        Err(Error::new(crate::syscall::error::ENOMEM))
-    }
+}
 
-    pub fn mprotect(&self, _base: Page, _count: usize, _flags: MapFlags) -> SysResult<()> {
-        Err(Error::new(crate::syscall::error::ENOSYS))
-    }
-
-    /// Locks a region of memory, ensuring it remains in physical RAM.
-    pub fn mlock(&self, start: VirtualAddress, size: usize) -> SysResult<()> {
+impl AddrSpaceInner {
+    pub fn mlock(&mut self, start: VirtualAddress, size: usize) -> SysResult<()> {
         let current_context_ref = crate::context::current();
+        let mut token = unsafe { CleanLockToken::new() };
         let mut current_context =
-            current_context_ref.write(unsafe { CleanLockToken::new() }.token());
+            current_context_ref.write(token.token());
 
-        let mut inner = self.inner.write();
         let mut kernel_mapper = crate::memory::KernelMapper::lock();
         let mapper = kernel_mapper
             .get_mut()
@@ -359,7 +427,7 @@ impl AddrSpaceWrapper {
         let end_page = Page::containing_address(VirtualAddress::new(start.data() + size - 1));
 
         for page in Page::range_inclusive(start_page, end_page) {
-            if let Some(grant) = inner.grants.get_mut(&page) {
+            if let Some(grant) = self.grants.get_mut(&page) {
                 if !grant.locked {
                     // Ensure the page is present in physical memory
                     if grant.phys.is_none() {
@@ -383,19 +451,17 @@ impl AddrSpaceWrapper {
         Ok(())
     }
 
-    /// Unlocks a region of memory.
-    pub fn munlock(&self, start: VirtualAddress, size: usize) -> SysResult<()> {
+    pub fn munlock(&mut self, start: VirtualAddress, size: usize) -> SysResult<()> {
         let current_context_ref = crate::context::current();
+        let mut token = unsafe { CleanLockToken::new() };
         let mut current_context =
-            current_context_ref.write(unsafe { CleanLockToken::new() }.token());
-
-        let mut inner = self.inner.write();
+            current_context_ref.write(token.token());
 
         let start_page = Page::containing_address(start);
         let end_page = Page::containing_address(VirtualAddress::new(start.data() + size - 1));
 
         for page in Page::range_inclusive(start_page, end_page) {
-            if let Some(grant) = inner.grants.get_mut(&page) {
+            if let Some(grant) = self.grants.get_mut(&page) {
                 if grant.locked {
                     grant.locked = false;
                     current_context.memory_locked_count -= 1;
@@ -404,21 +470,18 @@ impl AddrSpaceWrapper {
         }
         Ok(())
     }
-
-    /// Checks if a given page is locked.
-    pub fn is_locked(&self, page: Page) -> bool {
-        self.inner
-            .read()
-            .grants
-            .get(&page)
-            .map_or(false, |grant| grant.locked)
-    }
 }
 
 #[derive(Debug, Clone)]
 pub struct GrantFileRef {
     pub base_offset: usize,
-    pub description: Arc<RwLock<crate::context::file::FileDescriptor>>,
+    pub description: Arc<RwLock<FileDescription>>,
+}
+
+impl GrantFileRef {
+    pub fn unmap(&self, _token: &mut CleanLockToken) -> SysResult<()> {
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -431,28 +494,17 @@ impl PageSpan {
     pub fn new(base: Page, count: usize) -> Self {
         Self { base, count }
     }
+    pub fn empty() -> Self {
+        Self { base: Page::containing_address(VirtualAddress::new(0)), count: 0 }
+    }
+    pub fn is_empty(&self) -> bool {
+        self.count == 0
+    }
     pub fn validate_nonempty(base: VirtualAddress, size: usize) -> Option<Self> {
         Some(Self {
             base: Page::containing_address(base),
             count: size / PAGE_SIZE,
         })
-    }
-}
-
-pub struct GenericFlusher;
-impl GenericFlusher {
-    pub fn queue(&self, _frame: Frame, _page: Option<Page>, _action: TlbShootdownActions) {}
-}
-
-pub struct Mapper;
-impl Mapper {
-    pub fn map_phys(
-        &mut self,
-        _virt: VirtualAddress,
-        _phys: crate::paging::PhysicalAddress,
-        _flags: PageFlags<RmmA>,
-    ) -> Option<crate::paging::PageFlush<()>> {
-        None
     }
 }
 
@@ -464,6 +516,7 @@ impl TlbShootdownActions {
         Self
     }
     pub fn flush(&mut self) {}
+    pub fn queue(&mut self, _frame: Frame, _page: Option<Page>, _action: TlbShootdownActions) {}
 }
 
 #[derive(Debug)]
@@ -475,11 +528,17 @@ pub enum Provider {
 }
 
 #[derive(Debug)]
-pub struct BorrowedFmapSource;
+pub struct BorrowedFmapSource<'a> {
+    pub src_base: Page,
+    pub addr_space_lock: Arc<AddrSpaceWrapper>,
+    pub addr_space_guard: spin::RwLockWriteGuard<'a, AddrSpaceInner>,
+    pub mode: MmapMode,
+}
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum MmapMode {
     Cow,
+    Shared,
 }
 
 pub const DANGLING: usize = 0;

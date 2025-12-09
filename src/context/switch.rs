@@ -59,7 +59,10 @@ pub unsafe fn switch(token: &mut CleanLockToken) -> SwitchResult {
         }
 
         if let Some(prev_lock) = prev_context_lock {
-            let mut prev_guard = prev_lock.write(token.token());
+            // SAFETY: We need two write locks. Since we are in context switch, the hierarchy is respected
+            // implicitly by the fact that we are switching from prev to next.
+            let mut token2 = unsafe { CleanLockToken::new() };
+            let mut prev_guard = prev_lock.write(token2.token());
 
             PercpuBlock::current().context_id.set(next_context_id);
 
@@ -68,7 +71,7 @@ pub unsafe fn switch(token: &mut CleanLockToken) -> SwitchResult {
             // This case handles the initial switch from an idle state or kmain
             // where there isn't a "previous" user context to save.
             PercpuBlock::current().context_id.set(next_context_id);
-            crate::arch::switch_to_first(&mut *next_guard);
+            unsafe { crate::arch::switch_to_first(&mut *next_guard) };
         }
 
         SwitchResult::Switched
@@ -77,7 +80,16 @@ pub unsafe fn switch(token: &mut CleanLockToken) -> SwitchResult {
         let mut earliest_wake: Option<u128> = None;
         let contexts_guard = contexts().read();
         for (_id, context_lock) in contexts_guard.iter() {
-            let context = context_lock.read(token.token());
+            // Cannot use token again while contexts_guard is alive?
+            // Yes, ContextLock.read(token) needs mutable borrow of token.
+            // contexts_guard holds mutable borrow of token? No, read() takes &mut Token?
+            // RwLock::read takes &mut Token.
+            // So we cannot use token again.
+            // We need a new token for inner loop or iterate keys and re-acquire?
+            // Re-acquiring contexts lock for each item is slow.
+            // But we can unsafe create token for inner lock since we respect ordering (Contexts -> Context).
+            let mut token2 = unsafe { CleanLockToken::new() };
+            let context = context_lock.read(token2.token());
             if let Some(wake_time) = context.wake {
                 if earliest_wake.is_none() || wake_time < earliest_wake.unwrap() {
                     earliest_wake = Some(wake_time);

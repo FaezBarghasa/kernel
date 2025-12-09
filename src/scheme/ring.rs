@@ -43,6 +43,7 @@ pub struct IpcRing {
     pub sq_mask: u32,
     pub cq_head: AtomicU32,
     pub cq_tail: AtomicU32,
+    pub cq_mask: u32,
     pub features: u32,
     pub _reserved: u32,
 }
@@ -163,11 +164,9 @@ impl RingScheme {
     /// In a production system, this would be a custom syscall (`SYS_RING_COMPLETE`).
     pub fn ring_complete(handle: &Arc<RingHandle>, cqe: &Cqe, token: &mut CleanLockToken) {
         // Boost priority for the duration of this critical IPC completion
-        let _ipc_guard = {
-            let context_lock = context::current();
-            let context = context_lock.read(token.token());
-            IpcCriticalGuard::new(&context.tracker)
-        };
+        let context_lock = context::current();
+        let context = context_lock.read(token.token());
+        let _ipc_guard = IpcCriticalGuard::new(&context.priority);
 
         let ring = unsafe { &*handle.ring_ptr };
 
@@ -269,8 +268,7 @@ impl KernelScheme for RingScheme {
         let page_count = NonZeroUsize::new(1).unwrap();
 
         let base_page = addr_space.acquire_write().mmap(
-            addr_space,
-            (map.address != 0).then_some(VirtualAddress::new(map.address).page()),
+            (map.address != 0).then_some(Page::containing_address(VirtualAddress::new(map.address))),
             page_count,
             map.flags,
             &mut Vec::new(),

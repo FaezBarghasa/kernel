@@ -14,7 +14,7 @@ use syscall::EINTR;
 use crate::{
     context::{
         self,
-        memory::{AddrSpace, AddrSpaceWrapper},
+        memory::{AddrSpace, AddrSpaceInner, AddrSpaceWrapper},
         ContextLock,
     },
     memory::PhysicalAddress,
@@ -53,7 +53,10 @@ pub struct FutexEntry {
 static FUTEXES: OrderedMutex<L1, FutexList> =
     OrderedMutex::new(FutexList::with_hasher(DefaultHashBuilder::new()));
 
-fn validate_and_translate_virt(space: &AddrSpace, addr: VirtualAddress) -> Option<PhysicalAddress> {
+fn validate_and_translate_virt(
+    space: &AddrSpaceInner,
+    addr: VirtualAddress,
+) -> Option<PhysicalAddress> {
     // TODO: Move this elsewhere!
     if addr.data().saturating_add(core::mem::size_of::<usize>()) >= crate::USER_END_OFFSET {
         return None;
@@ -62,9 +65,9 @@ fn validate_and_translate_virt(space: &AddrSpace, addr: VirtualAddress) -> Optio
     let page = Page::containing_address(addr);
     let off = addr.data() - page.start_address().data();
 
-    let (frame, _) = space.table.utable.translate(page.start_address())?;
+    let phys = space.table.utable.translate(page.start_address())?;
 
-    Some(frame.add(off))
+    Some(phys.add(off))
 }
 
 pub fn futex(
@@ -75,7 +78,7 @@ pub fn futex(
     _addr2: usize,
     token: &mut CleanLockToken,
 ) -> Result<usize> {
-    let current_addrsp = AddrSpace::current()?;
+    let current_addrsp = AddrSpace::current(token)?;
 
     // Keep the address space locked so we can safely read from the physical address. Unlock it
     // before context switching.
@@ -167,7 +170,7 @@ pub fn futex(
 
             drop(addr_space_guard);
 
-            context::switch(token);
+            unsafe { context::switch(token) };
 
             if timeout_opt.is_some() {
                 context::current().write(token.token()).wake = None;

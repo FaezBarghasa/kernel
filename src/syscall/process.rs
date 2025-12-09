@@ -56,22 +56,29 @@ pub fn exit_this_context(excp: Option<syscall::Exception>, token: &mut CleanLock
             GlobalSchemes::Proc.scheme_id(),
             owner.get(),
             EventFlags::EVENT_READ,
+            token,
         );
     }
     {
-        let _ = context::contexts_mut(token.token()).remove(&ContextRef(context_lock));
+        let id = context_lock.read(token.token()).id();
+        let _ = context::contexts_mut().remove(&id);
     }
-    context::switch(token);
+    unsafe { context::switch(token) };
     unreachable!();
 }
 
-pub fn mprotect(address: usize, size: usize, flags: MapFlags) -> Result<()> {
+pub fn mprotect(
+    address: usize,
+    size: usize,
+    flags: MapFlags,
+    token: &mut CleanLockToken,
+) -> Result<()> {
     // println!("mprotect {:#X}, {}, {:#X}", address, size, flags);
 
     let span = PageSpan::validate_nonempty(VirtualAddress::new(address), size)
         .ok_or(Error::new(EINVAL))?;
 
-    AddrSpace::current()?.mprotect(span, flags)
+    AddrSpace::current(token)?.acquire_write().mprotect(span.base, span.count * PAGE_SIZE, flags)
 }
 
 pub unsafe fn usermode_bootstrap(bootstrap: &Bootstrap, token: &mut CleanLockToken) {
@@ -94,10 +101,8 @@ pub unsafe fn usermode_bootstrap(bootstrap: &Bootstrap, token: &mut CleanLockTok
         let page_count =
             NonZeroUsize::new(bootstrap.page_count).expect("bootstrap contained no pages!");
 
-        let _base_page = addr_space
-            .acquire_write()
+        let _base_page = addr_space.acquire_write()
             .mmap(
-                &addr_space,
                 Some(base),
                 page_count,
                 flags,

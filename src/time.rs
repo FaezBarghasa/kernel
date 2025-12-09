@@ -1,10 +1,13 @@
 use spin::Mutex;
 
 use crate::{
-    arch::x86_shared::device::{hpet, pit},
+    arch::x86_shared::device::pit,
     sync::CleanLockToken,
     syscall::error::{Error, Result, EINVAL},
 };
+
+#[cfg(feature = "acpi")]
+use crate::arch::x86_shared::device::hpet;
 
 pub use crate::stubs::time_helpers::TimeSpec;
 
@@ -20,6 +23,7 @@ pub static OFFSET: Mutex<u128> = Mutex::new(0);
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum ActiveTimer {
     Pit,
+    #[cfg(feature = "acpi")]
     Hpet,
     None,
 }
@@ -60,6 +64,7 @@ pub fn set_next_timer_event(deadline: u64) {
                 let divisor = (delta / nanoseconds_per_pit_tick) as u16;
                 pit::oneshot(divisor.max(1)); // Divisor must be at least 1
             }
+            #[cfg(feature = "acpi")]
             ActiveTimer::Hpet => {
                 let hpet_ref = hpet::get_hpet_mut();
                 let hpet_period_fs = hpet_ref.get_period_femtoseconds();
