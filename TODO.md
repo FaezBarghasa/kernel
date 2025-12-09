@@ -2,6 +2,17 @@
 
 This document tracks the tasks required to fix the current build state, address missing features, and complete the ongoing IPC and context switch optimizations.
 
+## Overview
+
+This TODO list is divided into several sections:
+
+- **Immediate Compilation Fixes**: Critical issues that are currently preventing the kernel from building successfully.
+- **Configuration & Dependencies**: Tasks related to `Cargo.toml` and dependency management.
+- **Refactoring & Cleanup**: General code quality improvements.
+- **IPC & Context Switch Optimization**: Ongoing work to improve kernel performance.
+- **TODOs and FIXMEs from code**: A collection of smaller tasks and fixes extracted from comments in the source code.
+- **Unimplemented code**: A list of functions and features that are yet to be implemented.
+
 ## Immediate Compilation Fixes
 
 ### `src/sync/mod.rs`
@@ -86,7 +97,7 @@ This document tracks the tasks required to fix the current build state, address 
 - [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/device/irqchip/plic.rs**: TODO spread irqs over all the cores when we have them?
 - [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86/interrupt/handler.rs**: TODO: Unmap PTI (split "add esp, 8" into two "add esp, 4"s maybe?)
 - [ ] **/home/jrad/RustroverProjects/redoxos/kernel/rmm/src/arch/aarch64.rs**: TODO
-- [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/device/serial.rs**: COM1.lock().enable_irq();  FIXME receive int is enabled by default in 16550. Disable by
+- [ ] **/home.jrad/RustroverProjects/redoxos/kernel/src/arch/riscv64/device/serial.rs**: COM1.lock().enable_irq();  FIXME receive int is enabled by default in 16550. Disable by
 - [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/x86_shared/device/mod.rs**: TODO: fix HPET on i686
 - [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/arch/aarch64/time.rs**: TODO: aarch64 generic timer counter
 - [ ] **/home/jrad/RustroverProjects/redoxos/kernel/src/acpi/mod.rs**: TODO: support this on any arch
