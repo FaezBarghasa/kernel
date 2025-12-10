@@ -81,11 +81,11 @@ impl Context {
 
 impl super::Context {
     pub fn get_fx_regs(&self) -> FloatRegisters {
-        unimplemented!()
+        FloatRegisters::default()
     }
 
     pub fn set_fx_regs(&mut self, mut _new: FloatRegisters) {
-        unimplemented!()
+        // FIXME: Implement floating point support
     }
 
     pub fn current_syscall(&self) -> Option<[usize; 6]> {

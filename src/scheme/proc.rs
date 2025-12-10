@@ -1107,7 +1107,7 @@ impl ContextHandle {
                             Status::Dead { .. } => return Err(Error::new(EOWNERDEAD)),
                             Status::HardBlocked {
                                 reason: HardBlockedReason::AwaitingMmap { .. },
-                            } => todo!(),
+                            } => return Err(Error::new(EBUSY)),
                             _ => (),
                         }
                         guard.status = Status::HardBlocked {

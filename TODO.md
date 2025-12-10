@@ -298,43 +298,43 @@ This TODO list is divided into several sections:
 ## Unimplemented code
 
 ### `../rmm/src/allocator/frame/bump.rs`
-- [ ] unimplemented!("BumpAllocator::free not implemented");
+- [x] unimplemented!("BumpAllocator::free not implemented");
 
 ### `../rmm/src/arch/aarch64.rs`
-- [ ] unimplemented!("AArch64Arch::init unimplemented");
+- [x] unimplemented!("AArch64Arch::init unimplemented");
 
 ### `../rmm/src/arch/emulate.rs`
 - [ ] unimplemented!("EmulateArch::invalidate not implemented");
 
 ### `../rmm/src/arch/riscv64/sv39.rs`
-- [ ] unimplemented!("RiscV64Sv39Arch::init unimplemented");
+- [x] unimplemented!("RiscV64Sv39Arch::init unimplemented");
 
 ### `../rmm/src/arch/riscv64/sv48.rs`
-- [ ] unimplemented!("RiscV64Sv48Arch::init unimplemented");
+- [x] unimplemented!("RiscV64Sv48Arch::init unimplemented");
 
 ### `../rmm/src/arch/x86.rs`
-- [ ] unimplemented!("X86Arch::init unimplemented");
+- [x] unimplemented!("X86Arch::init unimplemented");
 
 ### `../rmm/src/arch/x86_64.rs`
-- [ ] unimplemented!("X8664Arch::init unimplemented");
+- [x] unimplemented!("X8664Arch::init unimplemented");
 
 ### `src/arch/aarch64/device/irqchip/null.rs`
-- [ ] unimplemented!()
+- [x] unimplemented!()
 
 ### `src/arch/riscv64/device/cpu/mod.rs`
-- [ ] unimplemented!()
+- [x] unimplemented!()
 
 ### `src/arch/riscv64/rmm.rs`
-- [ ] unimplemented!()
+- [x] unimplemented!()
 
 ### `src/arch/riscv64/stop.rs`
-- [ ] unimplemented!()
+- [x] unimplemented!()
 
 ### `src/arch/x86_shared/interrupt/irq.rs`
-- [ ] IrqMethod::Apic => Ok(Vec::from(&b"(not implemented for APIC yet)"[..])),
+- [x] IrqMethod::Apic => Ok(Vec::from(&b"(not implemented for APIC yet)"[..])),
 
 ### `src/context/arch/riscv64.rs`
-- [ ] unimplemented!()
+- [x] unimplemented!()
 
 ### `src/scheme/proc.rs`
-- [ ] todo!(),
+- [x] todo!(),

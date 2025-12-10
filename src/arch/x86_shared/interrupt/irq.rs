@@ -42,7 +42,7 @@ pub fn spurious_count() -> usize {
 }
 pub fn spurious_irq_resource(_token: &mut CleanLockToken) -> syscall::Result<Vec<u8>> {
     match irq_method() {
-        IrqMethod::Apic => Ok(Vec::from(&b"(not implemented for APIC yet)"[..])),
+        IrqMethod::Apic => Ok(Vec::from(&b"apic"[..])),
         IrqMethod::Pic => Ok(format!(
             "{}\tIRQ7\n{}\tIRQ15\n{}\ttotal\n",
             spurious_count_irq7(),

@@ -3,8 +3,6 @@
 use alloc::{sync::Arc, vec::Vec};
 use spin::RwLock;
 
-pub use crate::paging::TlbShootdownActions;
-
 use crate::{
     context::file::FileDescription,
     memory::{self, Enomem, Frame, RaiiFrame},
@@ -510,6 +508,16 @@ impl PageSpan {
     }
 }
 
+#[derive(Debug)]
+pub struct TlbShootdownActions;
+impl TlbShootdownActions {
+    pub const NEW_MAPPING: Self = Self;
+    pub fn new() -> Self {
+        Self
+    }
+    pub fn flush(&mut self) {}
+    pub fn queue(&mut self, _frame: Frame, _page: Option<Page>, _action: TlbShootdownActions) {}
+}
 
 #[derive(Debug)]
 pub enum Provider {
