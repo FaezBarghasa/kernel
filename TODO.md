@@ -71,7 +71,7 @@ This TODO list is divided into several sections:
 - [x] **Lock-Free Queue**: Continue implementation and verification of `src/sync/lockfree_queue.rs` (Replaced with Mutex for stability).
 - [x] **Optimized Wait Queue**: Finalize `OptimizedWaitQueue` implementation in `src/sync/optimized_wait_queue.rs` and ensure safety comments are accurate (Fixed race condition).
 - [x] **Priority Inheritance**: Implement Priority Inheritance and Dynamic Boosting in `src/sync/priority.rs`.
-- [ ] **Context Switch**: Optimize the context switch path in `src/context/optimized_switch.rs`.
+- [x] **Context Switch**: Optimize the context switch path in `src/context/optimized_switch.rs` (Implemented logic, stats, and portability).
 
 ## New Implementations
 
