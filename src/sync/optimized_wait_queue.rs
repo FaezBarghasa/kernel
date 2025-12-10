@@ -64,7 +64,15 @@ impl<T> OptimizedWaitQueue<T> {
 
             let current_context_ref = crate::context::current();
 
-            // Register for notification BEFORE final check to avoid lost wakeup
+            // Register for notification BEFORE final check to avoid lost wakeup.
+            //
+            // Race Condition Fix:
+            // If we check the queue and then register, a producer might enqueue and call notify()
+            // between the check and the registration. If we are not registered, we miss the wakeup
+            // and might sleep forever (if queue is empty again).
+            //
+            // By registering first, we ensure that even if we are about to check, any notify()
+            // will see us (or we see the item in the subsequent check).
             {
                 let effective_priority = current_context_ref
                     .read(token.token())

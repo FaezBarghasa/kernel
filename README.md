@@ -73,6 +73,24 @@ To build this system component you need to download the Redox build system, you 
 
 This is necessary because they only work with cross-compilation to a Redox virtual machine, but you can do some testing from Linux.
 
+## Features and Hardening
+
+### Kernel Page Table Isolation (KPTI)
+The kernel supports KPTI to mitigate Meltdown-style attacks on x86_64. This feature isolates kernel page tables from user mode.
+To enable it, ensure the `pti` feature is active in `Cargo.toml`.
+
+### Stress Testing
+A stress test suite is available to verify kernel stability under high contention.
+To run it, enable the `stress_test` feature:
+```sh
+cargo build --features stress_test
+```
+This will invoke the stress test suite during kernel initialization.
+
+### Architecture Support
+- **RISC-V**: Initial support for system reset/shutdown via SBI.
+- **AArch64**: GICv2 support via memory-mapped I/O.
+
 ## Funding - _Unix-style Signals and Process Management_
 
 This project is funded through [NGI Zero Core](https://nlnet.nl/core), a fund established by [NLnet](https://nlnet.nl) with financial support from the European Commission's [Next Generation Internet](https://ngi.eu) program. Learn more at the [NLnet project page](https://nlnet.nl/project/RedoxOS-Signals).

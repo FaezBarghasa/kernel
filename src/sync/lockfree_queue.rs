@@ -1,44 +1,65 @@
 //! Lock-Free MPMC Queue (Fallback to Mutex for Stability)
 //!
-//! This implementation currently uses a Mutex because the lock-free implementation
-//! was unsafe (Use-After-Free) without a proper memory reclamation strategy (e.g. EBR).
-//! TODO: Re-implement using crossbeam-queue or implement EBR.
+//! This module provides a Multi-Producer Multi-Consumer (MPMC) queue.
+//!
+//! # Implementation Details
+//!
+//! Originally designed as a lock-free queue using atomic operations, it was found to be unsafe
+//! in the current kernel environment due to the lack of a robust Epoch-Based Reclamation (EBR)
+//! or Hazard Pointer system. Without proper memory reclamation, the lock-free dequeue operation
+//! suffered from Use-After-Free (UAF) issues (ABA problem on head node).
+//!
+//! To ensure system stability and correctness ("Production Hardening"), the implementation
+//! has been temporarily replaced with a `spin::Mutex` protecting a standard `VecDeque`.
+//! This ensures thread safety and correctness at the cost of some performance (locking overhead).
+//!
+//! # Future Work
+//!
+//! - Implement a safe memory reclamation scheme (e.g., EBR).
+//! - Restore the lock-free Michael-Scott queue algorithm once UAF prevention is in place.
+//!
+//! # Safety
+//!
+//! The current implementation uses a `Mutex`, so it is safe for concurrent access (Send + Sync).
 
 use alloc::collections::VecDeque;
 use spin::Mutex;
 
+/// A thread-safe queue implementation (currently Mutex-backed).
 #[derive(Debug)]
 pub struct LockFreeQueue<T> {
     inner: Mutex<VecDeque<T>>,
 }
 
 impl<T> LockFreeQueue<T> {
-    /// Create a new queue
+    /// Create a new empty queue.
     pub fn new() -> Self {
         LockFreeQueue {
             inner: Mutex::new(VecDeque::new()),
         }
     }
 
-    /// Enqueue an item
+    /// Enqueue an item (Producer).
     pub fn enqueue(&self, value: T) -> usize {
         let mut queue = self.inner.lock();
         queue.push_back(value);
         queue.len()
     }
 
-    /// Dequeue an item
+    /// Dequeue an item (Consumer).
+    ///
+    /// Returns `None` if the queue is empty.
     pub fn dequeue(&self) -> Option<T> {
         let mut queue = self.inner.lock();
         queue.pop_front()
     }
 
-    /// Check if queue is empty
+    /// Check if queue is empty.
     pub fn is_empty_approx(&self) -> bool {
         self.inner.lock().is_empty()
     }
 
-    /// Get length
+    /// Get approximate length.
     pub fn len_approx(&self) -> usize {
         self.inner.lock().len()
     }
