@@ -135,14 +135,14 @@ pub unsafe extern "C" fn syscall_instruction_entry() {
     push_preserved!(),
 
     // TODO: Map PTI
-    // $crate::arch::x86_64::pti::map();
+    "call map;",
 
     // Call inner funtion
     "mov rdi, rsp;",
     "call syscall_instruction;",
 
     // TODO: Unmap PTI
-    // $crate::arch::x86_64::pti::unmap();
+    "call unmap;",
 
     "
     .globl enter_usermode

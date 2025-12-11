@@ -212,6 +212,14 @@ pub fn get_sdt_signature(sdt: &'static Sdt) -> SdtSignature {
     (signature, sdt.oem_id, sdt.oem_table_id)
 }
 
+pub fn aml_tables() -> impl Iterator<Item = &'static Sdt> {
+    let mut sdts = find_sdt("SSDT");
+    // TODO: DSDT is pointed to by FADT, not in RSDT/XSDT usually?
+    // But sometimes it is mapped.
+    // For now we just return SSDTs as they are the dynamic ones.
+    sdts.into_iter()
+}
+
 pub struct Acpi {
     pub hpet: RwLock<Option<Hpet>>,
     pub next_ctx: RwLock<u64>,

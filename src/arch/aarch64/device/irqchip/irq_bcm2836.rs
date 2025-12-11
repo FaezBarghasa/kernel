@@ -228,4 +228,8 @@ impl InterruptController for Bcm2836ArmInterruptController {
             Some(self.irq_range.0 + hwirq as usize)
         }
     }
+
+    fn send_sgi(&mut self, _irq: u32, _target_cpu: u32) {
+        // TODO: Implement IPI for BCM2836 using Mailboxes (0x80..0xBC)
+    }
 }

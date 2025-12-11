@@ -1,11 +1,13 @@
+use crate::dtb::irqchip::IRQ_CHIP;
+
 /// The kind of IPI to send.
 #[derive(Clone, Copy, Debug)]
 #[repr(u8)]
 pub enum IpiKind {
     /// A wakeup IPI.
-    Wakeup = 0x40,
+    Wakeup = 0,
     /// A TLB shootdown IPI.
-    Tlb = 0x41,
+    Tlb = 1,
 }
 
 /// The target of an IPI.
@@ -18,20 +20,26 @@ pub enum IpiTarget {
 
 /// Sends an IPI to the specified target.
 #[inline(always)]
-pub fn ipi(_kind: IpiKind, _target: IpiTarget) {
+pub fn ipi(kind: IpiKind, _target: IpiTarget) {
     if cfg!(not(feature = "multi_core")) {
         return;
     }
 
-    // FIXME implement
+    unsafe {
+        // TODO: Map IpiTarget to SGI target mask (CPUIDs)
+        // For now we assume a broadcast or specific implementation in the driver
+        IRQ_CHIP.send_sgi(kind as u32, u32::MAX);
+    }
 }
 
 /// Sends an IPI to a single CPU.
 #[inline(always)]
-pub fn ipi_single(_kind: IpiKind, _target: &crate::percpu::PercpuBlock) {
+pub fn ipi_single(kind: IpiKind, target: &crate::percpu::PercpuBlock) {
     if cfg!(not(feature = "multi_core")) {
         return;
     }
 
-    // FIXME implement
+    unsafe {
+        IRQ_CHIP.send_sgi(kind as u32, target.cpu_id.get());
+    }
 }

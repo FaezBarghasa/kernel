@@ -6,7 +6,7 @@ use spin::RwLock;
 use crate::{
     context::file::FileDescription,
     memory::{self, Enomem, Frame, RaiiFrame},
-    paging::{Page, PageFlags, RmmA, VirtualAddress, PAGE_SIZE},
+    arch::paging::{Page, PageFlags, RmmA, VirtualAddress, PAGE_SIZE},
     sync::CleanLockToken,
     syscall::{
         self,
@@ -508,16 +508,7 @@ impl PageSpan {
     }
 }
 
-#[derive(Debug)]
-pub struct TlbShootdownActions;
-impl TlbShootdownActions {
-    pub const NEW_MAPPING: Self = Self;
-    pub fn new() -> Self {
-        Self
-    }
-    pub fn flush(&mut self) {}
-    pub fn queue(&mut self, _frame: Frame, _page: Option<Page>, _action: TlbShootdownActions) {}
-}
+pub use crate::arch::paging::TlbShootdownActions;
 
 #[derive(Debug)]
 pub enum Provider {

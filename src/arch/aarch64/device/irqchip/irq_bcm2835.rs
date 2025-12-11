@@ -262,13 +262,20 @@ impl InterruptController for Bcm2835ArmInterruptController {
         //assert interrupt-cells == 0x2
         match irq_data {
             IrqCell::L2(bank, irq) => {
-                //TODO: check bank && irq
+                if bank > 2 || irq > 31 {
+                    return Err(Error::new(EINVAL));
+                }
                 let hwirq = (bank as usize) << 5 | (irq as usize);
                 let off = hwirq + self.irq_range.0;
                 Ok(off)
             }
             _ => Err(Error::new(EINVAL)),
         }
+    }
+
+    fn send_sgi(&mut self, _irq: u32, _target_cpu: u32) {
+        // BCM2835 does not support SGIs in the ARMCTRL.
+        // BCM2836+ handles this in irq_bcm2836.rs.
     }
 
     fn irq_to_virq(&self, hwirq: u32) -> Option<usize> {

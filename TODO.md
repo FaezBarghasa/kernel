@@ -117,7 +117,7 @@ This TODO list is divided into several sections:
 - [ ] TODO: Use this throughout the code
 
 ### `../rmm/src/main.rs`
-- [ ] TODO: Allow allocations up to maximum pageable size
+- [x] TODO: Allow allocations up to maximum pageable size
 - [ ] TODO: This causes fragmentation, since neighbors are not identified
 - [ ] TODO: remainders less than PAGE_SIZE will be lost
 
@@ -155,7 +155,7 @@ This TODO list is divided into several sections:
 - [ ] TODO: support this on any arch
 - [ ] TODO: Let userspace setup HPET, and then provide an interface to specify which timer
 - [ ] TODO: Enumerate processors in userspace, and then provide an ACPI-independent interfa
-- [ ] TODO: Don't touch ACPI tables in kernel?
+- [x] TODO: Don't touch ACPI tables in kernel? (Iterator provided)
 
 ### `src/acpi/rsdp.rs`
 - [ ] TODO: Validate
@@ -171,7 +171,7 @@ This TODO list is divided into several sections:
 
 ### `src/arch/aarch64/device/irqchip/irq_bcm2835.rs`
 - [ ] TODO: support smp self.read(LOCAL_IRQ_PENDING + 4 * cpu)
-- [ ] TODO: check bank && irq
+- [x] TODO: check bank && irq
 
 ### `src/arch/aarch64/device/serial.rs`
 - [ ] TODO: what should chip index be?
@@ -187,7 +187,7 @@ This TODO list is divided into several sections:
 - [ ] FIXME add_irq accepts a u8 as irq number
 
 ### `src/arch/aarch64/ipi.rs`
-- [ ] FIXME implement
+- [x] FIXME implement
 
 ### `src/arch/aarch64/paging/mapper.rs`
 - [ ] TODO: Push to TLB "mailbox" or tell it to reload CR3 if there are too many entries.
@@ -236,17 +236,17 @@ This TODO list is divided into several sections:
 - [ ] FIXME bringup AP HARTs
 
 ### `src/arch/x86/interrupt/handler.rs`
-- [ ] TODO: Unmap PTI (split "add esp, 8" into two "add esp, 4"s maybe?)
+- [x] TODO: Unmap PTI (split "add esp, 8" into two "add esp, 4"s maybe?)
 - [ ] FIXME: The interrupt stack on which this is called, is always from userspace, but make
-- [ ] TODO: Unmap PTI
-- [ ] TODO: Map PTI
+- [x] TODO: Unmap PTI
+- [x] TODO: Map PTI
 
 ### `src/arch/x86_64/interrupt/syscall.rs`
 - [ ] TODO: Should we unconditionally jump or avoid jumping, to hint to the branch predictor that
-- [ ] TODO: Map PTI
+- [x] TODO: Map PTI
 - [ ] TODO: Which one is faster?
 - [ ] TODO: macro?
-- [ ] TODO: Unmap PTI
+- [x] TODO: Unmap PTI
 
 ### `src/arch/x86_shared/cpuid.rs`
 - [ ] FIXME check for cpuid availability during early boot and error out if it doesn't exist.
