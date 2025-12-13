@@ -27,7 +27,8 @@ impl InterruptController for Null {
         Ok(())
     }
     fn irq_ack(&mut self) -> u32 {
-        unimplemented!()
+        // Return spurious
+        1023
     }
     fn irq_eoi(&mut self, _irq_num: u32) {}
     fn irq_enable(&mut self, _irq_num: u32) {}

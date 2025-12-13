@@ -34,6 +34,9 @@ pub trait InterruptController: InterruptHandler {
     fn irq_disable(&mut self, irq_num: u32);
     fn irq_xlate(&self, irq_data: IrqCell) -> Result<usize>;
     fn irq_to_virq(&self, hwirq: u32) -> Option<usize>;
+    fn send_sgi(&mut self, irq: u32, target_cpu: u32) {
+        // Default implementation does nothing
+    }
 }
 
 pub struct IrqConnection {
@@ -324,6 +327,13 @@ impl IrqChipCore {
                     }
                 }
             }
+        }
+    }
+
+    pub fn send_sgi(&mut self, irq: u32, target_cpu: u32) {
+        // Send SGI via the first interrupt controller (usually the GIC)
+        if let Some(chip) = self.irq_chip_list.chips.first_mut() {
+            chip.ic.send_sgi(irq, target_cpu);
         }
     }
 

@@ -77,6 +77,8 @@ mod stubs;
 use sync::CleanLockToken;
 mod sync;
 mod syscall;
+#[cfg(feature = "stress_test")]
+mod tests;
 mod time;
 mod topology;
 
@@ -130,6 +132,9 @@ fn kmain(bootstrap: Bootstrap) -> ! {
 
     BOOTSTRAP.call_once(|| bootstrap);
     profiling::ready_for_profiling();
+
+    #[cfg(feature = "stress_test")]
+    tests::stress_test::start_stress_test();
 
     let owner = None;
     match context::spawn(false, owner.clone(), || kmain_reaper(), &mut token) {

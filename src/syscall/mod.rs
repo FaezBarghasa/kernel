@@ -61,12 +61,17 @@ pub fn syscall(
     _f: usize,
 ) -> usize {
     let mut token = unsafe { CleanLockToken::new() };
+    // TODO: Define these in redox_syscall
+    const SYS_MLOCK: usize = 328;
+    const SYS_MUNLOCK: usize = 329;
+
     let res = match number {
-        // TODO: These syscalls are implemented in fs.rs but the constants are missing from redox_syscall
-        // number::SYS_MLOCK => fs::sys_mlock(a, b, &mut token),
-        // number::SYS_MUNLOCK => fs::sys_munlock(a, b, &mut token),
-        // ... other syscalls ...
-        _ => Err(Error::new(ENOSYS)),
+        SYS_MLOCK => fs::sys_mlock(a, b, &mut token),
+        SYS_MUNLOCK => fs::sys_munlock(a, b, &mut token),
+        _ => match number {
+            // Forward to other handlers if needed, or default
+            _ => Err(Error::new(ENOSYS)),
+        }
     };
     Error::mux(res)
 }

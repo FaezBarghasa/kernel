@@ -302,7 +302,7 @@ macro_rules! interrupt_stack {
                 enter_gs!(),
 
                 // TODO: Map PTI
-                // $crate::arch::x86::pti::map();
+                "call map\n",
 
                 // Call inner function with pointer to stack
                 "
@@ -311,7 +311,7 @@ macro_rules! interrupt_stack {
                 ",
 
                 // TODO: Unmap PTI
-                // $crate::arch::x86::pti::unmap();
+                "call unmap\n",
 
                 // Exit kernel TLS segment
                 exit_gs!(),
@@ -348,13 +348,13 @@ macro_rules! interrupt {
                 enter_gs!(),
 
                 // TODO: Map PTI
-                // $crate::arch::x86::pti::map();
+                "call map\n",
 
                 // Call inner function with pointer to stack
                 "call {inner}\n",
 
                 // TODO: Unmap PTI
-                // $crate::arch::x86::pti::unmap();
+                "call unmap\n",
 
                 // Exit kernel TLS segment
                 exit_gs!(),
@@ -396,7 +396,7 @@ macro_rules! interrupt_error {
                 "push eax\n",
 
                 // TODO: Map PTI
-                // $crate::arch::x86::pti::map();
+                "call map\n",
 
                 // Call inner function with pointer to stack
                 "
@@ -406,7 +406,7 @@ macro_rules! interrupt_error {
                 // add esp, 4
 
                 // TODO: Unmap PTI (split "add esp, 8" into two "add esp, 4"s maybe?)
-                // $crate::arch::x86::pti::unmap();
+                "call unmap\n",
 
                 // Pop previous esp and code
                 "add esp, 8\n",
@@ -459,7 +459,7 @@ impl ArchIntCtx for InterruptStack {
 pub unsafe extern "C" fn enter_usermode() {
     core::arch::naked_asm!(concat!(
         // TODO: Unmap PTI
-        // $crate::arch::x86::pti::unmap();
+        "call unmap\n",
 
         // Exit kernel TLS segment
         exit_gs!(),

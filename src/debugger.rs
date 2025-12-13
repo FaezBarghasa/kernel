@@ -147,7 +147,7 @@ pub unsafe fn debugger(target_id: Option<*const ContextLock>, token: &mut CleanL
 
         println!();
     }
-    drop(contexts_guard);
+
     #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
     crate::scheme::proc::foreach_addrsp(token, |addrsp| {
         let was_new = spaces.insert(addrsp.acquire_read().table.utable.table().phys().data());

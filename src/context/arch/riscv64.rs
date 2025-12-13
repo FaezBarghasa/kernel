@@ -81,11 +81,11 @@ impl Context {
 
 impl super::Context {
     pub fn get_fx_regs(&self) -> FloatRegisters {
-        unimplemented!()
+        FloatRegisters::default()
     }
 
     pub fn set_fx_regs(&mut self, mut _new: FloatRegisters) {
-        unimplemented!()
+        // FIXME: Implement floating point support
     }
 
     pub fn current_syscall(&self) -> Option<[usize; 6]> {
@@ -184,9 +184,6 @@ unsafe extern "C" fn switch_to_inner(prev: &mut Context, next: &mut Context) {
 
         sd s10, {off_s10}(a0)
         ld s10, {off_s10}(a1)
-
-        sd s11, {off_s11}(a0)
-        ld s11, {off_s11}(a1)
 
         sd s11, {off_s11}(a0)
         ld s11, {off_s11}(a1)

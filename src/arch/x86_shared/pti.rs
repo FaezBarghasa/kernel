@@ -19,22 +19,29 @@ pub static mut PTI_CONTEXT_STACK: usize = 0;
 #[cfg(feature = "pti")]
 #[inline(always)]
 unsafe fn switch_stack(old: usize, new: usize) {
-    let old_rsp: usize;
-    asm!("", out("rsp") old_rsp);
+    let old_sp: usize;
+    #[cfg(target_arch = "x86_64")]
+    asm!("", out("rsp") old_sp);
+    #[cfg(target_arch = "x86")]
+    asm!("", out("esp") old_sp);
 
-    let offset_rsp = old - old_rsp;
+    let offset_sp = old - old_sp;
 
-    let new_rsp = new - offset_rsp;
+    let new_sp = new - offset_sp;
 
-    ptr::copy_nonoverlapping(old_rsp as *const u8, new_rsp as *mut u8, offset_rsp);
+    ptr::copy_nonoverlapping(old_sp as *const u8, new_sp as *mut u8, offset_sp);
 
-    asm!("", out("rsp") new_rsp);
+    #[cfg(target_arch = "x86_64")]
+    asm!("", out("rsp") new_sp);
+    #[cfg(target_arch = "x86")]
+    asm!("", out("esp") new_sp);
 }
 
 /// Maps the kernel heap and switches to the per-context stack.
 #[cfg(feature = "pti")]
 #[inline(always)]
-pub unsafe fn map() {
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn map() {
     // {
     //     let mut active_table = unsafe { ActivePageTable::new() };
     //
@@ -59,6 +66,7 @@ pub unsafe fn map() {
 /// Unmaps the kernel heap and switches to the per-CPU stack.
 #[cfg(feature = "pti")]
 #[inline(always)]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn unmap() {
     // Switch to per-CPU stack
     switch_stack(
@@ -83,8 +91,10 @@ pub unsafe extern "C" fn unmap() {
 
 #[cfg(not(feature = "pti"))]
 #[inline(always)]
-pub unsafe fn map() {}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn map() {}
 
 #[cfg(not(feature = "pti"))]
 #[inline(always)]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn unmap() {}

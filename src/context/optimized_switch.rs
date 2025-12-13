@@ -10,7 +10,7 @@ use core::sync::atomic::{AtomicU64, Ordering};
 pub struct SwitchStats {
     /// Total number of context switches
     pub total_switches: AtomicU64,
-    /// Total cycles spent in context switches (TSC)
+    /// Total cycles spent in context switches (TSC or equivalent)
     pub total_cycles: AtomicU64,
     /// Minimum cycles observed
     pub min_cycles: AtomicU64,
@@ -115,6 +115,7 @@ pub unsafe fn optimized_switch_to(
     next: *mut Context,
     stats: Option<&SwitchStats>,
 ) {
+    #[cfg(target_arch = "x86_64")]
     let start_tsc = core::arch::x86_64::_rdtsc();
 
     // Fast path: check if same address space
@@ -134,11 +135,16 @@ pub unsafe fn optimized_switch_to(
 
     crate::arch::switch_to(prev, next);
 
-    let end_tsc = core::arch::x86_64::_rdtsc();
-    let cycles = end_tsc - start_tsc;
-
-    if let Some(stats) = stats {
-        stats.record(cycles);
+    #[cfg(target_arch = "x86_64")]
+    {
+        let end_tsc = core::arch::x86_64::_rdtsc();
+        // Check for overflow or reordering
+        if end_tsc > start_tsc {
+             let cycles = end_tsc - start_tsc;
+             if let Some(stats) = stats {
+                 stats.record(cycles);
+             }
+        }
     }
 }
 

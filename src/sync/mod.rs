@@ -23,9 +23,8 @@ mod priority;
 
 // Re-export ordered lock types
 pub use ordered::{
-    check_no_locks, ArcRwLockWriteGuard, CleanLockToken, Higher, Level, LockToken, Lower,
-    Mutex as OrderedMutex, MutexGuard as OrderedMutexGuard, RwLock, RwLockReadGuard,
-    RwLockWriteGuard, L0, L1, L2, L3, L4, L5,
+    check_no_locks, CleanLockToken, Level, LockToken, Lower, Mutex as OrderedMutex,
+    MutexGuard as OrderedMutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard, L0, L1, L2,
 };
 
 // Re-export wait queue types
