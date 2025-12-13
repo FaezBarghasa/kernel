@@ -264,3 +264,14 @@ pub mod time_helpers {
         pub tv_nsec: i64,
     }
 }
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn bcmp(s1: *const u8, s2: *const u8, n: usize) -> i32 {
+    let s1_slice = core::slice::from_raw_parts(s1, n);
+    let s2_slice = core::slice::from_raw_parts(s2, n);
+    if s1_slice == s2_slice {
+        0
+    } else {
+        1
+    }
+}
