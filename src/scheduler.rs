@@ -1,9 +1,11 @@
-//! # Deadline Scheduler
+//! # Real-Time Scheduler
 //!
-//! This module implements a Virtual Deadline-based scheduler.
+//! This module implements a hybrid real-time scheduler.
 //!
-//! The scheduler aims to provide a "premium desktop feel" by prioritizing
-//! interactive and low-latency tasks, similar to XanMod's MuQSS/TT.
+//! It uses a fixed-priority, preemptive scheduling policy for real-time tasks
+//! and a virtual deadline-based policy for non-real-time tasks. This ensures
+//! that critical tasks meet their deadlines while providing fair scheduling
+//! for other tasks.
 
 use alloc::collections::VecDeque;
 use core::sync::atomic::{AtomicU64, Ordering};
@@ -22,9 +24,9 @@ const BASE_TIME_SLICE_NS: u64 = 1_000_000; // 1ms
 
 /// A single run queue for a CPU.
 ///
-/// This will hold runnable contexts, ordered by their virtual deadline.
+/// This will hold runnable contexts.
 pub struct RunQueue {
-    /// Real-time tasks, ordered by virtual deadline.
+    /// Real-time tasks, ordered by priority.
     rt_queue: VecDeque<(usize, ContextRef)>,
     /// Non-real-time tasks, ordered by virtual deadline.
     non_rt_queue: VecDeque<(usize, ContextRef)>,
@@ -40,34 +42,41 @@ impl RunQueue {
 
     /// Adds a context to the appropriate run queue.
     ///
-    /// The context is inserted into the queue based on its virtual deadline,
-    /// maintaining the sorted order.
+    /// Real-time tasks are inserted into the `rt_queue` sorted by priority.
+    /// Non-real-time tasks are inserted into the `non_rt_queue` sorted by virtual deadline.
     pub fn add(&mut self, context_ref: ContextRef, token: &mut CleanLockToken) {
-        let new_deadline = context_ref.read(token.token()).virtual_deadline;
-        let is_realtime = context_ref.read(token.token()).is_realtime;
-        let id = context_ref.read(token.token()).id();
-
-        let queue = if is_realtime {
-            &mut self.rt_queue
-        } else {
-            &mut self.non_rt_queue
+        let (is_realtime, id, new_deadline, new_priority) = {
+            let context = context_ref.read(token.token());
+            (
+                context.is_realtime,
+                context.id(),
+                context.virtual_deadline,
+                context.priority.effective_priority(),
+            )
         };
 
-        // Find the correct position to insert based on virtual_deadline
-        let mut i = 0;
-        while i < queue.len() {
-            // We need to read the context in the queue to check deadline.
-            // But if the context in queue IS the context we are currently holding a write lock on (e.g. rescheduling self),
-            // reading it will deadlock if we use the same token?
-            // Actually, add() is usually called when we DON'T hold the lock (e.g. unblock, spawn).
-            // But if we do, we need to be careful.
-            // Assuming add() is safe.
-            if new_deadline < queue[i].1.read(token.token()).virtual_deadline {
-                break;
+        if is_realtime {
+            // Real-time tasks are ordered by priority.
+            // Lower effective_priority value means higher actual priority.
+            let mut i = 0;
+            while i < self.rt_queue.len() {
+                if new_priority < self.rt_queue[i].1.read(token.token()).priority.effective_priority() {
+                    break;
+                }
+                i += 1;
             }
-            i += 1;
+            self.rt_queue.insert(i, (id, context_ref));
+        } else {
+            // Non-real-time tasks are ordered by virtual deadline.
+            let mut i = 0;
+            while i < self.non_rt_queue.len() {
+                if new_deadline < self.non_rt_queue[i].1.read(token.token()).virtual_deadline {
+                    break;
+                }
+                i += 1;
+            }
+            self.non_rt_queue.insert(i, (id, context_ref));
         }
-        queue.insert(i, (id, context_ref));
     }
 
     /// Removes and returns the next context to run.
@@ -139,16 +148,15 @@ impl Scheduler {
             // Update last_cpu_id for cache locality
             current_ctx.last_cpu_id = Some(crate::cpu_id());
 
-            // Calculate the virtual deadline based on effective priority
-            // Lower effective_priority means higher actual priority.
-            // A simple way to incorporate this is to scale the time_spent.
-            // For example, higher priority tasks accumulate virtual time slower.
-            let priority_factor = current_ctx.priority.effective_priority() as u64 + 1; // Avoid division by zero
-            let virtual_time_increase = (time_spent as u64 * BASE_TIME_SLICE_NS) / priority_factor;
+            if !current_ctx.is_realtime {
+                // Calculate the virtual deadline for non-real-time tasks.
+                let priority_factor = current_ctx.priority.effective_priority() as u64 + 1; // Avoid division by zero
+                let virtual_time_increase = (time_spent as u64 * BASE_TIME_SLICE_NS) / priority_factor;
 
-            current_ctx.virtual_deadline = current_ctx
-                .virtual_deadline
-                .saturating_add(virtual_time_increase);
+                current_ctx.virtual_deadline = current_ctx
+                    .virtual_deadline
+                    .saturating_add(virtual_time_increase);
+            }
 
             // If the context is still runnable, add it back to the run queue
             if current_ctx.status.is_runnable() {
@@ -162,8 +170,10 @@ impl Scheduler {
         if let Some(next_ctx_ref) = &next_context {
             let mut next_ctx = next_ctx_ref.write(token.token());
             next_ctx.switch_time = monotonic();
-            self.current_virtual_deadline
-                .store(next_ctx.virtual_deadline, Ordering::Relaxed);
+            if !next_ctx.is_realtime {
+                self.current_virtual_deadline
+                    .store(next_ctx.virtual_deadline, Ordering::Relaxed);
+            }
         }
 
         self.current_context = next_context.clone();
@@ -197,10 +207,12 @@ pub fn add_context(context_ref: ContextRef, token: &mut CleanLockToken) {
         context.last_cpu_id.unwrap_or_else(crate::cpu_id)
     };
 
-    // Initialize virtual_deadline for new contexts
+    // Initialize virtual_deadline for new non-real-time contexts
     {
         let mut context = context_ref.write(token.token());
-        context.virtual_deadline = PercpuBlock::current().scheduler.current_virtual_deadline.load(Ordering::Relaxed);
+        if !context.is_realtime {
+            context.virtual_deadline = PercpuBlock::current().scheduler.current_virtual_deadline.load(Ordering::Relaxed);
+        }
     }
 
     // TODO: Implement proper load balancing if target_cpu's queue is overloaded

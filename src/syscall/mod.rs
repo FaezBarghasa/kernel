@@ -12,6 +12,7 @@
 //! - `process`: Process management syscalls (e.g., `sys_fork`, `sys_exit`).
 //! - `time`: Time-related syscalls (e.g., `sys_clock_gettime`).
 //! - `usercopy`: Utilities for copying data between user and kernel space.
+//! - `memory`: Memory management syscalls (e.g., `sys_mlockall`).
 
 pub use self::debug::*;
 pub use crate::stubs::syscall_helpers::*;
@@ -26,6 +27,7 @@ pub mod privilege;
 pub mod process;
 pub mod time;
 pub mod usercopy;
+pub mod memory;
 
 use crate::{
     sync::CleanLockToken,
@@ -61,13 +63,10 @@ pub fn syscall(
     _f: usize,
 ) -> usize {
     let mut token = unsafe { CleanLockToken::new() };
-    // TODO: Define these in redox_syscall
-    const SYS_MLOCK: usize = 328;
-    const SYS_MUNLOCK: usize = 329;
 
     let res = match number {
-        SYS_MLOCK => fs::sys_mlock(a, b, &mut token),
-        SYS_MUNLOCK => fs::sys_munlock(a, b, &mut token),
+        number::SYS_MLOCKALL => memory::sys_mlockall(a),
+        number::SYS_MUNLOCKALL => memory::sys_munlockall(),
         _ => match number {
             // Forward to other handlers if needed, or default
             _ => Err(Error::new(ENOSYS)),

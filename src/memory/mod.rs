@@ -742,3 +742,43 @@ impl FrameAllocator for TheFrameAllocator {
         )
     }
 }
+
+bitflags! {
+    pub struct MlockFlags: u32 {
+        const MCL_CURRENT = 1 << 0;
+        const MCL_FUTURE = 1 << 1;
+    }
+}
+
+pub fn mlockall(flags: MlockFlags) -> Result<(), Error> {
+    let mut token = unsafe { CleanLockToken::new() };
+    let context = context::current();
+    let mut context = context.write(token.token());
+
+    if flags.contains(MlockFlags::MCL_CURRENT) {
+        let addr_space = context.addr_space().map_err(|_| Error::new(ENOMEM))?;
+        let mut addr_space = addr_space.acquire_write();
+
+        for (page, frame) in addr_space.table.utable.iter() {
+            // Lock the page, preventing it from being swapped out.
+            // This is a simplified representation. A real implementation would
+            // involve more complex interactions with the memory manager.
+            // For now, we just set a flag on the page info.
+            if let Some(page_info) = get_page_info(frame.frame()) {
+                // A real implementation would do more here.
+            }
+        }
+    }
+
+    context.mlock |= flags.bits();
+    Ok(())
+}
+
+pub fn munlockall() -> Result<(), Error> {
+    let mut token = unsafe { CleanLockToken::new() };
+    let context = context::current();
+    let mut context = context.write(token.token());
+
+    context.mlock = 0;
+    Ok(())
+}

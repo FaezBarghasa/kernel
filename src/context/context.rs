@@ -166,8 +166,8 @@ pub struct Context {
     /// True if this is a hard real-time task
     pub is_realtime: bool,
 
-    /// Counter for memory locked regions
-    pub memory_locked_count: usize,
+    /// Memory lock status
+    pub mlock: u32,
 }
 
 #[derive(Debug)]
@@ -232,7 +232,7 @@ impl Context {
             virtual_deadline: 0,
             last_cpu_id: None,
             is_realtime,
-            memory_locked_count: 0,
+            mlock: 0,
 
             #[cfg(feature = "syscall_debug")]
             syscall_debug_info: crate::syscall::debug::SyscallDebugInfo::default(),

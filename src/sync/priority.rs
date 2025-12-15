@@ -3,6 +3,7 @@
 //! This module implements priority inheritance protocol and dynamic priority boosting
 //! for IPC completion, similar to RCU boost in monolithic kernels.
 
+use alloc::collections::VecDeque;
 use core::sync::atomic::{AtomicU64, AtomicU8, Ordering};
 
 /// Priority levels for contexts
@@ -45,6 +46,8 @@ pub struct PriorityTracker {
     base_priority: AtomicU8,
     /// Effective priority (may be boosted)
     effective_priority: AtomicU8,
+    /// List of inherited priorities from other contexts, with a key to identify the source.
+    inherited_priorities: VecDeque<(usize, u8)>,
     /// Priority boost deadline (TSC timestamp, 0 = no boost)
     boost_deadline: AtomicU64,
     /// Count of critical IPC operations in progress
@@ -57,6 +60,7 @@ impl PriorityTracker {
         PriorityTracker {
             base_priority: AtomicU8::new(prio),
             effective_priority: AtomicU8::new(prio),
+            inherited_priorities: VecDeque::new(),
             boost_deadline: AtomicU64::new(0),
             ipc_critical_count: AtomicU8::new(0),
         }
@@ -65,24 +69,33 @@ impl PriorityTracker {
     /// Get current effective priority
     #[inline]
     pub fn effective_priority(&self) -> u8 {
+        self.effective_priority.load(Ordering::Relaxed)
+    }
+
+    /// Check if a priority boost has expired and recalculate if it has.
+    pub fn check_boost_expired(&mut self) {
         let deadline = self.boost_deadline.load(Ordering::Relaxed);
 
         if deadline != 0 {
-            // Check if boost has expired
             #[cfg(target_arch = "x86_64")]
             {
                 let current_tsc = unsafe { core::arch::x86_64::_rdtsc() };
                 if current_tsc > deadline {
-                    // Boost expired, restore base priority
-                    let base = self.base_priority.load(Ordering::Relaxed);
-                    self.effective_priority.store(base, Ordering::Relaxed);
+                    // Boost expired, clear deadline and recalculate priority
                     self.boost_deadline.store(0, Ordering::Relaxed);
-                    return base;
+                    self.recalculate_effective_priority();
                 }
             }
         }
+    }
 
-        self.effective_priority.load(Ordering::Relaxed)
+    /// Recalculates the effective priority based on base priority and inherited priorities.
+    fn recalculate_effective_priority(&mut self) {
+        let base = self.base_priority.load(Ordering::Relaxed);
+        // Find the highest priority (lowest value) among inherited priorities.
+        let highest_inherited = self.inherited_priorities.iter().map(|(_, p)| *p).min().unwrap_or(base);
+        let new_effective = core::cmp::min(base, highest_inherited);
+        self.effective_priority.store(new_effective, Ordering::Release);
     }
 
     /// Boost priority for IPC completion
@@ -131,46 +144,31 @@ impl PriorityTracker {
         self.ipc_critical_count.load(Ordering::Relaxed) > 0
     }
 
-    /// Inherit priority from another context
-    ///
-    /// Used when acquiring locks or waiting for IPC from another context
-    pub fn inherit_priority(&self, donor_priority: u8) {
-        let current_effective = self.effective_priority.load(Ordering::Relaxed);
-
-        // Only inherit if donor has higher priority (lower number)
-        if donor_priority < current_effective {
-            self.effective_priority
-                .store(donor_priority, Ordering::Release);
-
-            // Set a reasonable deadline for inherited priority
-            #[cfg(target_arch = "x86_64")]
-            {
-                let current_tsc = unsafe { core::arch::x86_64::_rdtsc() };
-                let deadline = current_tsc + 100_000; // ~30μs at 3GHz
-                self.boost_deadline.store(deadline, Ordering::Release);
-            }
+    /// Inherit a priority from a synchronization object.
+    /// The key should uniquely identify the synchronization object.
+    pub fn inherit_priority(&mut self, key: usize, donor_priority: u8) {
+        // If a priority from this key is already present, remove it before adding the new one.
+        if let Some(pos) = self.inherited_priorities.iter().position(|(k, _)| *k == key) {
+            self.inherited_priorities.remove(pos);
         }
+        self.inherited_priorities.push_back((key, donor_priority));
+        self.recalculate_effective_priority();
     }
 
-    /// Restore base priority
-    ///
-    /// Called when releasing locks or completing IPC
-    #[inline]
-    pub fn restore_base_priority(&self) {
-        let base = self.base_priority.load(Ordering::Relaxed);
-        self.effective_priority.store(base, Ordering::Release);
-        self.boost_deadline.store(0, Ordering::Relaxed);
+    /// Restore priority after releasing a resource.
+    /// The key should be the same as the one used in `inherit_priority`.
+    pub fn restore_priority(&mut self, key: usize) {
+        if let Some(pos) = self.inherited_priorities.iter().position(|(k, _)| *k == key) {
+            self.inherited_priorities.remove(pos);
+        }
+        self.recalculate_effective_priority();
     }
 
     /// Set base priority
-    pub fn set_base_priority(&self, priority: Priority) {
+    pub fn set_base_priority(&mut self, priority: Priority) {
         let prio = priority.as_u8();
         self.base_priority.store(prio, Ordering::Relaxed);
-
-        // If not currently boosted, update effective too
-        if self.boost_deadline.load(Ordering::Relaxed) == 0 {
-            self.effective_priority.store(prio, Ordering::Relaxed);
-        }
+        self.recalculate_effective_priority();
     }
 }
 

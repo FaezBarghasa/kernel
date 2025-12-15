@@ -3,6 +3,7 @@ use spin::Mutex;
 use syscall::{EAGAIN, EINTR, EWOULDBLOCK};
 
 use crate::{
+    context::ContextRef,
     sync::{CleanLockToken, WaitCondition},
     syscall::{
         error::{Error, Result, EINVAL},
@@ -11,8 +12,29 @@ use crate::{
 };
 
 #[derive(Debug)]
+pub struct Waitable<T> {
+    inner: T,
+}
+
+impl<T> AsRef<T> for Waitable<T> {
+    fn as_ref(&self) -> &T {
+        &self.inner
+    }
+}
+
+impl<T> Waitable<T> {
+    pub fn new(inner: T) -> Self {
+        Self { inner }
+    }
+
+    pub fn into_inner(self) -> T {
+        self.inner
+    }
+}
+
+#[derive(Debug)]
 pub struct WaitQueue<T> {
-    pub inner: Mutex<VecDeque<T>>,
+    pub inner: Mutex<VecDeque<Waitable<T>>>,
     pub condition: WaitCondition,
 }
 
@@ -38,7 +60,7 @@ impl<T> WaitQueue<T> {
 
             match inner.pop_front() {
                 Some(t) => {
-                    return Ok(t);
+                    return Ok(t.into_inner());
                 }
                 _ => {
                     if block {
@@ -60,7 +82,7 @@ impl<T> WaitQueue<T> {
         block: bool,
         reason: &'static str,
         token: &mut CleanLockToken,
-    ) -> Result<usize> {
+    ) -> Result<usize> where T: Copy {
         loop {
             let mut inner = self.inner.lock();
 
@@ -99,10 +121,21 @@ impl<T> WaitQueue<T> {
         }
     }
 
-    pub fn send(&self, value: T, token: &mut CleanLockToken) -> usize {
+    pub fn send(&self, value: T, token: &mut CleanLockToken) -> usize where T: AsRef<ContextRef> {
         let len = {
             let mut inner = self.inner.lock();
-            inner.push_back(value);
+            let priority = value.as_ref().read(token.token()).priority.effective_priority();
+
+            // Insert the task into the queue based on priority.
+            let mut i = 0;
+            while i < inner.len() {
+                let other_priority = inner[i].as_ref().as_ref().read(token.token()).priority.effective_priority();
+                if priority < other_priority {
+                    break;
+                }
+                i += 1;
+            }
+            inner.insert(i, Waitable::new(value));
             inner.len()
         };
         self.condition.notify(token);
