@@ -1,0 +1,52 @@
+//! RISC-V 32-bit miscellaneous utilities
+
+use core::arch::asm;
+
+use crate::{
+    cpu_set::LogicalCpuId,
+    paging::{RmmA, RmmArch},
+    percpu::PercpuBlock,
+};
+
+/// The architecture-specific per-CPU block.
+#[repr(C)]
+pub struct ArchPercpu {
+    // These fields must be kept first and in this order. Assembly in exception.rs depends on it
+    pub tmp: u32,
+    pub s_sp: u32,
+
+    pub percpu: PercpuBlock,
+}
+
+impl PercpuBlock {
+    /// Returns the current per-CPU block.
+    pub fn current() -> &'static Self {
+        unsafe {
+            let tp: *const ArchPercpu;
+            asm!( "mv t0, tp", out("t0") tp );
+            let arch_percpu = &*tp;
+            &arch_percpu.percpu
+        }
+    }
+}
+
+/// Initializes the per-CPU block for the current CPU.
+#[cold]
+pub unsafe fn init(cpu_id: LogicalCpuId) {
+    unsafe {
+        let frame = crate::memory::allocate_frame().expect("failed to allocate percpu memory");
+        let virt = RmmA::phys_to_virt(frame.base()).data() as *mut ArchPercpu;
+
+        virt.write(ArchPercpu {
+            tmp: 0,
+            s_sp: 0,
+            percpu: PercpuBlock::init(cpu_id),
+        });
+
+        asm!(
+            "mv tp, {}",
+            "csrw sscratch, tp",
+            in(reg) virt as u32
+        );
+    }
+}

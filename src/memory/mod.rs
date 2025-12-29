@@ -115,11 +115,13 @@ pub fn allocate_p2frame_complex(
     }
 
     for order in (min_order..frame_order).rev() {
-        let order_page_count = 1usize.checked_shl(order).ok_or(Error::new(EOVERFLOW)).ok()?;
+        let order_page_count = 1usize
+            .checked_shl(order)
+            .ok_or(Error::new(EOVERFLOW))
+            .ok()?;
         let hi = frame.try_next_by(order_page_count).ok()?;
 
-        let hi_info = get_page_info(hi)
-            .expect("sub-p2frame of split p2flame lacked PageInfo");
+        let hi_info = get_page_info(hi).expect("sub-p2frame of split p2flame lacked PageInfo");
 
         let free_info = hi_info.transition_to_free(order);
         free_info.set_next(P2Frame::new(None, order));
@@ -131,7 +133,10 @@ pub fn allocate_p2frame_complex(
     }
 
     if let Some(added) = 1usize.checked_shl(min_order) {
-        freelist.used_frames = freelist.used_frames.checked_add(added).expect("Used frames overflow");
+        freelist.used_frames = freelist
+            .used_frames
+            .checked_add(added)
+            .expect("Used frames overflow");
     } else {
         return None;
     }
@@ -228,7 +233,10 @@ pub unsafe fn deallocate_p2frame(orig_frame: Frame, order: u32) {
     }
 
     if let Some(sub) = 1usize.checked_shl(order) {
-        freelist.used_frames = freelist.used_frames.checked_sub(sub).expect("Free list underflow");
+        freelist.used_frames = freelist
+            .used_frames
+            .checked_sub(sub)
+            .expect("Free list underflow");
     }
 }
 
@@ -245,7 +253,8 @@ pub unsafe fn map_device_memory(addr: PhysicalAddress, len: usize) -> VirtualAdd
         let base = PhysicalAddress::new(crate::paging::round_down_pages(addr.data()));
 
         let offset = addr.data().checked_sub(base.data()).unwrap_or(0);
-        let aligned_len = crate::paging::round_up_pages(len.checked_add(offset).unwrap_or(usize::MAX));
+        let aligned_len =
+            crate::paging::round_up_pages(len.checked_add(offset).unwrap_or(usize::MAX));
 
         for page_idx in 0..aligned_len / crate::memory::PAGE_SIZE {
             let page_offset = page_idx.checked_mul(crate::memory::PAGE_SIZE).unwrap_or(0);
@@ -319,16 +328,25 @@ impl Frame {
     }
     pub fn try_next_by(self, n: usize) -> Result<Self, Error> {
         let offset = n.checked_mul(PAGE_SIZE).ok_or(Error::new(EOVERFLOW))?;
-        let new_addr = self.physaddr.get().checked_add(offset).ok_or(Error::new(EOVERFLOW))?;
+        let new_addr = self
+            .physaddr
+            .get()
+            .checked_add(offset)
+            .ok_or(Error::new(EOVERFLOW))?;
         let physaddr = NonZeroUsize::new(new_addr).ok_or(Error::new(EINVAL))?;
         Ok(Self { physaddr })
     }
     pub fn try_offset_from(self, from: Self) -> Result<usize, Error> {
-        let diff = self.physaddr.get().checked_sub(from.physaddr.get()).ok_or(Error::new(EOVERFLOW))?;
+        let diff = self
+            .physaddr
+            .get()
+            .checked_sub(from.physaddr.get())
+            .ok_or(Error::new(EOVERFLOW))?;
         Ok(diff / PAGE_SIZE)
     }
     pub fn offset_from(self, from: Self) -> usize {
-        self.try_offset_from(from).expect("overflow in Frame::offset_from")
+        self.try_offset_from(from)
+            .expect("overflow in Frame::offset_from")
     }
     pub fn is_aligned_to_order(self, order: u32) -> bool {
         if let Some(mask) = PAGE_SIZE.checked_shl(order) {
@@ -437,8 +455,8 @@ pub const MAX_SECTION_SIZE: usize = 1 << MAX_SECTION_SIZE_BITS;
 pub const MAX_SECTION_PAGE_COUNT: usize = MAX_SECTION_SIZE / PAGE_SIZE;
 
 #[cold]
-fn init_sections(mut allocator: BumpAllocator<RmmA>) {
-    let (free_areas, offset_into_first_free_area) = allocator.free_areas();
+fn init_sections(allocator: BumpAllocator<RmmA>) {
+    let (_free_areas, _offset_into_first_free_area) = allocator.free_areas();
     let bump_used = unsafe { allocator.usage().used().data() };
     BUMP_FRAMES.store(bump_used, Ordering::Relaxed);
 }
@@ -757,8 +775,9 @@ pub fn mlockall(flags: MlockFlags) -> Result<(), Error> {
 
     if flags.contains(MlockFlags::MCL_CURRENT) {
         let addr_space = context.addr_space().map_err(|_| Error::new(ENOMEM))?;
-        let mut addr_space = addr_space.acquire_write();
+        let _addr_space = addr_space.acquire_write();
 
+        /*
         for (page, frame) in addr_space.table.utable.iter() {
             // Lock the page, preventing it from being swapped out.
             // This is a simplified representation. A real implementation would
@@ -768,6 +787,7 @@ pub fn mlockall(flags: MlockFlags) -> Result<(), Error> {
                 // A real implementation would do more here.
             }
         }
+        */
     }
 
     context.mlock |= flags.bits();

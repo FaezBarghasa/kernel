@@ -18,8 +18,8 @@ use crate::{
     memory::{allocate_p2frame, deallocate_p2frame, Enomem, Frame, RaiiFrame},
     paging::{RmmA, RmmArch},
     percpu::PercpuBlock,
-    scheme::{CallerCtx, FileHandle, SchemeId, SchemeNamespace},
     scheduler,
+    scheme::{CallerCtx, FileHandle, SchemeId, SchemeNamespace},
     sync::{CleanLockToken, Priority},
 };
 
@@ -166,8 +166,11 @@ pub struct Context {
     /// True if this is a hard real-time task
     pub is_realtime: bool,
 
-    /// Memory lock status
+    /// Memory lock status (MCL_CURRENT, MCL_FUTURE flags)
     pub mlock: u32,
+
+    /// Count of memory-locked pages for this context
+    pub memory_locked_count: usize,
 }
 
 #[derive(Debug)]
@@ -233,6 +236,7 @@ impl Context {
             last_cpu_id: None,
             is_realtime,
             mlock: 0,
+            memory_locked_count: 0,
 
             #[cfg(feature = "syscall_debug")]
             syscall_debug_info: crate::syscall::debug::SyscallDebugInfo::default(),
@@ -490,7 +494,8 @@ impl Context {
         if self.kstack.is_none() {
             self.kstack = Some(Kstack::new().map_err(|_| Error::new(ENOMEM))?);
         }
-        self.arch.setup_initial_call(self.kstack.as_ref().unwrap(), call, self.userspace);
+        self.arch
+            .setup_initial_call(self.kstack.as_ref().unwrap(), call, self.userspace);
         Ok(())
     }
 }

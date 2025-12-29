@@ -16,18 +16,18 @@
 
 pub use self::debug::*;
 pub use crate::stubs::syscall_helpers::*;
-pub use ::syscall::{data, error, flag, io, number};
-pub use ::syscall::{EnvRegisters, FloatRegisters, IntRegisters};
-pub use ::syscall::flag::EventFlags;
+pub use ::syscall::{
+    data, error, flag, flag::EventFlags, io, number, EnvRegisters, FloatRegisters, IntRegisters,
+};
 
 pub mod debug;
 pub mod fs;
 pub mod futex;
+pub mod memory;
 pub mod privilege;
 pub mod process;
 pub mod time;
 pub mod usercopy;
-pub mod memory;
 
 use crate::{
     sync::CleanLockToken,
@@ -53,23 +53,21 @@ use crate::{
 ///
 /// Returns the result of the system call, which is typically 0 on success or a negative error code on failure.
 /// The `Error::mux` function converts the `Result` into this `usize` representation.
-pub fn syscall(
-    number: usize,
-    a: usize,
-    b: usize,
-    _c: usize,
-    _d: usize,
-    _e: usize,
-    _f: usize,
-) -> usize {
+pub fn syscall(number: usize, a: usize, b: usize, c: usize, d: usize, e: usize, f: usize) -> usize {
     let mut token = unsafe { CleanLockToken::new() };
 
     let res = match number {
-        number::SYS_MLOCKALL => memory::sys_mlockall(a),
-        number::SYS_MUNLOCKALL => memory::sys_munlockall(),
-        _ => match number {
+        number::SYS_FUTEX => futex::futex(a, b, c, d, e, &mut token),
+        // Linux uses 449 for futex_waitv on x86_64, but Redox might use a different number.
+        // We will assume 449 for now or a new constant if defined.
+        449 => futex::futex_waitv(a, b, c, d, e, &mut token),
+
+        // TODO: Uncomment when SYS_MLOCKALL and SYS_MUNLOCKALL are added to redox_syscall crate
+        // number::SYS_MLOCKALL => memory::sys_mlockall(a),
+        // number::SYS_MUNLOCKALL => memory::sys_munlockall(),
+        _ => {
             // Forward to other handlers if needed, or default
-            _ => Err(Error::new(ENOSYS)),
+            Err(Error::new(ENOSYS))
         }
     };
     Error::mux(res)

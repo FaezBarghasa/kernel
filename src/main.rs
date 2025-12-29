@@ -62,6 +62,7 @@ mod event;
 #[cfg(not(test))]
 mod externs;
 mod gdt;
+mod ipc;
 mod log;
 mod memory;
 mod misc;
@@ -69,8 +70,8 @@ mod panic;
 mod percpu;
 mod profiling;
 mod ptrace;
-mod scheme;
 mod scheduler;
+mod scheme;
 mod startup;
 #[macro_use]
 mod stubs;

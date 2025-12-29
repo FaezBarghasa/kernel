@@ -217,3 +217,154 @@ pub fn futex(
         _ => Err(Error::new(EINVAL)),
     }
 }
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct FutexWaitv {
+    pub val: u64,
+    pub uaddr: usize,
+    pub flags: u32,
+    pub __reserved: u32,
+}
+
+pub fn futex_waitv(
+    waiters_addr: usize,
+    nr_futexes: usize,
+    flags: usize,
+    timeout_addr: usize,
+    _clockid: usize,
+    token: &mut CleanLockToken,
+) -> Result<usize> {
+    if flags != 0 {
+        return Err(Error::new(EINVAL));
+    }
+    // Limit nr_futexes to avoid DoS (Linux uses 128)
+    if nr_futexes > 128 {
+        return Err(Error::new(EINVAL));
+    }
+
+    let timeout_opt = UserSlice::ro(timeout_addr, core::mem::size_of::<TimeSpec>())?
+        .none_if_null()
+        .map(|buf| unsafe { buf.read_exact::<TimeSpec>() })
+        .transpose()?;
+
+    let waiters_slice = UserSlice::ro(
+        waiters_addr,
+        nr_futexes * core::mem::size_of::<FutexWaitv>(),
+    )?;
+    let mut waiters =
+        alloc::vec![FutexWaitv { val: 0, uaddr: 0, flags: 0, __reserved: 0 }; nr_futexes];
+    unsafe {
+        let waiters_u8 = core::slice::from_raw_parts_mut(
+            waiters.as_mut_ptr() as *mut u8,
+            nr_futexes * core::mem::size_of::<FutexWaitv>(),
+        );
+        waiters_slice.copy_to_slice(waiters_u8)?;
+    }
+
+    let current_addrsp = AddrSpace::current(token)?;
+
+    // Keep the address space locked so we can safely read from the physical address. Unlock it
+    // before context switching.
+    let addr_space_guard = current_addrsp.acquire_read();
+
+    {
+        let mut futexes_locked = FUTEXES.lock(token.token());
+        let (futexes, mut token) = futexes_locked.token_split();
+        let context_lock = context::current();
+
+        // 1. Validate all values first
+        for waiter in waiters.iter() {
+            let addr = waiter.uaddr;
+            let val = waiter.val;
+
+            if addr % 4 != 0 {
+                return Err(Error::new(EINVAL));
+            }
+
+            let target_virtaddr = VirtualAddress::new(addr);
+            let target_physaddr = validate_and_translate_virt(&addr_space_guard, target_virtaddr)
+                .ok_or(Error::new(EFAULT))?;
+
+            // Assume 32-bit (FUTEX_32 default)
+            let accessible_addr =
+                unsafe { crate::paging::RmmA::phys_to_virt(target_physaddr) }.data();
+            let fetched = u64::from(unsafe {
+                (*(accessible_addr as *const AtomicU32)).load(Ordering::SeqCst)
+            });
+
+            if fetched != val {
+                return Err(Error::new(EAGAIN));
+            }
+        }
+
+        // 2. Add to all lists
+        for waiter in waiters.iter() {
+            let addr = waiter.uaddr;
+            let target_virtaddr = VirtualAddress::new(addr);
+            // We know it translates from step 1
+            let target_physaddr =
+                validate_and_translate_virt(&addr_space_guard, target_virtaddr).unwrap();
+
+            futexes
+                .entry(target_physaddr)
+                .or_insert_with(|| Vec::new())
+                .push(FutexEntry {
+                    target_virtaddr,
+                    context_lock: context_lock.clone(),
+                    addr_space: Arc::downgrade(&current_addrsp),
+                });
+        }
+
+        // 3. Block
+        {
+            let mut context = context_lock.write(token.token());
+
+            context.wake = timeout_opt.map(|TimeSpec { tv_sec, tv_nsec }| {
+                tv_sec as u128 * time::NANOS_PER_SEC + tv_nsec as u128
+            });
+
+            if let Some((tctl, pctl, _)) = context.sigcontrol() {
+                if tctl.currently_pending_unblocked(pctl) != 0 {
+                    return Err(Error::new(EINTR));
+                }
+            }
+
+            context.block("futex_waitv");
+        }
+    }
+
+    drop(addr_space_guard);
+
+    unsafe { context::switch(token) };
+
+    // 4. Cleanup (remove from all lists)
+    let _addr_space_guard = current_addrsp.acquire_read();
+    {
+        let mut futexes_locked = FUTEXES.lock(token.token());
+        let (futexes, mut token) = futexes_locked.token_split();
+        let context_lock = context::current();
+
+        for waiter in waiters.iter() {
+            let addr = waiter.uaddr;
+            if let Some(target_physaddr) =
+                validate_and_translate_virt(&_addr_space_guard, VirtualAddress::new(addr))
+            {
+                if let Some(list) = futexes.get_mut(&target_physaddr) {
+                    let my_context_ptr = Arc::as_ptr(&context_lock);
+                    list.retain(|entry| Arc::as_ptr(&entry.context_lock) != my_context_ptr);
+
+                    if list.is_empty() {
+                        futexes.remove(&target_physaddr);
+                    }
+                }
+            }
+        }
+    }
+
+    if timeout_opt.is_some() {
+        context::current().write(token.token()).wake = None;
+    }
+
+    Ok(0)
+}

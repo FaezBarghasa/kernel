@@ -2,9 +2,16 @@
 
 pub mod consts;
 pub mod context;
+pub mod debug;
+pub mod device;
 pub mod interrupt;
+pub mod ipi;
+pub mod misc;
 pub mod paging;
+pub mod rmm;
 pub mod start;
+pub mod stop;
+pub mod time;
 
 pub type Arch = crate::arch::riscv64::Arch;
 
