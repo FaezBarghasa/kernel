@@ -840,6 +840,128 @@ pub mod preempt {
     }
 }
 
+// =============================================================================
+// RCU-Style Read-Side Critical Sections
+// =============================================================================
+
+/// RCU-like read-side critical section for zero-copy IPC
+///
+/// This provides lock-free read access to shared IPC data structures.
+/// Writers must wait for all readers to complete before reclaiming.
+pub mod rcu {
+    use core::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+
+    /// Grace period counter for RCU synchronization
+    static GRACE_PERIOD: AtomicU64 = AtomicU64::new(0);
+
+    /// Per-CPU RCU state
+    #[repr(C)]
+    pub struct RcuState {
+        /// Current grace period seen by this CPU
+        gp_seq: AtomicU64,
+        /// Nesting count for read-side critical sections
+        nesting: AtomicUsize,
+    }
+
+    impl RcuState {
+        pub const fn new() -> Self {
+            Self {
+                gp_seq: AtomicU64::new(0),
+                nesting: AtomicUsize::new(0),
+            }
+        }
+    }
+
+    /// Thread-local RCU state
+    static RCU_STATE: RcuState = RcuState::new();
+
+    /// Enter RCU read-side critical section
+    ///
+    /// Must be paired with `rcu_read_unlock()`. Can be nested.
+    /// While in an RCU read-side critical section, the caller is
+    /// guaranteed that any RCU-protected data will not be reclaimed.
+    #[inline(always)]
+    pub fn rcu_read_lock() {
+        // Record that we're in a read-side critical section
+        let old = RCU_STATE.nesting.fetch_add(1, Ordering::Acquire);
+
+        // On first entry, snapshot the current grace period
+        if old == 0 {
+            let gp = GRACE_PERIOD.load(Ordering::Acquire);
+            RCU_STATE.gp_seq.store(gp, Ordering::Release);
+        }
+    }
+
+    /// Exit RCU read-side critical section
+    #[inline(always)]
+    pub fn rcu_read_unlock() {
+        let old = RCU_STATE.nesting.fetch_sub(1, Ordering::Release);
+        debug_assert!(old > 0, "rcu_read_unlock without matching rcu_read_lock");
+    }
+
+    /// Check if in RCU read-side critical section
+    #[inline(always)]
+    pub fn rcu_read_lock_held() -> bool {
+        RCU_STATE.nesting.load(Ordering::Relaxed) > 0
+    }
+
+    /// Advance grace period (called by writers after update)
+    ///
+    /// This waits for all current readers to exit their critical sections.
+    pub fn synchronize_rcu() {
+        // Advance the grace period
+        let new_gp = GRACE_PERIOD.fetch_add(1, Ordering::AcqRel) + 1;
+
+        // In a full implementation, we would:
+        // 1. Send IPIs to all CPUs
+        // 2. Wait for each CPU to pass through a quiescent state
+        // 3. Only then return
+        //
+        // For now, we use a simple spin-wait on the per-CPU state
+        // This is a placeholder for the full implementation
+        loop {
+            let reader_gp = RCU_STATE.gp_seq.load(Ordering::Acquire);
+            let nesting = RCU_STATE.nesting.load(Ordering::Acquire);
+
+            // Reader has exited or is in a new grace period
+            if nesting == 0 || reader_gp >= new_gp {
+                break;
+            }
+
+            // Spin (in production, would yield to other tasks)
+            core::hint::spin_loop();
+        }
+    }
+
+    /// RAII guard for RCU read-side critical section
+    pub struct RcuReadGuard {
+        _private: (),
+    }
+
+    impl RcuReadGuard {
+        #[inline(always)]
+        pub fn new() -> Self {
+            rcu_read_lock();
+            Self { _private: () }
+        }
+    }
+
+    impl Drop for RcuReadGuard {
+        #[inline(always)]
+        fn drop(&mut self) {
+            rcu_read_unlock();
+        }
+    }
+
+    impl Default for RcuReadGuard {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+}
+
+/// Dynamic priority boosting for IPC lock holders\n///\n/// When a high-priority thread is waiting on a lock held by a lower-priority\n/// thread, boost the holder's priority to prevent indefinite blocking.\npub fn priority_boost(holder: &crate::context::ContextRef, waiter_priority: u8) {\n    let mut token = unsafe { crate::sync::CleanLockToken::new() };\n    let holder_ctx = holder.read(token.token());\n    \n    // Only boost if waiter has higher priority (lower number)\n    let current = holder_ctx.priority.effective_priority();\n    if waiter_priority < current {\n        // Boost via IPC critical section mechanism\n        holder_ctx.priority.enter_ipc_critical();\n    }\n}
+
 /// Full preemption check point
 /// Call this at safe preemption points to allow RT threads to preempt
 #[inline]
