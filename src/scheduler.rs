@@ -58,6 +58,30 @@ const BALANCE_INTERVAL_NS: u64 = 4_000_000; // 4ms
 /// Imbalance threshold for work stealing (percentage).
 const IMBALANCE_PCT: usize = 25;
 
+/// Late deadline threshold for interactive tasks (100µs target latency).
+/// Tasks exceeding this are considered latency violations.
+pub const LATE_DEADLINE_NS: u64 = 100_000; // 100µs
+
+/// Scheduling policies
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u8)]
+pub enum SchedPolicy {
+    /// Normal non-real-time scheduling (CFS-like)
+    Normal = 0,
+    /// FIFO real-time scheduling
+    Fifo = 1,
+    /// Round-robin real-time scheduling
+    RoundRobin = 2,
+    /// Batch processing (throughput-oriented)
+    Batch = 3,
+    /// Idle (lowest priority)
+    Idle = 5,
+    /// Interactive (gaming/workstation, lowest latency)
+    Interactive = 6,
+    /// Deadline scheduling (for future EDF implementation)
+    Deadline = 7,
+}
+
 // =============================================================================
 // Scheduler Statistics
 // =============================================================================
@@ -243,6 +267,11 @@ impl RunQueue {
                 .position(|e| vdeadline < e.vdeadline)
                 .unwrap_or(self.non_rt_queue.len());
             self.non_rt_queue.insert(insert_pos, entry);
+
+            // Mark preemption needed if this task has the earliest deadline
+            if insert_pos == 0 {
+                self.needs_preempt.store(true, Ordering::Release);
+            }
         }
 
         // Update counts and load
@@ -560,7 +589,23 @@ impl Scheduler {
         }
 
         // Check if run queue flagged preemption
-        self.run_queue.check_preempt()
+        // Check if run queue flagged preemption
+        if self.run_queue.check_preempt() {
+            // For non-RT, only preempt if the waiting task has an earlier deadline
+            if let Some(front) = self.run_queue.non_rt_queue.front() {
+                let current_deadline = self.current_virtual_deadline.load(Ordering::Relaxed);
+                if front.vdeadline < current_deadline {
+                    return true;
+                }
+                // If RT queue has task, has_higher_priority handled it.
+                // If only non-RT queue has task and it's later deadline, don't preempt.
+            } else {
+                // RT task triggered preemption
+                return true;
+            }
+        }
+
+        false
     }
 
     /// Attempt load balancing with other CPUs

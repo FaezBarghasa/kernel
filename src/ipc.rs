@@ -18,11 +18,16 @@ use spin::RwLock;
 
 use crate::{
     context::{self, ContextRef},
-    memory::{allocate_frame, deallocate_frame, Frame, PhysicalAddress, RmmA, RmmArch, PAGE_SIZE},
+    memory::{allocate_frame, deallocate_frame, Frame, RmmA, RmmArch, PAGE_SIZE},
     sync::{CleanLockToken, IpcCriticalGuard, LockFreeQueue, Priority, PriorityTracker},
-    syscall::error::{Error, Result, EAGAIN, EBADF, EINVAL, ENOMEM, EPERM, ETIMEDOUT},
+    syscall::{
+        error::{Error, Result, EBADF, EINVAL, ENOMEM, EPERM, ETIMEDOUT},
+        flag::MapFlags,
+    },
     time::monotonic,
 };
+
+use crate::arch::paging::{PageFlags, VirtualAddress};
 
 // =============================================================================
 // Constants
@@ -205,6 +210,48 @@ impl SharedBuffer {
     /// Decrement reference count
     fn remove_ref(&self) -> bool {
         self.ref_count.fetch_sub(1, Ordering::AcqRel) == 1
+    }
+
+    /// Map this buffer into the target context's address space
+    pub fn map_to_context(
+        &self,
+        context: &ContextRef,
+        virt: VirtualAddress,
+        flags: MapFlags,
+    ) -> Result<()> {
+        let mut token = unsafe { CleanLockToken::new() };
+        let ctx = context.read(token.token());
+        let addr_space = ctx.addr_space()?;
+
+        // Convert MapFlags to PageFlags
+        // TODO: Move this conversion to a common helper
+        let mut page_flags = PageFlags::new();
+        if flags.contains(MapFlags::PROT_READ) {
+            page_flags = page_flags.user(true);
+        }
+        if flags.contains(MapFlags::PROT_WRITE) {
+            page_flags = page_flags.write(true);
+        }
+        if !flags.contains(MapFlags::PROT_EXEC) {
+            page_flags = page_flags.execute(false);
+        }
+
+        let mut inner = addr_space.acquire_write();
+
+        // Map the physical frame to the virtual address
+        // We use the underlying page table directly
+        // safety: we are mapping a valid frame to a user address
+        unsafe {
+            inner
+                .table
+                .utable
+                .0
+                .map_phys(virt, self.frame.base(), page_flags)
+                .ok_or(Error::new(ENOMEM))?
+                .flush();
+        }
+
+        Ok(())
     }
 }
 
@@ -696,6 +743,19 @@ impl IpcRegistry {
     /// Get a shared buffer
     pub fn get_buffer(&self, buffer_id: u32) -> Option<&SharedBuffer> {
         self.buffer_pool.as_ref()?.get(buffer_id)
+    }
+
+    /// Map a shared buffer into a context
+    pub fn map_buffer(
+        &self,
+        buffer_id: u32,
+        context: &ContextRef,
+        virt: VirtualAddress,
+        flags: MapFlags,
+    ) -> Result<()> {
+        let pool = self.buffer_pool.as_ref().ok_or(Error::new(EINVAL))?;
+        let buffer = pool.get(buffer_id).ok_or(Error::new(EBADF))?;
+        buffer.map_to_context(context, virt, flags)
     }
 }
 

@@ -81,6 +81,7 @@ impl KernelScheme for EventScheme {
                 break;
             }
             events_written += 1;
+            crate::ipc::preempt_check(token);
         }
 
         Ok(events_written * mem::size_of::<Event>())

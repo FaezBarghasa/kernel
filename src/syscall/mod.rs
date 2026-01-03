@@ -13,6 +13,7 @@
 //! - `time`: Time-related syscalls (e.g., `sys_clock_gettime`).
 //! - `usercopy`: Utilities for copying data between user and kernel space.
 //! - `memory`: Memory management syscalls (e.g., `sys_mlockall`).
+//! - `personality`: Foreign ABI detection and syscall redirection.
 
 pub use self::debug::*;
 pub use crate::stubs::syscall_helpers::*;
@@ -24,6 +25,7 @@ pub mod debug;
 pub mod fs;
 pub mod futex;
 pub mod memory;
+pub mod personality;
 pub mod privilege;
 pub mod process;
 pub mod time;
@@ -44,10 +46,10 @@ use crate::{
 /// * `number` - The system call number (e.g., `SYS_READ`, `SYS_WRITE`).
 /// * `a` - The first argument to the syscall.
 /// * `b` - The second argument to the syscall.
-/// * `_c` - The third argument to the syscall (unused in this stub).
-/// * `_d` - The fourth argument to the syscall (unused in this stub).
-/// * `_e` - The fifth argument to the syscall (unused in this stub).
-/// * `_f` - The sixth argument to the syscall (unused in this stub).
+/// * `c` - The third argument to the syscall.
+/// * `d` - The fourth argument to the syscall.
+/// * `e` - The fifth argument to the syscall.
+/// * `f` - The sixth argument to the syscall.
 ///
 /// # Returns
 ///
@@ -56,6 +58,15 @@ use crate::{
 pub fn syscall(number: usize, a: usize, b: usize, c: usize, d: usize, e: usize, f: usize) -> usize {
     let mut token = unsafe { CleanLockToken::new() };
 
+    // Check for foreign ABI syscalls
+    let abi = personality::detect_abi(&token);
+    if personality::is_foreign_syscall(abi, number) {
+        let args = personality::SyscallArgs::new(number, a, b, c, d, e, f);
+        let res = personality::redirect_foreign_syscall(abi, args, &mut token);
+        return Error::mux(res);
+    }
+
+    // Native Redox syscall dispatch
     let res = match number {
         number::SYS_FUTEX => futex::futex(a, b, c, d, e, &mut token),
         // Linux uses 449 for futex_waitv on x86_64, but Redox might use a different number.
