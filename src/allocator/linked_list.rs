@@ -26,9 +26,10 @@ unsafe impl GlobalAlloc for Allocator {
                     Ok(ptr) => return ptr.as_ptr(),
                     Err(()) => {
                         let size = heap.size();
+                        // Use KASLR-adjusted heap base for address randomization
                         super::map_heap(
                             &mut KernelMapper::lock(),
-                            crate::KERNEL_HEAP_OFFSET + size,
+                            crate::kaslr::heap_base() + size,
                             crate::KERNEL_HEAP_SIZE,
                         );
                         heap.extend(crate::KERNEL_HEAP_SIZE);

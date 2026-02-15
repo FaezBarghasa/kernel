@@ -58,11 +58,13 @@ mod debugger;
 mod devices;
 #[cfg(feature = "dtb")]
 mod dtb;
+mod entropy;
 mod event;
 #[cfg(not(test))]
 mod externs;
 mod gdt;
 mod ipc;
+mod kaslr;
 mod log;
 mod memory;
 mod misc;
@@ -72,6 +74,7 @@ mod profiling;
 mod ptrace;
 mod scheduler;
 mod scheme;
+mod stack_guard;
 mod startup;
 #[macro_use]
 mod stubs;
@@ -88,7 +91,7 @@ static ALLOCATOR: allocator::Allocator = allocator::Allocator;
 
 #[inline(always)]
 fn cpu_id() -> crate::cpu_set::LogicalCpuId {
-    crate::percpu::PercpuBlock::current().cpu_id
+    crate::percpu::PercpuBlock::current_cpu_id()
 }
 
 static CPU_COUNT: AtomicU32 = AtomicU32::new(1);
@@ -102,6 +105,7 @@ fn init_env() -> &'static [u8] {
     crate::BOOTSTRAP.get().expect("BOOTSTRAP was not set").env
 }
 
+#[allow(dead_code)]
 extern "C" fn userspace_init() {
     let mut token = unsafe { CleanLockToken::new() };
     let bootstrap = crate::BOOTSTRAP.get().expect("BOOTSTRAP was not set");
@@ -123,6 +127,7 @@ extern "C" fn kmain_reaper() {
     }
 }
 
+#[allow(dead_code)]
 fn kmain(bootstrap: Bootstrap) -> ! {
     let mut token = unsafe { CleanLockToken::new() };
     context::init();

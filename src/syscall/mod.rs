@@ -59,7 +59,7 @@ pub fn syscall(number: usize, a: usize, b: usize, c: usize, d: usize, e: usize, 
     let mut token = unsafe { CleanLockToken::new() };
 
     // Check for foreign ABI syscalls
-    let abi = personality::detect_abi(&token);
+    let abi = personality::detect_abi(&mut token);
     if personality::is_foreign_syscall(abi, number) {
         let args = personality::SyscallArgs::new(number, a, b, c, d, e, f);
         let res = personality::redirect_foreign_syscall(abi, args, &mut token);

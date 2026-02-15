@@ -46,9 +46,7 @@ pub fn file_op_generic_ext<T>(
     };
 
     let schemes_guard = scheme::schemes(&token.token());
-    let scheme = schemes_guard
-        .get(desc.scheme)
-        .ok_or(Error::new(EBADF))?;
+    let scheme = schemes_guard.get(desc.scheme).ok_or(Error::new(EBADF))?;
     let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
     op(&*scheme_clone, file.description, desc, token)
@@ -394,9 +392,7 @@ fn call_normal(
         (desc.scheme, desc.number)
     };
     let schemes_guard = scheme::schemes(&token.token());
-    let scheme = schemes_guard
-        .get(scheme_id)
-        .ok_or(Error::new(EBADFD))?;
+    let scheme = schemes_guard.get(scheme_id).ok_or(Error::new(EBADFD))?;
     let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
     scheme_clone.kcall(number, payload, flags, metadata, token)
@@ -442,9 +438,7 @@ fn fdwrite_inner(
             (desc.scheme, desc.number)
         };
         let schemes_guard = scheme::schemes(&token.token());
-        let scheme = schemes_guard
-            .get(scheme)
-            .ok_or(Error::new(ENODEV))?;
+        let scheme = schemes_guard.get(scheme).ok_or(Error::new(ENODEV))?;
         let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
         let current_lock = context::current();
@@ -497,9 +491,7 @@ fn call_fdread(
             (desc.scheme, desc.number)
         };
         let schemes_guard = scheme::schemes(&token.token());
-        let scheme = schemes_guard
-            .get(scheme)
-            .ok_or(Error::new(ENODEV))?;
+        let scheme = schemes_guard.get(scheme).ok_or(Error::new(ENODEV))?;
         let scheme_clone = Arc::clone(scheme) as Arc<dyn KernelScheme>;
 
         (scheme_clone, number)
@@ -762,7 +754,9 @@ pub fn mremap(
             return Err(Error::new(EOPNOTSUPP));
         }
 
-        let raii_frame = addr_space.acquire_write().borrow_frame_enforce_rw_allocated(src_span.base, token)?;
+        let raii_frame = addr_space
+            .acquire_write()
+            .borrow_frame_enforce_rw_allocated(src_span.base, token)?;
 
         let base = addr_space.acquire_write().mmap(
             requested_dst_base,
@@ -775,8 +769,6 @@ pub fn mremap(
                 // The page does not get unref-ed as we call take() on the `raii_frame`.
                 unsafe {
                     mapper
-                            .get_mut()
-                            .expect("failed to get mutable mapper")
                         .map_phys(page.start_address(), frame.base(), page_flags)
                         .ok_or(Error::new(ENOMEM))?
                         .ignore();
@@ -886,7 +878,9 @@ pub fn sys_mlock(addr: usize, len: usize, token: &mut CleanLockToken) -> Result<
     let current_context_ref = context::current();
     let addr_space = Arc::clone(current_context_ref.read(token.token()).addr_space()?);
 
-    addr_space.acquire_write().mlock(VirtualAddress::new(addr), len)?;
+    addr_space
+        .acquire_write()
+        .mlock(VirtualAddress::new(addr), len)?;
 
     let count = current_context_ref.read(token.token()).memory_locked_count;
     current_context_ref.write(token.token()).memory_locked_count = count.saturating_add(1);
@@ -899,7 +893,9 @@ pub fn sys_munlock(addr: usize, len: usize, token: &mut CleanLockToken) -> Resul
     let current_context_ref = context::current();
     let addr_space = Arc::clone(current_context_ref.read(token.token()).addr_space()?);
 
-    addr_space.acquire_write().munlock(VirtualAddress::new(addr), len)?;
+    addr_space
+        .acquire_write()
+        .munlock(VirtualAddress::new(addr), len)?;
 
     let count = current_context_ref.read(token.token()).memory_locked_count;
     current_context_ref.write(token.token()).memory_locked_count = count.saturating_sub(1);

@@ -188,7 +188,9 @@ crate::interrupt_stack!(pit_stack, |_stack| {
     timeout::trigger(&mut token);
 
     // Reschedule after timer interrupt
-    let _ = context::switch(&mut token);
+    unsafe {
+        let _ = context::switch(&mut token);
+    }
 });
 
 crate::interrupt!(keyboard, || {
@@ -309,10 +311,31 @@ crate::interrupt!(ata2, || {
 });
 
 crate::interrupt!(lapic_timer, || {
-    println!("Local apic timer interrupt");
+    // println!("Local apic timer interrupt");
     unsafe { lapic_eoi() };
+
+    // Re-arm timer based on next event
+    let next_event = crate::scheduler::scheduler().get_next_event_delta();
+    if let Some(delta) = next_event {
+        unsafe {
+            local_apic::the_local_apic().set_next_event(delta);
+        }
+    } else {
+        // No event? Periodic fallback or idle?
+        // Fallback to a default tick for timeslicing if no specific deadline
+        unsafe {
+            local_apic::the_local_apic().set_next_event(1_000_000); // 1ms default
+        }
+    }
+
     let mut token = unsafe { CleanLockToken::new() };
-    let _ = context::switch(&mut token);
+
+    // Check for timeouts
+    timeout::trigger(&mut token);
+
+    unsafe {
+        let _ = context::switch(&mut token);
+    }
 });
 #[cfg(feature = "profiling")]
 crate::interrupt!(aux_timer, || {
@@ -338,6 +361,7 @@ crate::interrupt_error!(generic_irq, |_stack, code| {
     unsafe { lapic_eoi() };
 });
 
+#[cfg(not(test))]
 core::arch::global_asm!("
     .globl __generic_interrupts_start
     .globl __generic_interrupts_end
@@ -353,6 +377,7 @@ __generic_interrupts_start:
 __generic_interrupts_end:
 ", sym generic_irq);
 
+#[cfg(not(test))]
 unsafe extern "C" {
     pub fn __generic_interrupts_start();
     pub fn __generic_interrupts_end();

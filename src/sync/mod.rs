@@ -23,13 +23,13 @@ mod priority;
 
 // Re-export ordered lock types
 pub use ordered::{
-    check_no_locks, CleanLockToken, Level, LockToken, Lower, Mutex as OrderedMutex,
-    MutexGuard as OrderedMutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard, L0, L1, L2,
+    CleanLockToken, Level, LockToken, Mutex as OrderedMutex, MutexGuard as OrderedMutexGuard,
+    RwLock, RwLockReadGuard, RwLockWriteGuard, L0, L1, L2,
 };
 
 // Re-export wait queue types
 pub use wait_condition::WaitCondition;
-pub use wait_queue::{WaitQueue, Waitable};
+pub use wait_queue::WaitQueue;
 
 // Re-export lock-free and optimized types
 pub use lockfree_queue::LockFreeQueue;
@@ -60,10 +60,17 @@ impl<T> Mutex<T> {
         let mut token = unsafe { CleanLockToken::new() };
         let current_context_ref = context::current();
         let current_context_id = current_context_ref.read(token.token()).id();
-        let current_priority = current_context_ref.read(token.token()).priority.effective_priority();
+        let current_priority = current_context_ref
+            .read(token.token())
+            .priority
+            .effective_priority();
 
         // Fast path: try to acquire the lock without blocking.
-        if self.owner_id.compare_exchange(0, current_context_id, Ordering::Acquire, Ordering::Relaxed).is_ok() {
+        if self
+            .owner_id
+            .compare_exchange(0, current_context_id, Ordering::Acquire, Ordering::Relaxed)
+            .is_ok()
+        {
             return MutexGuard {
                 mutex: self,
                 guard: self.inner.lock(),
@@ -75,22 +82,30 @@ impl<T> Mutex<T> {
             // Inherit priority to the lock owner.
             let owner_id = self.owner_id.load(Ordering::Relaxed);
             if owner_id != 0 {
-                if let Some(owner_context_ref) = context::contexts().read().get(&owner_id).cloned() {
+                if let Some(owner_context_ref) = context::contexts().read().get(&owner_id).cloned()
+                {
                     let mut owner_context = owner_context_ref.write(token.token());
                     // The key for priority inheritance is the address of the mutex.
-                    owner_context.priority.inherit_priority(self as *const _ as usize, current_priority);
+                    owner_context
+                        .priority
+                        .inherit_priority(self as *const _ as *const () as usize, current_priority);
                 }
             }
 
             // Add ourselves to the wait queue. The queue should be priority-ordered.
-            self.wait_queue.send(current_context_ref.clone(), &mut token);
+            self.wait_queue
+                .send_ordered(current_context_ref.clone(), &mut token);
 
             // Block and wait to be woken up.
             context::current().write(token.token()).block("Mutex::lock");
             unsafe { context::switch(&mut token) };
 
             // When we wake up, try to acquire the lock again.
-            if self.owner_id.compare_exchange(0, current_context_id, Ordering::Acquire, Ordering::Relaxed).is_ok() {
+            if self
+                .owner_id
+                .compare_exchange(0, current_context_id, Ordering::Acquire, Ordering::Relaxed)
+                .is_ok()
+            {
                 return MutexGuard {
                     mutex: self,
                     guard: self.inner.lock(),
@@ -118,17 +133,25 @@ pub struct MutexGuard<'a, T: ?Sized> {
 impl<'a, T: ?Sized> Drop for MutexGuard<'a, T> {
     fn drop(&mut self) {
         let mut token = unsafe { CleanLockToken::new() };
-        let current_context_ref = context::current();
-        let mut current_context = current_context_ref.write(token.token());
+        {
+            let current_context_ref = context::current();
+            let mut current_context = current_context_ref.write(token.token());
 
-        // Restore original priority.
-        current_context.priority.restore_priority(self.mutex as *const _ as usize);
+            // Restore original priority.
+            current_context
+                .priority
+                .restore_priority(self.mutex as *const _ as *const () as usize);
+        }
 
         // Release the lock.
         self.mutex.owner_id.store(0, Ordering::Release);
 
         // Wake up the highest-priority waiting task.
-        if let Ok(next_waiter_ref) = self.mutex.wait_queue.receive(false, "Mutex::drop", &mut token) {
+        let next_waiter = self
+            .mutex
+            .wait_queue
+            .receive(false, "Mutex::drop", &mut token);
+        if let Ok(next_waiter_ref) = next_waiter {
             next_waiter_ref.write(token.token()).unblock();
         }
     }

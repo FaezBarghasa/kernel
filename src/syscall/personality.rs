@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! Personality-based Syscall Redirection
 //!
 //! This module provides detection and redirection of foreign ABI syscalls
@@ -149,9 +150,9 @@ pub mod windows_syscall {
 ///
 /// This examines the context's registered personality and returns
 /// the appropriate ABI type. Called early in syscall dispatch.
-pub fn detect_abi(token: &CleanLockToken) -> PersonalityABI {
+pub fn detect_abi(token: &mut CleanLockToken) -> PersonalityABI {
     let current = context::current();
-    let guard = current.read(token.ticket());
+    let _guard = current.read(token.token());
 
     // Check if context has a registered personality
     // For now, default to Redox unless explicitly set
@@ -165,7 +166,7 @@ pub fn detect_abi(token: &CleanLockToken) -> PersonalityABI {
 ///
 /// Linux syscall numbers > 400 are typically Redox-specific
 /// Windows NT syscalls are routed through int 0x2e or different entry
-pub fn is_foreign_syscall(abi: PersonalityABI, syscall_number: usize) -> bool {
+pub fn is_foreign_syscall(abi: PersonalityABI, _syscall_number: usize) -> bool {
     match abi {
         PersonalityABI::Redox => false,
         PersonalityABI::Linux => true, // All Linux syscalls need translation
@@ -226,7 +227,7 @@ fn redirect_to_android_server(args: SyscallArgs, _token: &mut CleanLockToken) ->
 fn create_syscall_message(abi: PersonalityABI, args: SyscallArgs) -> ZeroCopyMessage {
     let mut header = MessageHeader::default();
     header.msg_type = abi as u32;
-    header.payload_size = core::mem::size_of::<SyscallArgs>() as u32;
+    header.payload_len = core::mem::size_of::<SyscallArgs>() as u32;
 
     let mut msg = ZeroCopyMessage::default();
     msg.header = header;

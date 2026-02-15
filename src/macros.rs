@@ -2,8 +2,15 @@
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ({
-        use core::fmt::Write;
-        let _ = write!($crate::log::Writer::new(), $($arg)*);
+        #[cfg(not(test))]
+        {
+            use core::fmt::Write;
+            let _ = write!($crate::log::Writer::new(), $($arg)*);
+        }
+        #[cfg(test)]
+        {
+            std::print!($($arg)*);
+        }
     });
 }
 
@@ -11,8 +18,15 @@ macro_rules! print {
 #[macro_export]
 macro_rules! println {
     ($($arg:tt)*) => ({
-        use core::fmt::Write;
-        let _ = writeln!($crate::log::Writer::new(), $($arg)*);
+        #[cfg(not(test))]
+        {
+            use core::fmt::Write;
+            let _ = writeln!($crate::log::Writer::new(), $($arg)*);
+        }
+        #[cfg(test)]
+        {
+            std::println!($($arg)*);
+        }
     });
 }
 

@@ -24,7 +24,7 @@ use crate::{
 pub struct PercpuBlock {
     /// A unique immutable number that identifies the current CPU - used for scheduling
     pub cpu_id: LogicalCpuId,
-    
+
     pub context_id: Cell<usize>,
 
     /// Context management
@@ -49,7 +49,7 @@ pub struct PercpuBlock {
     pub scheduler: Scheduler,
 }
 
-static ALL_PERCPU_BLOCKS: [AtomicPtr<PercpuBlock>; MAX_CPU_COUNT as usize] =
+pub static ALL_PERCPU_BLOCKS: [AtomicPtr<PercpuBlock>; MAX_CPU_COUNT as usize] =
     [const { AtomicPtr::new(core::ptr::null_mut()) }; MAX_CPU_COUNT as usize];
 
 #[allow(unused)]
@@ -127,7 +127,10 @@ impl PercpuBlock {
         }
 
         if let Some(addrsp) = &*self.current_addrsp.borrow() {
-            addrsp.acquire_read().tlb_ack.fetch_add(1, Ordering::Release);
+            addrsp
+                .acquire_read()
+                .tlb_ack
+                .fetch_add(1, Ordering::Release);
         }
     }
 }
@@ -175,6 +178,12 @@ pub unsafe fn switch_arch_hook() {
     }
 }
 impl PercpuBlock {
+    #[cfg(not(target_arch = "x86_64"))]
+    #[inline(always)]
+    pub fn current_cpu_id() -> LogicalCpuId {
+        Self::current().cpu_id
+    }
+
     pub fn init(cpu_id: LogicalCpuId) -> Self {
         Self {
             cpu_id,

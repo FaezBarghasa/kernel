@@ -82,7 +82,10 @@ impl<T> WaitQueue<T> {
         block: bool,
         reason: &'static str,
         token: &mut CleanLockToken,
-    ) -> Result<usize> where T: Copy {
+    ) -> Result<usize>
+    where
+        T: Copy,
+    {
         loop {
             let mut inner = self.inner.lock();
 
@@ -120,16 +123,31 @@ impl<T> WaitQueue<T> {
             return Ok(bytes_copied);
         }
     }
-
-    pub fn send(&self, value: T, token: &mut CleanLockToken) -> usize where T: AsRef<ContextRef> {
+    pub fn send(&self, value: T, token: &mut CleanLockToken) -> usize {
         let len = {
             let mut inner = self.inner.lock();
-            let priority = value.as_ref().read(token.token()).priority.effective_priority();
+            inner.push_back(Waitable::new(value));
+            inner.len()
+        };
+        self.condition.notify(token);
+        len
+    }
+}
+
+impl WaitQueue<ContextRef> {
+    pub fn send_ordered(&self, value: ContextRef, token: &mut CleanLockToken) -> usize {
+        let len = {
+            let mut inner = self.inner.lock();
+            let priority = value.read(token.token()).priority.effective_priority();
 
             // Insert the task into the queue based on priority.
             let mut i = 0;
             while i < inner.len() {
-                let other_priority = inner[i].as_ref().as_ref().read(token.token()).priority.effective_priority();
+                let other_priority = inner[i]
+                    .as_ref()
+                    .read(token.token())
+                    .priority
+                    .effective_priority();
                 if priority < other_priority {
                     break;
                 }

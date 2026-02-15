@@ -3,6 +3,7 @@
 //! Implements calibration and reading of the TSC for high-resolution, low-latency timing,
 //! essential for deterministic QoS.
 
+#![allow(dead_code)]
 use core::sync::atomic::{AtomicU64, Ordering};
 use x86::{
     controlregs::{cr4, cr4_write, Cr4},

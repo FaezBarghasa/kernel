@@ -291,3 +291,13 @@ interrupt_error!(security, |stack, _code| {
         }
     }
 });
+
+interrupt_error!(control_protection, |stack, code| {
+    println!("Control Protection exception code={:#0x}", code);
+    stack.trace();
+    excp_handler(Exception {
+        kind: 21,
+        code,
+        ..Default::default()
+    });
+});

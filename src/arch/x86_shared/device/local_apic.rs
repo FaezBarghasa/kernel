@@ -99,7 +99,7 @@ impl LocalApic {
                 self.write(0xF0, 0x100);
             }
             self.setup_error_int();
-            //self.setup_timer();
+            self.setup_timer();
 
             PercpuBlock::current()
                 .misc_arch_info
@@ -279,6 +279,68 @@ impl LocalApic {
         unsafe {
             let vector = 49u32;
             self.set_lvt_error(vector);
+        }
+    }
+
+    unsafe fn setup_timer(&mut self) {
+        unsafe {
+            // Check for TSC Deadline support
+            // CPUID.01H:ECX.TSC_Deadline[bit 24]
+            let has_tsc_deadline = cpuid()
+                .get_feature_info()
+                .is_some_and(|finfo| finfo.has_tsc_deadline());
+
+            if has_tsc_deadline {
+                // Set LVT Timer to TSC Deadline Mode (0b10 << 17)
+                // Vector 48
+                let mode = (LvtTimerMode::TscDeadline as u32) << 17;
+                self.set_lvt_timer(mode | 48);
+            } else {
+                // Set LVT Timer to One-Shot Mode (0b00 << 17)
+                // Vector 48
+                let mode = (LvtTimerMode::OneShot as u32) << 17;
+                self.set_lvt_timer(mode | 48);
+                // Divide by 1 (0b1011)
+                self.set_div_conf(0b1011);
+            }
+        }
+    }
+
+    pub unsafe fn set_next_event(&mut self, delay_ns: u64) {
+        use crate::arch::x86_shared::device::tsc::{get_tsc_frequency, tsc_read};
+
+        unsafe {
+            let lvt = self.lvt_timer();
+            let mode = (lvt >> 17) & 0b11;
+
+            let freq = get_tsc_frequency();
+            if freq == 0 {
+                return;
+            }
+
+            // Calculate ticks: delay_ns * freq / 1_000_000_000
+            // Use u128 to prevent overflow
+            let ticks = (delay_ns as u128 * freq as u128) / 1_000_000_000;
+            let ticks = ticks as u64;
+
+            if mode == LvtTimerMode::TscDeadline as u32 {
+                // TSC Deadline: write absolute TSC value
+                let current_tsc = tsc_read();
+                let deadline = current_tsc.wrapping_add(ticks);
+
+                // IA32_TSC_DEADLINE = 0x6E0
+                const IA32_TSC_DEADLINE: u32 = 0x6E0;
+                wrmsr(IA32_TSC_DEADLINE, deadline);
+            } else {
+                // One-Shot: write initial count
+                // Limit ticks to u32 for LVT Timer Initial Count
+                let ticks_32 = if ticks > u32::MAX as u64 {
+                    u32::MAX
+                } else {
+                    ticks as u32
+                };
+                self.set_init_count(ticks_32);
+            }
         }
     }
 }

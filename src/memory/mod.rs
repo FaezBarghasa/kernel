@@ -2,6 +2,7 @@
 //! Includes the physical memory allocator (buddy system).
 
 mod kernel_mapper;
+pub mod model;
 
 use core::{
     cell::SyncUnsafeCell,
@@ -74,6 +75,22 @@ pub fn allocate_p2frame(order: u32) -> Option<Frame> {
 
 pub fn allocate_frame() -> Option<Frame> {
     allocate_p2frame(0)
+}
+
+/// Allocate a 2MB huge page (512 x 4KB pages, order 9).
+/// Returns None if a contiguous 2MB aligned region is not available.
+/// Used by MAP_HUGETLB.
+pub fn allocate_huge_frame() -> Option<Frame> {
+    // 2MB = 512 * 4KB = 2^9 pages
+    allocate_p2frame(9)
+}
+
+/// Allocate a 1GB giant page (262144 x 4KB pages, order 18).
+/// Returns None if a contiguous 1GB aligned region is not available.
+/// Used by MAP_HUGETLB | MAP_HUGE_1GB.
+pub fn allocate_giant_frame() -> Option<Frame> {
+    // 1GB = 262144 * 4KB = 2^18 pages
+    allocate_p2frame(18)
 }
 
 pub fn allocate_p2frame_complex(

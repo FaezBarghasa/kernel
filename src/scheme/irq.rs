@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 // TODO: Rewrite this entire scheme. Legacy x86 APIs should be abstracted by a userspace scheme,
 // this scheme should only handle raw IRQ registration and delivery to userspace.
 

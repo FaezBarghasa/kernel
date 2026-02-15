@@ -95,6 +95,7 @@ const FILES: &[(&str, Kind)] = &[
         "update_time_offset",
         Wr(crate::time::sys_update_time_offset),
     ),
+    #[cfg(not(test))]
     (
         "kstop",
         Wr(|arg, token| unsafe {

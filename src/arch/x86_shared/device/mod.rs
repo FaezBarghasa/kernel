@@ -14,7 +14,6 @@ pub mod serial;
 #[cfg(feature = "system76_ec_debug")]
 pub mod system76_ec;
 
-#[cfg(feature = "x86_kvm_pv")]
 pub mod tsc;
 
 pub unsafe fn init() {

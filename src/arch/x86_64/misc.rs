@@ -26,5 +26,13 @@ pub unsafe fn init(cpu_id: LogicalCpuId) {
         {
             x86::msr::wrmsr(x86::msr::IA32_TSC_AUX, cpu_id.get().into());
         }
+
+        // Enable CET Shadow Stack if supported
+        if let Err(e) = crate::stack_guard::enable_shadow_stack() {
+            // Only log on BSP to avoid spam, or log debug on APs
+            if cpu_id == LogicalCpuId::BSP {
+                log::warn!("CET: Failed to enable shadow stack: {}", e);
+            }
+        }
     }
 }

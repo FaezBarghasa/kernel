@@ -34,9 +34,11 @@ pub mod pti;
 pub mod rmm;
 
 /// Initialization and start function
+#[cfg(not(test))]
 pub mod start;
 
 /// Stop function
+#[cfg(not(test))]
 pub mod stop;
 
 pub mod time;
@@ -67,5 +69,19 @@ use crate::percpu::PercpuBlock;
 impl PercpuBlock {
     pub fn current() -> &'static mut Self {
         unsafe { &mut gdt::pcr().percpu }
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[inline(always)]
+    pub fn current_cpu_id() -> crate::cpu_set::LogicalCpuId {
+        let id: u32;
+        unsafe {
+            core::arch::asm!(
+                "mov {0:e}, gs:[{1}]",
+                out(reg) id,
+                const crate::arch::x86_shared::gdt::PCR_PERCPU_OFFSET
+            );
+        }
+        crate::cpu_set::LogicalCpuId::new(id)
     }
 }

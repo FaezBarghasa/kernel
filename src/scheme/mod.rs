@@ -27,8 +27,10 @@ pub mod debug;
 #[cfg(dtb)]
 pub mod dtb;
 pub mod event;
+pub mod gpu;
 pub mod irq;
 pub mod memory;
+pub mod net_fast;
 pub mod pipe;
 pub mod proc;
 pub mod ring;
@@ -38,6 +40,7 @@ pub mod serio;
 pub mod sys;
 pub mod time;
 pub mod user;
+pub mod vmm;
 
 pub use self::ring::RingScheme;
 
@@ -108,36 +111,6 @@ pub struct CallerCtx {
 pub enum OpenResult {
     SchemeLocal(usize, crate::context::file::InternalFlags),
     External(Arc<RwLock<FileDescription>>),
-}
-
-pub enum StrOrBytes<'a> {
-    Str(&'a str),
-    Bytes(&'a [u8]),
-}
-
-impl<'a> StrOrBytes<'a> {
-    pub fn as_bytes(&self) -> &'a [u8] {
-        match self {
-            Self::Str(s) => s.as_bytes(),
-            Self::Bytes(b) => b,
-        }
-    }
-    pub fn as_str(&self) -> Result<&'a str, Error> {
-        match self {
-            Self::Str(s) => Ok(s),
-            Self::Bytes(_) => Err(Error::new(ENODEV)),
-        }
-    }
-}
-impl<'a> From<&'a str> for StrOrBytes<'a> {
-    fn from(s: &'a str) -> Self {
-        Self::Str(s)
-    }
-}
-impl<'a> From<&'a [u8]> for StrOrBytes<'a> {
-    fn from(b: &'a [u8]) -> Self {
-        Self::Bytes(b)
-    }
 }
 
 /// Kernel scheme trait
@@ -385,8 +358,11 @@ pub enum GlobalSchemes {
     Ring(Arc<RingScheme>),
     Serio,
     Irq,
+    Gpu(Arc<gpu::GpuScheme>),
+    NetFast(Arc<net_fast::NetFastScheme>),
     Time,
     Sys,
+    Vmm(Arc<vmm::VmmScheme>),
     #[cfg(feature = "acpi")]
     Acpi,
     #[cfg(dtb)]
@@ -405,8 +381,11 @@ impl GlobalSchemes {
             Self::Ring(_) => "ring",
             Self::Serio => "serio",
             Self::Irq => "irq",
+            Self::Gpu(_) => "gpu",
+            Self::NetFast(_) => "net-fast",
             Self::Time => "time",
             Self::Sys => "sys",
+            Self::Vmm(_) => "vmm",
             #[cfg(feature = "acpi")]
             Self::Acpi => "acpi",
             #[cfg(dtb)]
@@ -441,6 +420,18 @@ macro_rules! forward_scheme {
                 $expr
             }
             GlobalSchemes::Ring(s) => {
+                let $s = s;
+                $expr
+            }
+            GlobalSchemes::Gpu(s) => {
+                let $s = s;
+                $expr
+            }
+            GlobalSchemes::NetFast(s) => {
+                let $s = s;
+                $expr
+            }
+            GlobalSchemes::Vmm(s) => {
                 let $s = s;
                 $expr
             }
@@ -1081,7 +1072,12 @@ impl SchemeList {
         id
     }
 
-    pub fn insert_and_pass<T, F>(&mut self, ns: SchemeNamespace, name: &str, f: F) -> Result<(SchemeId, T)>
+    pub fn insert_and_pass<T, F>(
+        &mut self,
+        ns: SchemeNamespace,
+        name: &str,
+        f: F,
+    ) -> Result<(SchemeId, T)>
     where
         F: FnOnce(SchemeId) -> Result<(KernelSchemes, T)>,
     {
@@ -1136,6 +1132,9 @@ pub fn init_schemes() {
 
     let mut schemes = SCHEMES.write();
     let ring = Arc::new(RingScheme::new());
+    let gpu = Arc::new(gpu::GpuScheme::new());
+    let net_fast = Arc::new(net_fast::NetFastScheme::new());
+    let vmm = Arc::new(vmm::VmmScheme::new());
 
     schemes.insert(
         Box::from("debug"),
@@ -1167,10 +1166,22 @@ pub fn init_schemes() {
     );
     schemes.insert(Box::from("irq"), KernelSchemes::Global(GlobalSchemes::Irq));
     schemes.insert(
+        Box::from("gpu"),
+        KernelSchemes::Global(GlobalSchemes::Gpu(gpu)),
+    );
+    schemes.insert(
+        Box::from("net-fast"),
+        KernelSchemes::Global(GlobalSchemes::NetFast(net_fast)),
+    );
+    schemes.insert(
         Box::from("time"),
         KernelSchemes::Global(GlobalSchemes::Time),
     );
     schemes.insert(Box::from("sys"), KernelSchemes::Global(GlobalSchemes::Sys));
+    schemes.insert(
+        Box::from("vmm"),
+        KernelSchemes::Global(GlobalSchemes::Vmm(vmm)),
+    );
     #[cfg(feature = "acpi")]
     schemes.insert(
         Box::from("acpi"),

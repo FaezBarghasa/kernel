@@ -10,6 +10,8 @@ use x86::{
 
 use crate::percpu::PercpuBlock;
 
+pub const PCR_PERCPU_OFFSET: usize = mem::offset_of!(ProcessorControlRegion, percpu);
+
 pub const GDT_NULL: u16 = 0;
 pub const GDT_KERNEL_CODE: u16 = 1;
 pub const GDT_KERNEL_DATA: u16 = 2;

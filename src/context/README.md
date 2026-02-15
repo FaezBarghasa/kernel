@@ -1,14 +1,23 @@
 # Context Module
 
-The `context` module is responsible for managing the execution contexts of the kernel. This module contains the code for creating, scheduling, and destroying contexts.
+The `context` module manages execution contexts, including thread state, memory management, and scheduling integration.
 
-This module contains the following files:
+## Core Components
 
-*   `context.rs`: This file contains the `Context` struct, which represents an execution context.
-*   `file.rs`: This file contains the `FileDescriptor` struct, which represents a file descriptor.
-*   `memory.rs`: This file contains the code for managing the memory of a context.
-*   `page_count.rs`: This file contains the `PageCount` struct, which is used to track the number of pages that are allocated to a context.
-*   `reap.rs`: This file contains the code for reaping dead contexts.
-*   `signal.rs`: This file contains the code for handling signals.
-*   `switch.rs`: This file contains the code for switching between contexts.
-*   `timeout.rs`: This file contains the code for handling timeouts.
+- `context.rs`: Defines the `Context` struct, representing an execution thread (including registers, stack, and priority).
+- `switch.rs`: Core logic for context switching.
+- `memory.rs`: Memory space management and paging for contexts.
+- `signal.rs`: Logic for asynchronous signals.
+- `timeout.rs`: Management of context-specific timeouts.
+
+## Performance & Optimization
+
+- `optimized_switch.rs`: Implements ultra-fast context switching with:
+  - **Same Address Space Fast Path**: Skips TLB flushes when switching between threads in the same process.
+  - **Lazy FPU Saving**: Postpones FPU/SIMD state saving until strictly necessary.
+  - **Prefetching**: Issues CPU hints to pre-load the next context's state.
+  - **TSC Profiling**: Tracks per-CPU switch latency in cycles.
+- `list.rs`: Management of the global context list.
+- `reap.rs`: Cleanup of terminated contexts.
+- `page_count.rs`: Tracking allocated memory pages.
+- `file.rs`: File descriptor management per context.

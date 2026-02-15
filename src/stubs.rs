@@ -124,7 +124,9 @@ pub mod context_helpers {
     where
         F: FnOnce() + 'static,
     {
-        Err(crate::syscall::error::Error::new(crate::syscall::error::ENOMEM))
+        Err(crate::syscall::error::Error::new(
+            crate::syscall::error::ENOMEM,
+        ))
     }
 
     pub fn is_current(_context: &Arc<ContextLock>) -> bool {
@@ -172,14 +174,19 @@ pub mod syscall_helpers {
     use crate::context::memory::PageSpan;
     pub fn validate_region(_ptr: usize, _len: usize) -> crate::syscall::error::Result<PageSpan> {
         // Placeholder returning a dummy PageSpan or error
-        Err(crate::syscall::error::Error::new(crate::syscall::error::ENOMEM))
+        Err(crate::syscall::error::Error::new(
+            crate::syscall::error::ENOMEM,
+        ))
     }
 
     pub fn exit_this_context(_status: usize) -> ! {
         loop {}
     }
 
-    pub fn copy_path_to_buf(_path: crate::syscall::usercopy::UserSliceRo, _max_len: usize) -> crate::syscall::error::Result<alloc::string::String> {
+    pub fn copy_path_to_buf(
+        _path: crate::syscall::usercopy::UserSliceRo,
+        _max_len: usize,
+    ) -> crate::syscall::error::Result<alloc::string::String> {
         Ok(alloc::string::String::new())
     }
 }
@@ -267,8 +274,8 @@ pub mod time_helpers {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn bcmp(s1: *const u8, s2: *const u8, n: usize) -> i32 {
-    let s1_slice = core::slice::from_raw_parts(s1, n);
-    let s2_slice = core::slice::from_raw_parts(s2, n);
+    let s1_slice = unsafe { core::slice::from_raw_parts(s1, n) };
+    let s2_slice = unsafe { core::slice::from_raw_parts(s2, n) };
     if s1_slice == s2_slice {
         0
     } else {

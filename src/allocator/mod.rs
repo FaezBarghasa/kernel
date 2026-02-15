@@ -28,6 +28,17 @@ impl FrameAllocator {
     pub fn allocate_frame(&mut self) -> Option<Frame> {
         None
     }
+    /// Adds a new memory region to the allocator (e.g., from CXL hotplug)
+    pub fn add_memory_region(&mut self, base: usize, size: usize) {
+        // Placeholder: In a real implementation, this would add the range to the free list
+        // and update the buddy allocator's bookkeeping.
+        println!(
+            "FrameAllocator: Added memory region: {:#x} - {:#x} ({} bytes)",
+            base,
+            base + size,
+            size
+        );
+    }
     pub fn deallocate_frame(&mut self, _frame: Frame) { /* ... */
     }
 }

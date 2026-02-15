@@ -2,7 +2,7 @@
 //!
 //! Defines the structure and handling logic for interrupts and exceptions.
 
-use crate::{ptrace, syscall, syscall::flag::*};
+use crate::{ptrace, stack_guard, syscall, syscall::flag::*};
 
 // Ensure the alternative macro is available
 use crate::alternative;
@@ -173,6 +173,9 @@ pub extern "C" fn syscall_handler(stack: &mut InterruptStack) {
         e as usize,
         f as usize,
     ) as u64;
+
+    // Stack canary check on syscall exit - detects stack buffer overflows
+    stack_guard::check_kernel_canary();
 }
 
 #[unsafe(no_mangle)]

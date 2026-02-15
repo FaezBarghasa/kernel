@@ -17,6 +17,7 @@ use crate::{
     },
     context::{context::Kstack, memory::Table},
     memory::RmmA,
+    stack_guard::ShadowStack,
     syscall::FloatRegisters,
 };
 
@@ -34,7 +35,40 @@ bitflags! {
         const XSAVE = 1 << 0;
         const XSAVEOPT = 1 << 1;
         const FSGSBASE = 1 << 2;
+        const SHSTK = 1 << 3;
     }
+}
+
+pub fn init_features() {
+    CPU_FEATURES.call_once(|| {
+        let mut features = FeatureFlags::empty();
+        unsafe {
+            // Check XSAVE (CPUID.01H:ECX.XSAVE[bit 26])
+            let result = core::arch::x86_64::__cpuid(1);
+            if (result.ecx & (1 << 26)) != 0 {
+                features.insert(FeatureFlags::XSAVE);
+            }
+
+            // Check XSAVEOPT (CPUID.0DH:EAX.XSAVEOPT[bit 0])
+            if features.contains(FeatureFlags::XSAVE) {
+                let result = core::arch::x86_64::__cpuid_count(0xD, 1);
+                if (result.eax & (1 << 0)) != 0 {
+                    features.insert(FeatureFlags::XSAVEOPT);
+                }
+            }
+
+            // Check FSGSBASE (CPUID.07H:EBX.FSGSBASE[bit 0])
+            // Check SHSTK (CPUID.07H:ECX.CET_SS[bit 7])
+            let result = core::arch::x86_64::__cpuid(7);
+            if (result.ebx & (1 << 0)) != 0 {
+                features.insert(FeatureFlags::FSGSBASE);
+            }
+            if (result.ecx & (1 << 7)) != 0 {
+                features.insert(FeatureFlags::SHSTK);
+            }
+        }
+        features
+    });
 }
 
 impl Default for FeatureFlags {
@@ -56,25 +90,27 @@ pub const KFX_ALIGN: usize = 64;
 #[repr(C)]
 pub struct Context {
     /// RFLAGS register
-    rflags: usize,
+    pub(crate) rflags: usize,
     /// RBX register
-    rbx: usize,
+    pub(crate) rbx: usize,
     /// R12 register
-    r12: usize,
+    pub(crate) r12: usize,
     /// R13 register
-    r13: usize,
+    pub(crate) r13: usize,
     /// R14 register
-    r14: usize,
+    pub(crate) r14: usize,
     /// R15 register
-    r15: usize,
+    pub(crate) r15: usize,
     /// Base pointer
-    rbp: usize,
+    pub(crate) rbp: usize,
     /// Stack pointer
     pub(crate) rsp: usize,
     /// FSBASE
     pub(crate) fsbase: usize,
     /// GSBASE
     pub(crate) gsbase: usize,
+    pub(crate) shadow_stack: Option<ShadowStack>,
+    pub(crate) ssp: usize,
     userspace_io_allowed: bool,
 }
 
@@ -91,6 +127,8 @@ impl Context {
             rsp: 0,
             fsbase: 0,
             gsbase: 0,
+            shadow_stack: None,
+            ssp: 0,
             userspace_io_allowed: false,
         }
     }
@@ -126,6 +164,19 @@ impl Context {
         }
 
         self.set_stack(stack_top as usize);
+
+        // Setup Shadow Stack if SHSTK feature is present
+        if CPU_FEATURES
+            .get()
+            .map_or(false, |f| f.contains(FeatureFlags::SHSTK))
+        {
+            if let Ok(ss) = ShadowStack::new() {
+                if let Ok(new_ssp) = ss.push_return_address(func as usize) {
+                    self.ssp = new_ssp;
+                    self.shadow_stack = Some(ss);
+                }
+            }
+        }
     }
 }
 
@@ -376,21 +427,30 @@ unsafe extern "sysv64" fn switch_to_inner(_prev: &mut Context, _next: &mut Conte
 }
 
 pub fn setup_new_utable() -> Result<Table> {
-    use crate::memory::{KernelMapper, TheFrameAllocator};
-    let utable = unsafe {
-        PageMapper::create(TableKind::User, TheFrameAllocator).ok_or(Error::new(ENOMEM))?
-    };
-    unsafe {
-        let active_ktable = KernelMapper::lock();
-        for pde_no in ENTRY_COUNT / 2..ENTRY_COUNT {
-            if let Some(entry) = active_ktable.table().entry(pde_no) {
-                utable.table().set_entry(pde_no, entry);
+    #[cfg(not(feature = "no-mmu"))]
+    {
+        use crate::memory::{KernelMapper, TheFrameAllocator};
+        let utable = unsafe {
+            PageMapper::create(TableKind::User, TheFrameAllocator).ok_or(Error::new(ENOMEM))?
+        };
+        unsafe {
+            let active_ktable = KernelMapper::lock();
+            for pde_no in ENTRY_COUNT / 2..ENTRY_COUNT {
+                if let Some(entry) = active_ktable.table().entry(pde_no) {
+                    utable.table().set_entry(pde_no, entry);
+                }
             }
         }
+        Ok(Table {
+            utable: crate::context::memory::UTableWrapper(utable),
+        })
     }
-    Ok(Table {
-        utable: crate::context::memory::UTableWrapper(utable),
-    })
+    #[cfg(feature = "no-mmu")]
+    {
+        Ok(Table {
+            utable: crate::context::memory::UTableWrapper,
+        })
+    }
 }
 
 /// Phase 2.4: Device Not Available (#NM) Fault Hook

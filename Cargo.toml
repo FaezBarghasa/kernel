@@ -63,6 +63,8 @@ powerpc = []
 s390x = []
 hexagon = []
 
+no-mmu = []
+
 [profile.dev]
 opt-level = 1
 debug = true

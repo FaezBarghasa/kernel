@@ -12,15 +12,10 @@ use x86::{
     segmentation::Descriptor as X86IdtEntry,
 };
 
-use crate::{
-    cpu_set::LogicalCpuId,
-    interrupt::{
-        irq::{__generic_interrupts_end, __generic_interrupts_start},
-        *,
-    },
-    ipi::IpiKind,
-    memory::PAGE_SIZE,
-};
+use crate::{cpu_set::LogicalCpuId, interrupt::*, ipi::IpiKind, memory::PAGE_SIZE};
+
+#[cfg(not(test))]
+use crate::interrupt::irq::{__generic_interrupts_end, __generic_interrupts_start};
 
 use spin::RwLock;
 
@@ -132,12 +127,14 @@ fn set_exceptions(idt: &mut [IdtEntry]) {
     idt[18].set_func(exception::machine_check);
     idt[19].set_func(exception::simd);
     idt[20].set_func(exception::virtualization);
-    // 21 through 29 reserved
+    idt[21].set_func(exception::control_protection);
+    // 22 through 29 reserved
     idt[30].set_func(exception::security);
     // 31 reserved
 }
 
 /// Initializes the IDT for the BSP.
+#[cfg(not(test))]
 pub unsafe fn init_bsp() {
     #[repr(C, packed(4096))]
     struct BackupStack([u8; BACKUP_STACK_SIZE]);
@@ -157,6 +154,7 @@ pub unsafe fn init_bsp() {
 }
 
 /// Allocates and initializes an IDT for the given CPU.
+#[cfg(not(test))]
 pub fn allocate_and_init_idt(cpu_id: LogicalCpuId) -> *mut Idt {
     let mut idts_btree = IDTS.write();
 
@@ -182,6 +180,7 @@ pub fn allocate_and_init_idt(cpu_id: LogicalCpuId) -> *mut Idt {
 const BACKUP_IST: u8 = 1;
 
 /// Initializes an IDT for any type of processor.
+#[cfg(not(test))]
 fn init_generic(cpu_id: LogicalCpuId, idt: &mut Idt, backup_stack_end: usize) {
     let (current_idt, current_reservations) = (&mut idt.entries, &mut idt.reservations);
 

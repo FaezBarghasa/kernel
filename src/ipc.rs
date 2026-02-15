@@ -54,7 +54,7 @@ pub const DEFAULT_IPC_TIMEOUT_NS: u64 = 5_000_000_000; // 5 seconds
 
 /// A zero-copy message that can be transferred between processes
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct ZeroCopyMessage {
     /// Message header with metadata
     pub header: MessageHeader,
@@ -216,7 +216,7 @@ impl SharedBuffer {
     pub fn map_to_context(
         &self,
         context: &ContextRef,
-        virt: VirtualAddress,
+        addr: VirtualAddress,
         flags: MapFlags,
     ) -> Result<()> {
         let mut token = unsafe { CleanLockToken::new() };
@@ -245,8 +245,7 @@ impl SharedBuffer {
             inner
                 .table
                 .utable
-                .0
-                .map_phys(virt, self.frame.base(), page_flags)
+                .map_phys(addr, self.frame.base(), page_flags)
                 .ok_or(Error::new(ENOMEM))?
                 .flush();
         }
@@ -643,15 +642,18 @@ pub fn direct_transfer(
     token: &mut CleanLockToken,
 ) -> Result<usize> {
     // Verify same address space
-    let src_addrsp = src_ctx.read(token.token()).addr_space()?;
-    let dst_addrsp = dst_ctx.read(token.token()).addr_space()?;
+    // Verify same address space
+    let src_addrsp = src_ctx.read(token.token()).addr_space()?.clone();
+    let dst_addrsp = dst_ctx.read(token.token()).addr_space()?.clone();
 
-    if !Arc::ptr_eq(src_addrsp, dst_addrsp) {
+    if !Arc::ptr_eq(&src_addrsp, &dst_addrsp) {
         return Err(Error::new(EPERM));
     }
 
     // Enter IPC critical section for priority boost
-    let src_priority = &src_ctx.read(token.token()).priority;
+    // We need to re-acquire the lock on src_ctx
+    let src_guard = src_ctx.read(token.token());
+    let src_priority = &src_guard.priority;
     let _guard = IpcCriticalGuard::new(src_priority);
 
     // Since same address space, we can do a direct memory copy
@@ -764,12 +766,12 @@ pub static mut IPC_REGISTRY: IpcRegistry = IpcRegistry::new();
 
 /// Get the global IPC registry
 pub fn registry() -> &'static IpcRegistry {
-    unsafe { &IPC_REGISTRY }
+    unsafe { &*core::ptr::addr_of!(IPC_REGISTRY) }
 }
 
 /// Get the global IPC registry mutably (for initialization)
 pub fn registry_mut() -> &'static mut IpcRegistry {
-    unsafe { &mut IPC_REGISTRY }
+    unsafe { &mut *core::ptr::addr_of_mut!(IPC_REGISTRY) }
 }
 
 // =============================================================================
@@ -966,29 +968,18 @@ pub mod rcu {
 /// Call this at safe preemption points to allow RT threads to preempt
 #[inline]
 pub fn preempt_check(token: &mut CleanLockToken) {
-    let current = context::current();
-    let ctx = current.read(token.token());
+    let current_priority = {
+        let current = context::current();
+        let ctx = current.read(token.token());
+        ctx.priority.effective_priority()
+    };
 
-    // Check if there's a higher priority thread waiting
-    if let Some(scheduler_ref) = crate::percpu::PercpuBlock::current()
-        .scheduler
-        .run_queue
-        .rt_queue
-        .front()
-    {
-        let waiting_priority = scheduler_ref
-            .context
-            .read(token.token())
-            .priority
-            .effective_priority();
-        let current_priority = ctx.priority.effective_priority();
+    // O(1) check via bitmask: is there a higher-priority RT task waiting?
+    let run_queue = &crate::percpu::PercpuBlock::current().scheduler.run_queue;
 
-        // Lower number = higher priority
-        if waiting_priority < current_priority {
-            drop(ctx);
-            // Preempt: switch to the higher priority thread
-            unsafe { context::switch(token) };
-        }
+    if run_queue.has_higher_priority(current_priority) {
+        // Preempt: switch to the higher priority thread
+        unsafe { context::switch(token) };
     }
 }
 

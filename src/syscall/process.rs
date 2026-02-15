@@ -78,7 +78,9 @@ pub fn mprotect(
     let span = PageSpan::validate_nonempty(VirtualAddress::new(address), size)
         .ok_or(Error::new(EINVAL))?;
 
-    AddrSpace::current(token)?.acquire_write().mprotect(span.base, span.count * PAGE_SIZE, flags)
+    AddrSpace::current(token)?
+        .acquire_write()
+        .mprotect(span.base, span.count * PAGE_SIZE, flags)
 }
 
 pub unsafe fn usermode_bootstrap(bootstrap: &Bootstrap, token: &mut CleanLockToken) {
@@ -92,18 +94,28 @@ pub unsafe fn usermode_bootstrap(bootstrap: &Bootstrap, token: &mut CleanLockTok
                 .expect("expected bootstrap context to have an address space"),
         );
 
-        let base = Page::containing_address(VirtualAddress::new(PAGE_SIZE));
-        let flags = MapFlags::MAP_FIXED_NOREPLACE
-            | MapFlags::PROT_EXEC
-            | MapFlags::PROT_READ
-            | MapFlags::PROT_WRITE;
+        #[cfg(not(feature = "no-mmu"))]
+        let (base, flags) = (
+            Some(Page::containing_address(VirtualAddress::new(PAGE_SIZE))),
+            MapFlags::MAP_FIXED_NOREPLACE
+                | MapFlags::PROT_EXEC
+                | MapFlags::PROT_READ
+                | MapFlags::PROT_WRITE,
+        );
+
+        #[cfg(feature = "no-mmu")]
+        let (base, flags) = (
+            None,
+            MapFlags::PROT_EXEC | MapFlags::PROT_READ | MapFlags::PROT_WRITE,
+        );
 
         let page_count =
             NonZeroUsize::new(bootstrap.page_count).expect("bootstrap contained no pages!");
 
-        let _base_page = addr_space.acquire_write()
+        let _base_page = addr_space
+            .acquire_write()
             .mmap(
-                Some(base),
+                base,
                 page_count,
                 flags,
                 &mut Vec::new(),

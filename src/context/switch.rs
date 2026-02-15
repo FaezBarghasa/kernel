@@ -66,7 +66,9 @@ pub unsafe fn switch(token: &mut CleanLockToken) -> SwitchResult {
 
             PercpuBlock::current().context_id.set(next_context_id);
 
-            crate::arch::switch_to(&mut *prev_guard, &mut *next_guard);
+            unsafe {
+                crate::arch::switch_to(&mut *prev_guard, &mut *next_guard);
+            }
         } else {
             // This case handles the initial switch from an idle state or kmain
             // where there isn't a "previous" user context to save.
@@ -101,7 +103,8 @@ pub unsafe fn switch(token: &mut CleanLockToken) -> SwitchResult {
             time::set_next_timer_event(wake_time as u64);
         } else {
             // If no contexts are set to wake up, set a default idle timeout
-            time::set_next_timer_event(time::monotonic() as u64 + 1_000_000_000); // 1 second
+            time::set_next_timer_event(time::monotonic() as u64 + 1_000_000_000);
+            // 1 second
         }
 
         SwitchResult::AllContextsIdle

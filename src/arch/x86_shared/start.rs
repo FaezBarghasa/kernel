@@ -127,6 +127,22 @@ unsafe extern "C" fn start(args_ptr: *const KernelArgs, stack_end: usize) -> ! {
             #[cfg(target_arch = "x86_64")]
             crate::alternative::early_init(true);
 
+            // Initialize entropy subsystem (required for KASLR and stack canaries)
+            crate::entropy::init();
+
+            // Initialize KASLR (calculates heap/stack random slides)
+            crate::kaslr::init();
+
+            // Initialize stack protection
+            crate::stack_guard::init();
+
+            // Log KASLR status
+            if crate::entropy::has_hardware_rng() {
+                info!("KASLR: Hardware RNG available, full entropy");
+            } else {
+                info!("KASLR: Using jitter entropy (no hardware RNG)");
+            }
+
             // Set up syscall instruction
             interrupt::syscall::init();
 

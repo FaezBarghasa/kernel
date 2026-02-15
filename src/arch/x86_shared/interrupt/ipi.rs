@@ -17,7 +17,9 @@ interrupt!(switch, || {
     unsafe { the_local_apic().eoi() };
 
     let mut token = unsafe { CleanLockToken::new() };
-    let _ = context::switch(&mut token);
+    unsafe {
+        let _ = context::switch(&mut token);
+    }
 });
 
 interrupt!(pit, || {
@@ -25,5 +27,7 @@ interrupt!(pit, || {
 
     // Switch after a sufficient amount of time since the last switch.
     let mut token = unsafe { CleanLockToken::new() };
-    let _ = context::switch(&mut token);
+    unsafe {
+        let _ = context::switch(&mut token);
+    }
 });

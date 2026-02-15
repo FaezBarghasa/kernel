@@ -20,7 +20,7 @@ use crate::syscall::{
     data::{Map, StatVfs},
     error::*,
     flag::MapFlags,
-    usercopy::UserSliceWo,
+    usercopy::{UserSliceRo, UserSliceWo},
 };
 
 use super::{CallerCtx, KernelScheme, OpenResult};
@@ -34,6 +34,7 @@ enum HandleTy {
     Allocated = 0,
     PhysBorrow = 1,
     Translation = 2,
+    Hotplug = 3,
 }
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -56,6 +57,7 @@ fn from_raw(raw: u32) -> Option<(HandleTy, MemoryType, HandleFlags)> {
             0 => HandleTy::Allocated,
             1 => HandleTy::PhysBorrow,
             2 => HandleTy::Translation,
+            3 => HandleTy::Hotplug,
 
             _ => return None,
         },
@@ -198,6 +200,7 @@ impl KernelScheme for MemoryScheme {
             "" | "zeroed" => HandleTy::Allocated,
             "physical" => HandleTy::PhysBorrow,
             "translation" => HandleTy::Translation,
+            "hotplug" => HandleTy::Hotplug,
 
             _ => return Err(Error::new(ENOENT)),
         };
@@ -265,7 +268,9 @@ impl KernelScheme for MemoryScheme {
                 // patterns reserved for error codes
                 Ok(0)
             }
-            HandleTy::Allocated | HandleTy::PhysBorrow => Err(Error::new(EOPNOTSUPP)),
+            HandleTy::Allocated | HandleTy::PhysBorrow | HandleTy::Hotplug => {
+                Err(Error::new(EOPNOTSUPP))
+            }
         }
     }
 
@@ -290,7 +295,7 @@ impl KernelScheme for MemoryScheme {
                 token,
             ),
             HandleTy::PhysBorrow => Self::physmap(map.offset, map.size, map.flags, mem_ty, token),
-            HandleTy::Translation => Err(Error::new(EOPNOTSUPP)),
+            HandleTy::Translation | HandleTy::Hotplug => Err(Error::new(EOPNOTSUPP)),
         }
     }
     fn kfpath(&self, id: usize, buf: UserSliceWo, _token: &mut CleanLockToken) -> Result<usize> {
@@ -306,6 +311,7 @@ impl KernelScheme for MemoryScheme {
             HandleTy::Allocated => path.extend_from_slice(b"zeroed"),
             HandleTy::PhysBorrow => path.extend_from_slice(b"physical"),
             HandleTy::Translation => path.extend_from_slice(b"translation"),
+            HandleTy::Hotplug => path.extend_from_slice(b"hotplug"),
         }
 
         match mem_ty {
@@ -320,6 +326,39 @@ impl KernelScheme for MemoryScheme {
         }
 
         buf.copy_common_bytes_from_slice(&path)
+    }
+
+    fn kwrite(
+        &self,
+        id: usize,
+        buf: UserSliceRo,
+        _flags: u32,
+        _stored_flags: u32,
+        _token: &mut CleanLockToken,
+    ) -> Result<usize> {
+        let (handle_ty, _, _) = u32::try_from(id)
+            .ok()
+            .and_then(from_raw)
+            .ok_or(Error::new(EBADF))?;
+
+        match handle_ty {
+            HandleTy::Hotplug => {
+                let mut data = [0u8; 16];
+                if buf.copy_common_bytes_to_slice(&mut data)? != 16 {
+                    return Err(Error::new(EINVAL));
+                }
+                let base = u64::from_ne_bytes(data[0..8].try_into().unwrap()) as usize;
+                let size = u64::from_ne_bytes(data[8..16].try_into().unwrap()) as usize;
+
+                if let Some(ref mut allocator) = *crate::allocator::FRAME_ALLOCATOR.lock() {
+                    allocator.add_memory_region(base, size);
+                    Ok(16)
+                } else {
+                    Err(Error::new(ENODEV))
+                }
+            }
+            _ => Err(Error::new(EBADF)), // Only hotplug supports write
+        }
     }
     fn kfstatvfs(&self, _file: usize, dst: UserSliceWo, _token: &mut CleanLockToken) -> Result<()> {
         let used = used_frames() as u64;

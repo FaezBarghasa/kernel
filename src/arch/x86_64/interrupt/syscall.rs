@@ -1,6 +1,6 @@
 use crate::{
     arch::{gdt, interrupt::InterruptStack},
-    pop_preserved, pop_scratch, ptrace, ptrace_event, push_preserved, push_scratch,
+    pop_preserved, pop_scratch, ptrace, push_preserved, push_scratch, stack_guard,
     sync::CleanLockToken,
     syscall::flag::{PTRACE_FLAG_IGNORE, PTRACE_STOP_POST_SYSCALL, PTRACE_STOP_PRE_SYSCALL},
 };
@@ -101,6 +101,10 @@ pub unsafe extern "C" fn syscall_instruction(stack: *mut InterruptStack) {
         // Save the return value
         current_stack.rax = ret as u64;
     }
+
+    // Stack canary check on syscall exit - detects stack buffer overflows
+    // that may have occurred during syscall handling
+    stack_guard::check_kernel_canary();
 
     ptrace::breakpoint_callback(PTRACE_STOP_POST_SYSCALL, None, &mut token);
 }

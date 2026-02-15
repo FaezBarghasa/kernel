@@ -122,6 +122,37 @@ impl GenericTimer {
         ctrl.remove(TimerCtrlFlags::IMASK);
         self.write_tmr_ctrl(ctrl);
     }
+
+    /// Arm a one-shot timer event after `delay_ns` nanoseconds.
+    /// Converts nanoseconds to timer ticks using the counter frequency,
+    /// then writes to TVAL and enables the timer with interrupts unmasked.
+    pub fn set_next_event_ns(&mut self, delay_ns: u64) {
+        if self.clk_freq == 0 {
+            return;
+        }
+
+        // Convert ns to timer ticks: ticks = delay_ns * clk_freq / 1_000_000_000
+        // Use u128 to prevent overflow
+        let ticks = (delay_ns as u128 * self.clk_freq as u128) / 1_000_000_000;
+        let ticks = if ticks > u32::MAX as u128 {
+            u32::MAX
+        } else if ticks == 0 {
+            1 // Minimum 1 tick to ensure the timer fires
+        } else {
+            ticks as u32
+        };
+
+        if self.use_virtual_timer {
+            unsafe { control_regs::vtmr_tval_write(ticks) };
+        } else {
+            unsafe { control_regs::ptmr_tval_write(ticks) };
+        }
+
+        let mut ctrl = self.read_tmr_ctrl();
+        ctrl.insert(TimerCtrlFlags::ENABLE);
+        ctrl.remove(TimerCtrlFlags::IMASK);
+        self.write_tmr_ctrl(ctrl);
+    }
 }
 
 impl InterruptHandler for GenericTimer {
@@ -137,6 +168,14 @@ impl InterruptHandler for GenericTimer {
         unsafe {
             trigger(irq, token);
         }
-        self.reload_count();
+
+        // Dynamic tick: query scheduler for next event and arm accordingly
+        let next_event = crate::scheduler::scheduler().get_next_event_delta();
+        if let Some(delta_ns) = next_event {
+            self.set_next_event_ns(delta_ns);
+        } else {
+            // No specific event scheduled; fallback to 1ms tick for timeslicing
+            self.set_next_event_ns(1_000_000);
+        }
     }
 }

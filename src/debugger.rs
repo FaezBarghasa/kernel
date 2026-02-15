@@ -22,10 +22,12 @@ pub unsafe fn debugger(target_id: Option<*const ContextLock>, token: &mut CleanL
     println!();
 
     let mut tree = HashMap::new();
+    #[cfg(not(feature = "no-mmu"))]
     let mut spaces = HashSet::new();
 
     tree.insert(the_zeroed_frame().0, (1, false));
 
+    #[cfg(not(feature = "no-mmu"))]
     let old_table = unsafe { RmmA::table(TableKind::User) };
 
     let contexts_guard = crate::context::contexts();
@@ -58,6 +60,7 @@ pub unsafe fn debugger(target_id: Option<*const ContextLock>, token: &mut CleanL
         }
 
         // Switch to context page table to ensure syscall debug and stack dump will work
+        #[cfg(not(feature = "no-mmu"))]
         if let Some(ref space) = context.addr_space {
             let was_new = spaces.insert(space.acquire_read().table.utable.table().phys().data());
             unsafe {
@@ -143,12 +146,16 @@ pub unsafe fn debugger(target_id: Option<*const ContextLock>, token: &mut CleanL
         }
 
         // Switch to original page table
-        unsafe { RmmA::set_table(TableKind::User, old_table) };
+        #[cfg(not(feature = "no-mmu"))]
+        unsafe {
+            RmmA::set_table(TableKind::User, old_table)
+        };
 
         println!();
     }
 
     #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+    #[cfg(not(feature = "no-mmu"))]
     crate::scheme::proc::foreach_addrsp(token, |addrsp| {
         let was_new = spaces.insert(addrsp.acquire_read().table.utable.table().phys().data());
         unsafe { check_page_table_consistency(&mut *addrsp.acquire_write(), was_new, &mut tree) };
@@ -212,6 +219,7 @@ fn dump_stack(context: &Context, mut sp: usize) {
 }
 
 #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+#[cfg(not(feature = "no-mmu"))]
 unsafe fn check_page_table_consistency(
     addr_space: &mut crate::context::memory::AddrSpaceInner,
     new_as: bool,
