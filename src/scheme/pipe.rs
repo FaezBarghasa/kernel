@@ -182,7 +182,7 @@ impl KernelScheme for PipeScheme {
     ) -> Result<OpenResult> {
         let (_, key) = from_raw_id(id);
 
-        let buf = user_buf.as_str().or(Err(Error::new(EINVAL)))?;
+        let buf = user_buf.as_str().ok_or(Error::new(EINVAL))?;
         if buf == "write" {
             return Err(Error::new(EINVAL));
         }

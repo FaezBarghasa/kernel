@@ -113,6 +113,34 @@ pub enum OpenResult {
     External(Arc<RwLock<FileDescription>>),
 }
 
+#[derive(Copy, Clone, Debug)]
+pub enum StrOrBytes<'a> {
+    Str(&'a str),
+    Bytes(&'a [u8]),
+}
+
+impl<'a> StrOrBytes<'a> {
+    pub fn as_str(&self) -> Option<&'a str> {
+        match self {
+            Self::Str(s) => Some(s),
+            _ => None,
+        }
+    }
+
+    pub fn as_bytes(&self) -> &'a [u8] {
+        match self {
+            Self::Str(s) => s.as_bytes(),
+            Self::Bytes(b) => b,
+        }
+    }
+}
+
+impl<'a> From<&'a str> for StrOrBytes<'a> {
+    fn from(s: &'a str) -> Self {
+        Self::Str(s)
+    }
+}
+
 /// Kernel scheme trait
 pub trait KernelScheme: Send + Sync {
     fn kopen(
@@ -1203,3 +1231,4 @@ pub fn init_schemes() {
         .or_default()
         .insert(Box::from("root"), root_id);
 }
+mod verify;

@@ -6,10 +6,12 @@
 // Existing module code continues...
 pub mod alternative;
 pub mod consts;
+pub mod ept;
 pub mod flags;
 pub mod interrupt;
 pub mod macros;
 pub mod misc;
+pub mod npt;
 pub mod svm;
 pub mod vmx;
 

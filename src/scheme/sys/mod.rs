@@ -40,6 +40,7 @@ mod exe;
 mod iostat;
 mod irq;
 mod log;
+mod pmu;
 mod scheme;
 mod scheme_num;
 mod stat;
@@ -80,6 +81,7 @@ const FILES: &[(&str, Kind)] = &[
     ("scheme_num", Rd(scheme_num::resource)),
     ("syscall", Rd(syscall::resource)),
     ("uname", Rd(uname::resource)),
+    ("pmu", Rd(|_| Ok(pmu::pmu_info()))),
     ("env", Rd(|_| Ok(Vec::from(crate::init_env())))),
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     ("spurious_irq", Rd(interrupt::irq::spurious_irq_resource)),
@@ -186,6 +188,7 @@ impl KernelScheme for SysScheme {
 
         Ok(bytes_read)
     }
+
     fn kreadoff(
         &self,
         id: usize,
