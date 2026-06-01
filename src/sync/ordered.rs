@@ -151,21 +151,37 @@ impl<L: Level, T> Mutex<L, T> {
             let holder_context_ref_opt = self.holder.lock().clone();
             if let Some(holder_context_ref) = holder_context_ref_opt {
                 let mut clean = unsafe { CleanLockToken::new() };
-                let current_priority = current_context_ref
-                    .write(clean.token())
-                    .priority
-                    .effective_priority();
-                let holder_priority = holder_context_ref
-                    .write(clean.token())
-                    .priority
-                    .effective_priority();
+                let current_priority = if let Some(guard) = current_context_ref.try_read(clean.token()) {
+                    guard.priority.effective_priority()
+                } else {
+                    current_context_ref
+                        .read(clean.token())
+                        .priority
+                        .effective_priority()
+                };
+                let holder_priority = if let Some(guard) = holder_context_ref.try_read(clean.token()) {
+                    guard.priority.effective_priority()
+                } else {
+                    holder_context_ref
+                        .read(clean.token())
+                        .priority
+                        .effective_priority()
+                };
 
                 if current_priority < holder_priority {
                     // Current thread has higher priority than holder, perform priority inheritance
-                    holder_context_ref
-                        .write(clean.token())
-                        .priority
-                        .inherit_priority(self as *const _ as *const () as usize, current_priority);
+                    // Try wait-free update via non-blocking try_write
+                    if let Some(mut holder_guard) = holder_context_ref.try_write(clean.token()) {
+                        holder_guard
+                            .priority
+                            .inherit_priority(self as *const _ as *const () as usize, current_priority);
+                    } else {
+                        // Fall back to blocking write if needed
+                        holder_context_ref
+                            .write(clean.token())
+                            .priority
+                            .inherit_priority(self as *const _ as *const () as usize, current_priority);
+                    }
                 }
             }
 
@@ -201,21 +217,37 @@ impl<L: Level, T> Mutex<L, T> {
             let holder_context_ref_opt = self.holder.lock().clone();
             if let Some(holder_context_ref) = holder_context_ref_opt {
                 let mut clean = unsafe { CleanLockToken::new() };
-                let current_priority = current_context_ref
-                    .write(clean.token())
-                    .priority
-                    .effective_priority();
-                let holder_priority = holder_context_ref
-                    .write(clean.token())
-                    .priority
-                    .effective_priority();
+                let current_priority = if let Some(guard) = current_context_ref.try_read(clean.token()) {
+                    guard.priority.effective_priority()
+                } else {
+                    current_context_ref
+                        .read(clean.token())
+                        .priority
+                        .effective_priority()
+                };
+                let holder_priority = if let Some(guard) = holder_context_ref.try_read(clean.token()) {
+                    guard.priority.effective_priority()
+                } else {
+                    holder_context_ref
+                        .read(clean.token())
+                        .priority
+                        .effective_priority()
+                };
 
                 if current_priority < holder_priority {
                     // Current thread has higher priority than holder, perform priority inheritance
-                    holder_context_ref
-                        .write(clean.token())
-                        .priority
-                        .inherit_priority(self as *const _ as *const () as usize, current_priority);
+                    // Try wait-free update via non-blocking try_write
+                    if let Some(mut holder_guard) = holder_context_ref.try_write(clean.token()) {
+                        holder_guard
+                            .priority
+                            .inherit_priority(self as *const _ as *const () as usize, current_priority);
+                    } else {
+                        // Fall back to blocking write if needed
+                        holder_context_ref
+                            .write(clean.token())
+                            .priority
+                            .inherit_priority(self as *const _ as *const () as usize, current_priority);
+                    }
                 }
             }
             None
@@ -325,6 +357,42 @@ impl<L: Level, T> RwLock<L, T> {
         self.inner.into_inner()
     }
 
+    /// Attempts to acquire write access without blocking.
+    pub fn try_write<'a, LP: Lower<L> + 'a>(
+        &'a self,
+        lock_token: LockToken<'a, LP>,
+    ) -> Option<RwLockWriteGuard<'a, L, T>> {
+        if let Some(guard) = self.inner.try_write() {
+            let current_context_ref = context::current();
+            *self.writer_holder.lock() = Some(current_context_ref);
+            Some(RwLockWriteGuard {
+                inner: guard,
+                lock_token: LockToken::downgraded(lock_token),
+                rwlock: self,
+            })
+        } else {
+            None
+        }
+    }
+
+    /// Attempts to acquire read access without blocking.
+    pub fn try_read<'a, LP: Lower<L> + 'a>(
+        &'a self,
+        lock_token: LockToken<'a, LP>,
+    ) -> Option<RwLockReadGuard<'a, L, T>> {
+        if let Some(guard) = self.inner.try_read() {
+            let current_context_ref = context::current();
+            self.reader_holders.lock().push(current_context_ref);
+            Some(RwLockReadGuard {
+                inner: guard,
+                lock_token: LockToken::downgraded(lock_token),
+                rwlock: self,
+            })
+        } else {
+            None
+        }
+    }
+
     /// Locks this RwLock with exclusive write access, blocking the current thread until it can be acquired.
     /// This function will not return while other writers or other readers currently have access to the lock.
     /// Returns an RAII guard which will drop the write access of this RwLock when dropped.
@@ -348,39 +416,55 @@ impl<L: Level, T> RwLock<L, T> {
             let writer_context_ref_opt = self.writer_holder.lock().clone();
             if let Some(writer_context_ref) = writer_context_ref_opt {
                 let mut clean = unsafe { CleanLockToken::new() };
-                let current_priority = current_context_ref
-                    .write(clean.token())
-                    .priority
-                    .effective_priority();
-                let writer_priority = writer_context_ref
-                    .write(clean.token())
-                    .priority
-                    .effective_priority();
+                let current_priority = if let Some(guard) = current_context_ref.try_read(clean.token()) {
+                    guard.priority.effective_priority()
+                } else {
+                    current_context_ref.read(clean.token()).priority.effective_priority()
+                };
+                let writer_priority = if let Some(guard) = writer_context_ref.try_read(clean.token()) {
+                    guard.priority.effective_priority()
+                } else {
+                    writer_context_ref.read(clean.token()).priority.effective_priority()
+                };
 
                 if current_priority < writer_priority {
-                    writer_context_ref
-                        .write(clean.token())
-                        .priority
-                        .inherit_priority(self as *const _ as *const () as usize, current_priority);
+                    if let Some(mut writer_guard) = writer_context_ref.try_write(clean.token()) {
+                        writer_guard
+                            .priority
+                            .inherit_priority(self as *const _ as *const () as usize, current_priority);
+                    } else {
+                        writer_context_ref
+                            .write(clean.token())
+                            .priority
+                            .inherit_priority(self as *const _ as *const () as usize, current_priority);
+                    }
                 }
             }
             // Also check readers
             for reader_context_ref in self.reader_holders.lock().iter() {
                 let mut clean = unsafe { CleanLockToken::new() };
-                let current_priority = current_context_ref
-                    .write(clean.token())
-                    .priority
-                    .effective_priority();
-                let reader_priority = reader_context_ref
-                    .write(clean.token())
-                    .priority
-                    .effective_priority();
+                let current_priority = if let Some(guard) = current_context_ref.try_read(clean.token()) {
+                    guard.priority.effective_priority()
+                } else {
+                    current_context_ref.read(clean.token()).priority.effective_priority()
+                };
+                let reader_priority = if let Some(guard) = reader_context_ref.try_read(clean.token()) {
+                    guard.priority.effective_priority()
+                } else {
+                    reader_context_ref.read(clean.token()).priority.effective_priority()
+                };
 
                 if current_priority < reader_priority {
-                    reader_context_ref
-                        .write(clean.token())
-                        .priority
-                        .inherit_priority(self as *const _ as *const () as usize, current_priority);
+                    if let Some(mut reader_guard) = reader_context_ref.try_write(clean.token()) {
+                        reader_guard
+                            .priority
+                            .inherit_priority(self as *const _ as *const () as usize, current_priority);
+                    } else {
+                        reader_context_ref
+                            .write(clean.token())
+                            .priority
+                            .inherit_priority(self as *const _ as *const () as usize, current_priority);
+                    }
                 }
             }
 
@@ -417,20 +501,28 @@ impl<L: Level, T> RwLock<L, T> {
             let writer_context_ref_opt = self.writer_holder.lock().clone();
             if let Some(writer_context_ref) = writer_context_ref_opt {
                 let mut clean = unsafe { CleanLockToken::new() };
-                let current_priority = current_context_ref
-                    .write(clean.token())
-                    .priority
-                    .effective_priority();
-                let writer_priority = writer_context_ref
-                    .write(clean.token())
-                    .priority
-                    .effective_priority();
+                let current_priority = if let Some(guard) = current_context_ref.try_read(clean.token()) {
+                    guard.priority.effective_priority()
+                } else {
+                    current_context_ref.read(clean.token()).priority.effective_priority()
+                };
+                let writer_priority = if let Some(guard) = writer_context_ref.try_read(clean.token()) {
+                    guard.priority.effective_priority()
+                } else {
+                    writer_context_ref.read(clean.token()).priority.effective_priority()
+                };
 
                 if current_priority < writer_priority {
-                    writer_context_ref
-                        .write(clean.token())
-                        .priority
-                        .inherit_priority(self as *const _ as *const () as usize, current_priority);
+                    if let Some(mut writer_guard) = writer_context_ref.try_write(clean.token()) {
+                        writer_guard
+                            .priority
+                            .inherit_priority(self as *const _ as *const () as usize, current_priority);
+                    } else {
+                        writer_context_ref
+                            .write(clean.token())
+                            .priority
+                            .inherit_priority(self as *const _ as *const () as usize, current_priority);
+                    }
                 }
             }
 

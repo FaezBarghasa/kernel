@@ -74,14 +74,21 @@ impl PercpuBlock {
     #[cfg(target_arch = "x86_64")]
     #[inline(always)]
     pub fn current_cpu_id() -> crate::cpu_set::LogicalCpuId {
-        let id: u32;
-        unsafe {
-            core::arch::asm!(
-                "mov {0:e}, gs:[{1}]",
-                out(reg) id,
-                const crate::arch::x86_shared::gdt::PCR_PERCPU_OFFSET
-            );
+        #[cfg(test)]
+        {
+            crate::cpu_set::LogicalCpuId::new(0)
         }
-        crate::cpu_set::LogicalCpuId::new(id)
+        #[cfg(not(test))]
+        {
+            let id: u32;
+            unsafe {
+                core::arch::asm!(
+                    "mov {0:e}, gs:[{1}]",
+                    out(reg) id,
+                    const crate::arch::x86_shared::gdt::PCR_PERCPU_OFFSET
+                );
+            }
+            crate::cpu_set::LogicalCpuId::new(id)
+        }
     }
 }

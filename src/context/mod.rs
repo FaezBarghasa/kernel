@@ -5,6 +5,7 @@ pub mod file;
 pub mod list;
 pub mod memory;
 pub mod reap;
+pub mod ring;
 pub mod switch;
 
 #[allow(clippy::module_inception)]

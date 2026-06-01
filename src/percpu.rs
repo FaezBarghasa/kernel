@@ -204,7 +204,7 @@ impl PercpuBlock {
 
             stats: CpuStats::default(),
 
-            scheduler: Scheduler::new(),
+            scheduler: Scheduler::new(cpu_id),
         }
     }
 }

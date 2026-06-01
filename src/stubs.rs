@@ -272,6 +272,7 @@ pub mod time_helpers {
     }
 }
 
+#[cfg(not(test))]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn bcmp(s1: *const u8, s2: *const u8, n: usize) -> i32 {
     let s1_slice = unsafe { core::slice::from_raw_parts(s1, n) };

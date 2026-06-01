@@ -610,7 +610,15 @@ impl IpcChannel {
         let mut token = unsafe { CleanLockToken::new() };
         let contexts = context::contexts().read();
         if let Some(context_ref) = contexts.get(&context_id) {
-            context_ref.write(token.token()).unblock();
+            let current_ref = context::current();
+            let current_vdeadline = current_ref.read(token.token()).virtual_deadline;
+
+            let mut waiter_ctx = context_ref.write(token.token());
+            if current_vdeadline > 0 && (waiter_ctx.virtual_deadline == 0 || current_vdeadline < waiter_ctx.virtual_deadline) {
+                // EEVDF: Boost receiver's deadline to sender's deadline
+                waiter_ctx.virtual_deadline = current_vdeadline;
+            }
+            waiter_ctx.unblock();
         }
     }
 

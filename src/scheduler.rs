@@ -17,8 +17,9 @@
 //! NUMA boundaries where possible but prioritizes system-wide throughput.
 
 use alloc::collections::VecDeque;
+use alloc::sync::Arc;
 use core::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicUsize, Ordering};
-use spin::Mutex;
+use spin::{Mutex, RwLock};
 
 use crate::{
     context::ContextRef,
@@ -70,6 +71,90 @@ pub enum SchedPolicy {
     Idle = 5,
     Interactive = 6,
     Deadline = 7,
+}
+
+pub trait ExtSchedulerOps: Send + Sync {
+    fn enqueue(&self, context: ContextRef) -> bool;
+    fn dequeue(&self, context_id: usize);
+    fn select_next(&self, cpu_id: LogicalCpuId) -> Option<ContextRef>;
+}
+
+pub static EXT_SCHEDULER: RwLock<Option<Arc<dyn ExtSchedulerOps>>> = RwLock::new(None);
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CacheDomain {
+    CacheRich,
+    FrequencyRich,
+}
+
+static L3_CACHE_SIZES: [AtomicU64; 256] = [const { AtomicU64::new(0) }; 256];
+
+pub fn get_l3_cache_size() -> Option<u64> {
+    #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+    {
+        None
+    }
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    {
+        for subleaf in 0..4 {
+            if let Some(res) = crate::arch::x86_shared::cpuid::get_amd_cache_properties(subleaf) {
+                let cache_level = (res.eax >> 5) & 0x7;
+                if cache_level == 3 {
+                    let line_size = (res.ebx & 0xFFF) + 1;
+                    let partitions = ((res.ebx >> 12) & 0x3FF) + 1;
+                    let ways = ((res.ebx >> 22) & 0x3FF) + 1;
+                    let sets = res.ecx + 1;
+                    return Some((ways as u64) * (partitions as u64) * (line_size as u64) * (sets as u64));
+                }
+            }
+        }
+        None
+    }
+}
+
+pub fn detect_cache_domain(cpu_id: LogicalCpuId) -> CacheDomain {
+    let l3_size = get_l3_cache_size().unwrap_or(0);
+    let id_val = cpu_id.get() as usize;
+    if id_val < 256 {
+        L3_CACHE_SIZES[id_val].store(l3_size, Ordering::Release);
+    }
+
+    // A threshold of 64MB (64 * 1024 * 1024) is a perfect differentiator for Ryzen 3D V-Cache (96MB vs 32MB).
+    if l3_size >= 64 * 1024 * 1024 {
+        CacheDomain::CacheRich
+    } else {
+        CacheDomain::FrequencyRich
+    }
+}
+
+pub fn get_cpu_cache_domain(cpu_id: LogicalCpuId) -> CacheDomain {
+    let ptr = ALL_PERCPU_BLOCKS[cpu_id.get() as usize].load(Ordering::Acquire);
+    if !ptr.is_null() {
+        unsafe { (*ptr).scheduler.cache_domain }
+    } else {
+        CacheDomain::CacheRich
+    }
+}
+
+pub fn select_best_cpu_in_domain(domain: CacheDomain) -> LogicalCpuId {
+    let mut best_cpu = crate::cpu_id();
+    let mut min_load = u64::MAX;
+
+    for i in 0..crate::cpu_count() {
+        let cpu_id = LogicalCpuId::new(i);
+        let ptr = ALL_PERCPU_BLOCKS[i as usize].load(Ordering::Acquire);
+        if !ptr.is_null() {
+            let cpu_domain = unsafe { (*ptr).scheduler.cache_domain };
+            if cpu_domain == domain {
+                let load = unsafe { (*ptr).scheduler.run_queue.load() };
+                if load < min_load {
+                    min_load = load;
+                    best_cpu = cpu_id;
+                }
+            }
+        }
+    }
+    best_cpu
 }
 
 // =============================================================================
@@ -191,9 +276,9 @@ pub struct RunQueue {
     /// Allows O(1) highest-priority lookup via `trailing_zeros()`.
     rt_bitmap: AtomicU64,
 
-    /// Non-RT tasks sorted by virtual deadline.
+    /// Non-RT tasks managed via a lock-free EEVDF priority ring.
     /// The primary target for work stealing.
-    pub non_rt_queue: Mutex<VecDeque<RunQueueEntry>>,
+    pub non_rt_ring: crate::context::ring::ContextRing,
 
     /// Atomic counters for quick load estimation without locking
     task_count: AtomicUsize,
@@ -219,7 +304,7 @@ impl RunQueue {
                 EMPTY_Q,
             ]),
             rt_bitmap: AtomicU64::new(0),
-            non_rt_queue: Mutex::new(VecDeque::new()),
+            non_rt_ring: crate::context::ring::ContextRing::new(),
             task_count: AtomicUsize::new(0),
             load_weight: AtomicU64::new(0),
             needs_preempt: AtomicBool::new(false),
@@ -234,6 +319,12 @@ impl RunQueue {
     }
 
     pub fn add(&self, context_ref: ContextRef, token: &mut CleanLockToken) {
+        if let Some(ext_sched) = &*EXT_SCHEDULER.read() {
+            if ext_sched.enqueue(context_ref.clone()) {
+                return;
+            }
+        }
+
         let (is_realtime, id, vdeadline, priority) = {
             let context = context_ref.read(token.token());
             (
@@ -244,10 +335,10 @@ impl RunQueue {
             )
         };
 
-        let entry = RunQueueEntry::new(id, context_ref, vdeadline, priority);
         let weight = Self::priority_to_weight(priority);
 
         if is_realtime {
+            let entry = RunQueueEntry::new(id, context_ref, vdeadline, priority);
             let idx = Self::rt_prio_index(priority);
             {
                 let mut queues = self.rt_queues.lock();
@@ -267,14 +358,21 @@ impl RunQueue {
                 self.needs_preempt.store(true, Ordering::Release);
             }
         } else {
-            let mut queue = self.non_rt_queue.lock();
-            let insert_pos = queue
-                .iter()
-                .position(|e| vdeadline < e.vdeadline)
-                .unwrap_or(queue.len());
-            queue.insert(insert_pos, entry);
+            // EEVDF: Calculate initial virtual deadline if it's currently 0 or behind monotonic time.
+            let now = monotonic();
+            let computed_vdeadline = if vdeadline < now {
+                let weight_div = if weight == 0 { 1 } else { weight };
+                let slice_factor = (BASE_TIME_SLICE_NS.saturating_mul(1024)) / weight_div;
+                now.saturating_add(slice_factor)
+            } else {
+                vdeadline
+            };
 
-            if insert_pos == 0 {
+            // Store back to the context
+            context_ref.write(token.token()).virtual_deadline = computed_vdeadline;
+
+            let enqueued = self.non_rt_ring.enqueue(context_ref, computed_vdeadline, priority);
+            if enqueued {
                 self.needs_preempt.store(true, Ordering::Release);
             }
         }
@@ -306,16 +404,14 @@ impl RunQueue {
             }
         }
 
-        // Try Non-RT queue with earliest deadline
-        {
-            let mut non_rt = self.non_rt_queue.lock();
-            if let Some(mut entry) = non_rt.pop_front() {
-                self.task_count.fetch_sub(1, Ordering::Relaxed);
-                let weight = Self::priority_to_weight(entry.priority);
-                self.load_weight.fetch_sub(weight, Ordering::Relaxed);
-                entry.run_count += 1;
-                return Some(entry.context);
-            }
+        // Try Non-RT queue with earliest EEVDF deadline
+        if let Some(ctx_ref) = self.non_rt_ring.select_next_eevdf() {
+            let mut token = unsafe { CleanLockToken::new() };
+            let priority = ctx_ref.read(token.token()).priority.effective_priority();
+            let weight = Self::priority_to_weight(priority);
+            self.task_count.fetch_sub(1, Ordering::Relaxed);
+            self.load_weight.fetch_sub(weight, Ordering::Relaxed);
+            return Some(ctx_ref);
         }
 
         None
@@ -331,13 +427,14 @@ impl RunQueue {
                 return Some(front.context.clone());
             }
         }
-        if let Some(front) = self.non_rt_queue.lock().front() {
-            return Some(front.context.clone());
-        }
-        None
+        self.non_rt_ring.peek_earliest()
     }
 
     pub fn remove(&self, context_id: usize) {
+        if let Some(ext_sched) = &*EXT_SCHEDULER.read() {
+            ext_sched.dequeue(context_id);
+        }
+
         // Search RT queues
         {
             let mut queues = self.rt_queues.lock();
@@ -360,15 +457,12 @@ impl RunQueue {
             }
         }
         // Search non-RT queue
-        {
-            let mut non_rt = self.non_rt_queue.lock();
-            if let Some(pos) = non_rt.iter().position(|e| e.id == context_id) {
-                if let Some(entry) = non_rt.remove(pos) {
-                    self.task_count.fetch_sub(1, Ordering::Relaxed);
-                    let weight = Self::priority_to_weight(entry.priority);
-                    self.load_weight.fetch_sub(weight, Ordering::Relaxed);
-                }
-            }
+        if let Some(ctx_ref) = self.non_rt_ring.remove_by_id(context_id) {
+            let mut token = unsafe { CleanLockToken::new() };
+            let priority = ctx_ref.read(token.token()).priority.effective_priority();
+            let weight = Self::priority_to_weight(priority);
+            self.task_count.fetch_sub(1, Ordering::Relaxed);
+            self.load_weight.fetch_sub(weight, Ordering::Relaxed);
         }
     }
 
@@ -376,14 +470,18 @@ impl RunQueue {
     /// Returns a RunQueueEntry if successful.
     /// Only steals from non-RT queue to avoid disrupting real-time guarantees.
     pub fn steal(&self) -> Option<RunQueueEntry> {
-        let mut non_rt = self.non_rt_queue.lock();
-        if non_rt.len() > 1 {
-            // Steal from back (coldest cache, furthest deadline)
-            if let Some(entry) = non_rt.pop_back() {
+        if self.non_rt_ring.len() > 1 {
+            // Steal the context with the furthest virtual deadline (coldest task)
+            if let Some(ctx_ref) = self.non_rt_ring.select_furthest_eevdf() {
+                let mut token = unsafe { CleanLockToken::new() };
+                let (id, vdeadline, priority) = {
+                    let context = ctx_ref.read(token.token());
+                    (context.id(), context.virtual_deadline, context.priority.effective_priority())
+                };
+                let weight = Self::priority_to_weight(priority);
                 self.task_count.fetch_sub(1, Ordering::Relaxed);
-                let weight = Self::priority_to_weight(entry.priority);
                 self.load_weight.fetch_sub(weight, Ordering::Relaxed);
-                return Some(entry);
+                return Some(RunQueueEntry::new(id, ctx_ref, vdeadline, priority));
             }
         }
         None
@@ -446,10 +544,11 @@ pub struct Scheduler {
     pub stats: SchedulerStats,
     pub tickless: AtomicBool,
     pub next_timer_event: AtomicU64,
+    pub cache_domain: CacheDomain,
 }
 
 impl Scheduler {
-    pub const fn new() -> Self {
+    pub fn new(cpu_id: LogicalCpuId) -> Self {
         Scheduler {
             run_queue: RunQueue::new(),
             current_context: None,
@@ -459,6 +558,7 @@ impl Scheduler {
             stats: SchedulerStats::new(),
             tickless: AtomicBool::new(true),
             next_timer_event: AtomicU64::new(0),
+            cache_domain: detect_cache_domain(cpu_id),
         }
     }
 
@@ -560,25 +660,29 @@ impl Scheduler {
 
         current_ctx.last_cpu_id = Some(crate::cpu_id());
         current_ctx.cpu_time = current_ctx.cpu_time.saturating_add(time_spent);
+        current_ctx.update_cache_metrics(time_spent as u64);
 
         if !current_ctx.is_realtime {
-            let priority_factor = current_ctx.priority.effective_priority() as u64 + 1;
-            let virtual_time_increase = if priority_factor > 0 {
-                (time_spent as u64 * BASE_TIME_SLICE_NS) / priority_factor
-            } else {
-                time_spent as u64
-            };
+            let priority = current_ctx.priority.effective_priority();
+            let weight = RunQueue::priority_to_weight(priority);
+            let weight_div = if weight == 0 { 1 } else { weight };
+            let virtual_time_increase = (time_spent.saturating_mul(1024)) / weight_div;
 
-            current_ctx.virtual_deadline = current_ctx
-                .virtual_deadline
-                .saturating_add(virtual_time_increase);
+            if current_ctx.virtual_deadline < now {
+                let slice_factor = (BASE_TIME_SLICE_NS.saturating_mul(1024)) / weight_div;
+                current_ctx.virtual_deadline = now.saturating_add(slice_factor);
+            } else {
+                current_ctx.virtual_deadline = current_ctx
+                    .virtual_deadline
+                    .saturating_add(virtual_time_increase);
+            }
         }
 
         current_ctx.priority.check_boost_expired();
 
         if current_ctx.status.is_runnable() {
             drop(current_ctx);
-            self.run_queue.add(current_ctx_ref.clone(), token);
+            add_context(current_ctx_ref.clone(), token);
         }
     }
 
@@ -709,12 +813,31 @@ pub fn add_context(context_ref: ContextRef, token: &mut CleanLockToken) {
     };
 
     let target_cpu_id = if let Some(cpu_id) = context_cpu_id {
-        // Sticky affinity: try to keep on same CPU
-        cpu_id
+        // V-Cache/Topology-aware placement based on cache-miss profiling
+        let context = context_ref.read(token.token());
+        let ratio = context.cache_miss_ratio();
+        let current_domain = get_cpu_cache_domain(cpu_id);
+        let desired_domain = if ratio > 0.35 {
+            CacheDomain::CacheRich
+        } else {
+            CacheDomain::FrequencyRich
+        };
+
+        if current_domain != desired_domain {
+            select_best_cpu_in_domain(desired_domain)
+        } else {
+            cpu_id
+        }
     } else {
-        // New task placement: Prefer parent's socket (NUMA awareness)
-        let parent_cpu_id = crate::cpu_id();
-        select_best_cpu_on_socket(parent_cpu_id)
+        // New task placement: use cache profiling
+        let context = context_ref.read(token.token());
+        let ratio = context.cache_miss_ratio();
+        let desired_domain = if ratio > 0.35 {
+            CacheDomain::CacheRich
+        } else {
+            CacheDomain::FrequencyRich
+        };
+        select_best_cpu_in_domain(desired_domain)
     };
 
     // Dispatch to the target CPU's queue
@@ -817,7 +940,7 @@ mod benchmarks {
     // logic. Real measurement requires running in kernel.
     #[test]
     fn bench_scheduler_overhead() {
-        let scheduler = Scheduler::new();
+        let scheduler = Scheduler::new(LogicalCpuId::new(0));
         let _q = &scheduler.run_queue;
 
         // Simulate adding tasks

@@ -56,7 +56,7 @@ const F_GETOWN: usize = 9;
 // =============================================================================
 
 /// Shared ring buffer header mapped to userspace
-#[repr(C)]
+#[repr(C, align(64))]
 pub struct IpcRing {
     // Submission Queue control
     pub sq_head: AtomicU32,
@@ -321,6 +321,8 @@ impl RingScheme {
                 }
 
                 // Queue for driver processing
+                handle.driver_cmds.write().push_back(*sqe);
+
                 handle.driver_queue.send((), token);
                 handle.driver_queue.wake_one();
                 Ok(())
@@ -337,6 +339,7 @@ impl RingScheme {
                     handle.write_cqe(&cqe);
                     return Err(Error::new(EIO));
                 }
+                handle.driver_cmds.write().push_back(*sqe);
                 handle.driver_queue.send((), token);
                 handle.driver_queue.wake_one();
                 Ok(())
@@ -353,6 +356,7 @@ impl RingScheme {
                     handle.write_cqe(&cqe);
                     return Err(Error::new(EIO));
                 }
+                handle.driver_cmds.write().push_back(*sqe);
                 handle.driver_queue.send((), token);
                 handle.driver_queue.wake_one();
                 Ok(())
@@ -370,6 +374,7 @@ impl RingScheme {
                     handle.write_cqe(&cqe);
                     return Err(Error::new(EIO));
                 }
+                handle.driver_cmds.write().push_back(*sqe);
                 handle.driver_queue.send((), token);
                 handle.driver_queue.wake_one();
                 Ok(())
@@ -387,6 +392,7 @@ impl RingScheme {
                     handle.write_cqe(&cqe);
                     return Err(Error::new(EIO));
                 }
+                handle.driver_cmds.write().push_back(*sqe);
                 handle.driver_queue.send((), token);
                 handle.driver_queue.wake_one();
                 Ok(())
@@ -479,6 +485,7 @@ impl RingScheme {
                     handle.write_cqe(&cqe);
                     return Err(Error::new(EIO));
                 }
+                handle.driver_cmds.write().push_back(*sqe);
                 handle.driver_queue.send((), token);
                 handle.driver_queue.wake_one();
                 Ok(())
@@ -496,6 +503,7 @@ impl RingScheme {
                     handle.write_cqe(&cqe);
                     return Err(Error::new(EIO));
                 }
+                handle.driver_cmds.write().push_back(*sqe);
                 handle.driver_queue.send((), token);
                 handle.driver_queue.wake_one();
                 Ok(())
@@ -716,7 +724,7 @@ impl KernelScheme for RingScheme {
         let handles = self.handles.read();
         let handle = handles.get(&id).ok_or(Error::new(EBADF))?;
         let frame = handle.frame;
-        let page_count = NonZeroUsize::new(1).unwrap();
+        let page_count = NonZeroUsize::new(2).unwrap(); // 8KB = 2 pages
 
         let base_page = addr_space.acquire_write().mmap(
             (map.address != 0)

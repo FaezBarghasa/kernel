@@ -126,6 +126,26 @@ fn descriptor_from_tss(base: u64, limit: u64) -> (u64, u64) {
 }
 
 pub fn pcr() -> &'static mut ProcessorControlRegion {
+    #[cfg(test)]
+    {
+        struct ForceSync<T>(T);
+        unsafe impl<T> Sync for ForceSync<T> {}
+        static TEST_PCR: ForceSync<core::cell::SyncUnsafeCell<Option<ProcessorControlRegion>>> = ForceSync(core::cell::SyncUnsafeCell::new(None));
+        unsafe {
+            let pcr_opt = &mut *TEST_PCR.0.get();
+            if pcr_opt.is_none() {
+                *pcr_opt = Some(ProcessorControlRegion {
+                    self_ref: 0,
+                    gdt: Gdt { entries: [0; 8] },
+                    tss: TaskStateSegment::new(),
+                    percpu: PercpuBlock::init(crate::cpu_set::LogicalCpuId::new(0)),
+                    user_rsp_tmp: 0,
+                });
+            }
+            pcr_opt.as_mut().unwrap()
+        }
+    }
+    #[cfg(not(test))]
     unsafe {
         let base: u64;
         core::arch::asm!("mov {}, gs:0", out(reg) base);

@@ -48,29 +48,32 @@ fn main() {
     }
 
     // Linker selection
-    let linker_script = if target.contains("x86_64") {
-        "x86_64.ld"
-    } else if target.contains("aarch64") {
-        "aarch64.ld"
-    } else if target.contains("riscv64") {
-        "riscv64.ld"
-    } else if target.contains("riscv32") {
-        "riscv32.ld"
-    } else if target.contains("i686") || target.contains("i586") {
-        "i586.ld"
-    } else {
-        panic!("Unsupported target for linker script selection: {}", target);
-    };
+    let is_host = target.contains("unknown-linux") || target.contains("apple") || target.contains("windows");
+    if !is_host {
+        let linker_script = if target.contains("x86_64") {
+            "x86_64.ld"
+        } else if target.contains("aarch64") {
+            "aarch64.ld"
+        } else if target.contains("riscv64") {
+            "riscv64.ld"
+        } else if target.contains("riscv32") {
+            "riscv32.ld"
+        } else if target.contains("i686") || target.contains("i586") {
+            "i586.ld"
+        } else {
+            panic!("Unsupported target for linker script selection: {}", target);
+        };
 
-    let linker_path = Path::new("linkers").join(linker_script);
+        let linker_path = Path::new("linkers").join(linker_script);
 
-    if !linker_path.exists() {
-        panic!("Linker script not found: {}", linker_path.display());
+        if !linker_path.exists() {
+            panic!("Linker script not found: {}", linker_path.display());
+        }
+
+        let dest_path = out_path.join(linker_script);
+        fs::copy(&linker_path, &dest_path).unwrap();
+
+        println!("cargo:rustc-link-search={}", out_dir);
+        println!("cargo:rustc-link-arg=-T{}", linker_script);
     }
-
-    let dest_path = out_path.join(linker_script);
-    fs::copy(&linker_path, &dest_path).unwrap();
-
-    println!("cargo:rustc-link-search={}", out_dir);
-    println!("cargo:rustc-link-arg=-T{}", linker_script);
 }

@@ -171,6 +171,11 @@ pub struct Context {
 
     /// Count of memory-locked pages for this context
     pub memory_locked_count: usize,
+
+    /// Cache miss count (simulated or read from PMU)
+    pub cache_misses: u64,
+    /// Instructions count (simulated or read from PMU)
+    pub instructions: u64,
 }
 
 #[derive(Debug)]
@@ -237,6 +242,8 @@ impl Context {
             is_realtime,
             mlock: 0,
             memory_locked_count: 0,
+            cache_misses: 0,
+            instructions: 0,
 
             #[cfg(feature = "syscall_debug")]
             syscall_debug_info: crate::syscall::debug::SyscallDebugInfo::default(),
@@ -247,6 +254,22 @@ impl Context {
 
     pub fn id(&self) -> usize {
         self.id
+    }
+
+    pub fn update_cache_metrics(&mut self, runtime_ns: u64) {
+        let base_misses = (runtime_ns / 100) as u64; // 1 miss per 100ns
+        // Vary simulated cache misses by context ID to create heterogeneous profiles
+        let multiplier = if self.id % 3 == 0 { 2 } else { 1 };
+        self.cache_misses += base_misses * multiplier;
+        self.instructions += (runtime_ns / 2) as u64; // 1 instruction per 2ns
+    }
+
+    pub fn cache_miss_ratio(&self) -> f32 {
+        if self.instructions == 0 {
+            0.0
+        } else {
+            self.cache_misses as f32 / self.instructions as f32
+        }
     }
 
     /// Set whether this context is a hard real-time task.
