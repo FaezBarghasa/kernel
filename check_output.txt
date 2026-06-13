@@ -134,6 +134,12 @@ warning: unused import: `Status`
 3 | use crate::context::{Context, Status};
   |                               ^^^^^^
 
+warning: unused import: `alloc::sync::Arc`
+ --> src/context/ring.rs:3:5
+  |
+3 | use alloc::sync::Arc;
+  |     ^^^^^^^^^^^^^^^^
+
 warning: unused import: `Context`
  --> src/context/switch.rs:4:25
   |
@@ -186,11 +192,35 @@ warning: unused imports: `mem::MaybeUninit` and `ptr::NonNull`
 14 |     ptr::NonNull,
    |     ^^^^^^^^^^^^
 
-warning: unused import: `mem`
- --> src/memory/mod.rs:9:5
+warning: unused import: `alloc::sync::Arc`
+ --> src/memory/mglru.rs:5:5
   |
-9 |     mem,
-  |     ^^^
+5 | use alloc::sync::Arc;
+  |     ^^^^^^^^^^^^^^^^
+
+warning: unused imports: `PageFlags`, `Page`, `RmmA`, and `VirtualAddress`
+ --> src/memory/mglru.rs:7:21
+  |
+7 | use crate::paging::{Page, PageFlags, RmmA, PhysicalAddress, VirtualAddress, PAGE_SIZE};
+  |                     ^^^^  ^^^^^^^^^  ^^^^                   ^^^^^^^^^^^^^^
+
+warning: unused import: `alloc::sync::Arc`
+ --> src/memory/mthp.rs:4:5
+  |
+4 | use alloc::sync::Arc;
+  |     ^^^^^^^^^^^^^^^^
+
+warning: unused imports: `PageFlags`, `Page`, `PhysicalAddress`, `RmmA`, and `VirtualAddress`
+ --> src/memory/mthp.rs:5:21
+  |
+5 | use crate::paging::{Page, PageFlags, RmmA, PhysicalAddress, VirtualAddress, PAGE_SIZE};
+  |                     ^^^^  ^^^^^^^^^  ^^^^  ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^
+
+warning: unused import: `mem`
+  --> src/memory/mod.rs:11:5
+   |
+11 |     mem,
+   |     ^^^
 
 warning: unexpected `cfg` condition name: `dtb`
   --> src/scheme/mod.rs:27:7
@@ -207,9 +237,9 @@ warning: unexpected `cfg` condition name: `dtb`
    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:390:11
+   --> src/scheme/mod.rs:396:11
     |
-390 |     #[cfg(dtb)]
+396 |     #[cfg(dtb)]
     |           ^^^ help: found config with similar value: `feature = "dtb"`
     |
     = help: consider using a Cargo feature instead
@@ -319,6 +349,12 @@ warning: unused imports: `ContextId`, `ESPIPE`, `KernelMapper`, `MapFlags`, `O_C
 44 |         number::*,
    |         ^^^^^^^^^
 
+warning: unused imports: `AtomicUsize` and `Ordering`
+ --> src/scheme/sys/pmu.rs:2:26
+  |
+2 | use core::sync::atomic::{AtomicUsize, Ordering};
+  |                          ^^^^^^^^^^^  ^^^^^^^^
+
 warning: unused import: `ContextRef`
  --> src/scheme/sys/stat.rs:2:25
   |
@@ -326,9 +362,9 @@ warning: unused import: `ContextRef`
   |                         ^^^^^^^^^^
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:413:19
+   --> src/scheme/mod.rs:419:19
     |
-413 |             #[cfg(dtb)]
+419 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
     |
     = help: consider using a Cargo feature instead
@@ -339,12 +375,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-503 |         forward_scheme!(self, |s| s.kopen(path, flags, ctx, token))
+509 |         forward_scheme!(self, |s| s.kopen(path, flags, ctx, token))
     |         ----------------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -356,12 +392,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-514 |         forward_scheme!(self, |s| s.kopenat(file, path, flags, fcntl, ctx, token))
+520 |         forward_scheme!(self, |s| s.kopenat(file, path, flags, fcntl, ctx, token))
     |         -------------------------------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -373,12 +409,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-517 |         forward_scheme!(self, |s| s.rmdir(path, ctx, token))
+523 |         forward_scheme!(self, |s| s.rmdir(path, ctx, token))
     |         ---------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -390,12 +426,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-520 |         forward_scheme!(self, |s| s.unlink(path, ctx, token))
+526 |         forward_scheme!(self, |s| s.unlink(path, ctx, token))
     |         ----------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -407,12 +443,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-523 |         forward_scheme!(self, |s| s.close(file, token))
+529 |         forward_scheme!(self, |s| s.close(file, token))
     |         ----------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -424,12 +460,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-533 |         forward_scheme!(self, |s| s.kread(file, buf, flags, stored_flags, token))
+539 |         forward_scheme!(self, |s| s.kread(file, buf, flags, stored_flags, token))
     |         ------------------------------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -441,18 +477,18 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |               #[cfg(dtb)]
+488 |               #[cfg(dtb)]
     |                     ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-544 | /         forward_scheme!(self, |s| s.kreadoff(
-545 | |             file,
-546 | |             buf,
-547 | |             offset,
+550 | /         forward_scheme!(self, |s| s.kreadoff(
+551 | |             file,
+552 | |             buf,
+553 | |             offset,
 ...   |
-550 | |             token
-551 | |         ))
+556 | |             token
+557 | |         ))
     | |__________- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -464,12 +500,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-561 |         forward_scheme!(self, |s| s.kwrite(file, buf, flags, stored_flags, token))
+567 |         forward_scheme!(self, |s| s.kwrite(file, buf, flags, stored_flags, token))
     |         -------------------------------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -481,18 +517,18 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |               #[cfg(dtb)]
+488 |               #[cfg(dtb)]
     |                     ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-572 | /         forward_scheme!(self, |s| s.kwriteoff(
-573 | |             file,
-574 | |             buf,
-575 | |             offset,
+578 | /         forward_scheme!(self, |s| s.kwriteoff(
+579 | |             file,
+580 | |             buf,
+581 | |             offset,
 ...   |
-578 | |             token
-579 | |         ))
+584 | |             token
+585 | |         ))
     | |__________- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -504,12 +540,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-588 |         forward_scheme!(self, |s| s.legacy_seek(file, pos, whence, token))
+594 |         forward_scheme!(self, |s| s.legacy_seek(file, pos, whence, token))
     |         ------------------------------------------------------------------ in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -521,12 +557,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-598 |         forward_scheme!(self, |s| s.kfmap(file, addr_space, map, consume, token))
+604 |         forward_scheme!(self, |s| s.kfmap(file, addr_space, map, consume, token))
     |         ------------------------------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -538,12 +574,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-608 |         forward_scheme!(self, |s| s.kfunmap(number, offset, size, flags, token))
+614 |         forward_scheme!(self, |s| s.kfunmap(number, offset, size, flags, token))
     |         ------------------------------------------------------------------------ in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -555,12 +591,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-611 |         forward_scheme!(self, |s| s.kfstat(file, stat, token))
+617 |         forward_scheme!(self, |s| s.kfstat(file, stat, token))
     |         ------------------------------------------------------ in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -572,12 +608,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-614 |         forward_scheme!(self, |s| s.kfstatvfs(file, stat, token))
+620 |         forward_scheme!(self, |s| s.kfstatvfs(file, stat, token))
     |         --------------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -589,12 +625,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-617 |         forward_scheme!(self, |s| s.kfpath(file, buf, token))
+623 |         forward_scheme!(self, |s| s.kfpath(file, buf, token))
     |         ----------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -606,12 +642,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-625 |         forward_scheme!(self, |s| s.kfutimens(file, buf, token))
+631 |         forward_scheme!(self, |s| s.kfutimens(file, buf, token))
     |         -------------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -623,12 +659,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-628 |         forward_scheme!(self, |s| s.fsize(file, token))
+634 |         forward_scheme!(self, |s| s.fsize(file, token))
     |         ----------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -640,12 +676,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-631 |         forward_scheme!(self, |s| s.fchmod(file, mode, token))
+637 |         forward_scheme!(self, |s| s.fchmod(file, mode, token))
     |         ------------------------------------------------------ in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -657,12 +693,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-634 |         forward_scheme!(self, |s| s.fchown(file, uid, gid, token))
+640 |         forward_scheme!(self, |s| s.fchown(file, uid, gid, token))
     |         ---------------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -674,12 +710,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-643 |         forward_scheme!(self, |s| s.fcntl(file, cmd, arg, token))
+649 |         forward_scheme!(self, |s| s.fcntl(file, cmd, arg, token))
     |         --------------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -691,12 +727,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-651 |         forward_scheme!(self, |s| s.fevent(file, flags, token))
+657 |         forward_scheme!(self, |s| s.fevent(file, flags, token))
     |         ------------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -708,12 +744,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-654 |         forward_scheme!(self, |s| s.fsync(file, token))
+660 |         forward_scheme!(self, |s| s.fsync(file, token))
     |         ----------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -725,12 +761,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-657 |         forward_scheme!(self, |s| s.ftruncate(file, len, token))
+663 |         forward_scheme!(self, |s| s.ftruncate(file, len, token))
     |         -------------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -742,12 +778,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-666 |         forward_scheme!(self, |s| s.flink(file, path, ctx, token))
+672 |         forward_scheme!(self, |s| s.flink(file, path, ctx, token))
     |         ---------------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -759,12 +795,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-675 |         forward_scheme!(self, |s| s.frename(file, path, ctx, token))
+681 |         forward_scheme!(self, |s| s.frename(file, path, ctx, token))
     |         ------------------------------------------------------------ in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -776,12 +812,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-684 |         forward_scheme!(self, |s| s.kdup(file, buf, ctx, token))
+690 |         forward_scheme!(self, |s| s.kdup(file, buf, ctx, token))
     |         -------------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -793,12 +829,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-694 |         forward_scheme!(self, |s| s.kcall(file, payload, flags, metadata, token))
+700 |         forward_scheme!(self, |s| s.kcall(file, payload, flags, metadata, token))
     |         ------------------------------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -810,13 +846,13 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |               #[cfg(dtb)]
+488 |               #[cfg(dtb)]
     |                     ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-705 | /         forward_scheme!(self, |s| s
-706 | |             .kfdwrite(file, descs, flags, arg, metadata, token))
+711 | /         forward_scheme!(self, |s| s
+712 | |             .kfdwrite(file, descs, flags, arg, metadata, token))
     | |________________________________________________________________- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -828,12 +864,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-716 |         forward_scheme!(self, |s| s.kfdread(file, payload, flags, metadata, token))
+722 |         forward_scheme!(self, |s| s.kfdread(file, payload, flags, metadata, token))
     |         --------------------------------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -845,12 +881,12 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-   --> src/scheme/mod.rs:482:19
+   --> src/scheme/mod.rs:488:19
     |
-482 |             #[cfg(dtb)]
+488 |             #[cfg(dtb)]
     |                   ^^^ help: found config with similar value: `feature = "dtb"`
 ...
-726 |         forward_scheme!(self, |s| s.getdents(file, buf, header_size, opaque, token))
+732 |         forward_scheme!(self, |s| s.getdents(file, buf, header_size, opaque, token))
     |         ---------------------------------------------------------------------------- in this macro invocation
     |
     = help: consider using a Cargo feature instead
@@ -862,9 +898,9 @@ warning: unexpected `cfg` condition name: `dtb`
     = note: this warning originates in the macro `forward_scheme` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 warning: unexpected `cfg` condition name: `dtb`
-    --> src/scheme/mod.rs:1212:11
+    --> src/scheme/mod.rs:1218:11
      |
-1212 |     #[cfg(dtb)]
+1218 |     #[cfg(dtb)]
      |           ^^^ help: found config with similar value: `feature = "dtb"`
      |
      = help: consider using a Cargo feature instead
@@ -873,6 +909,19 @@ warning: unexpected `cfg` condition name: `dtb`
               unexpected_cfgs = { level = "warn", check-cfg = ['cfg(dtb)'] }
      = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(dtb)");` to the top of the `build.rs`
      = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unexpected `cfg` condition name: `kani`
+ --> src/scheme/verify.rs:1:7
+  |
+1 | #[cfg(kani)]
+  |       ^^^^
+  |
+  = help: consider using a Cargo feature instead
+  = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+           [lints.rust]
+           unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)'] }
+  = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(kani)");` to the top of the `build.rs`
+  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
 
 warning: unexpected `cfg` condition value: `verbose_boot`
   --> src/stack_guard.rs:47:11
@@ -1015,24 +1064,6 @@ warning: `#[inline]` is ignored on externally exported functions
    |
    = help: externally exported functions are functions with `#[no_mangle]`, `#[export_name]`, or `#[linkage]`
 
-error[E0308]: mismatched types
-   --> src/syscall/fs.rs:176:30
-    |
-176 |             StrOrBytes::from(path_buf.as_str()),
-    |             ---------------- ^^^^^^^^^^^^^^^^^ expected `StrOrBytes<'_>`, found `&str`
-    |             |
-    |             arguments to this function are incorrect
-    |
-note: associated function defined here
-   --> /home/jrad/.rustup/toolchains/nightly-2025-10-03-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/convert/mod.rs:592:8
-    |
-592 |     fn from(value: T) -> Self;
-    |        ^^^^
-help: try wrapping the expression in `scheme::StrOrBytes::Str`
-    |
-176 |             StrOrBytes::from(scheme::StrOrBytes::Str(path_buf.as_str())),
-    |                              ++++++++++++++++++++++++                 +
-
 warning: unused import: `rmm::Arch`
    --> src/stack_guard.rs:199:13
     |
@@ -1046,26 +1077,6 @@ warning: unused variable: `reloc`
    |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_reloc`
    |
    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
-
-error[E0499]: cannot borrow `self.pml4` as mutable more than once at a time
-   --> src/arch/x86_64/ept.rs:128:45
-    |
-128 |         let pdpt = self.get_or_create_child(self.pml4.as_mut() as *mut _, pml4_idx);
-    |                    ---- ------------------- ^^^^^^^^^ second mutable borrow occurs here
-    |                    |    |
-    |                    |    first borrow later used by call
-    |                    first mutable borrow occurs here
-    |
-help: try adding a local storing this argument...
-   --> src/arch/x86_64/ept.rs:128:45
-    |
-128 |         let pdpt = self.get_or_create_child(self.pml4.as_mut() as *mut _, pml4_idx);
-    |                                             ^^^^^^^^^^^^^^^^^^
-help: ...and then using that local as the argument to this call
-   --> src/arch/x86_64/ept.rs:128:20
-    |
-128 |         let pdpt = self.get_or_create_child(self.pml4.as_mut() as *mut _, pml4_idx);
-    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: unused variable: `stack`
    --> src/arch/x86_64/interrupt/handler.rs:182:44
@@ -1105,26 +1116,6 @@ warning[E0133]: dereference of raw pointer is unsafe and requires unsafe block
    |
    = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
    = note: raw pointers may be null, dangling or unaligned; they can violate aliasing rules and cause data races: all of these are undefined behavior
-
-error[E0499]: cannot borrow `self.pml4` as mutable more than once at a time
-   --> src/arch/x86_64/npt.rs:110:45
-    |
-110 |         let pdpt = self.get_or_create_child(self.pml4.as_mut() as *mut _, pml4_idx);
-    |                    ---- ------------------- ^^^^^^^^^ second mutable borrow occurs here
-    |                    |    |
-    |                    |    first borrow later used by call
-    |                    first mutable borrow occurs here
-    |
-help: try adding a local storing this argument...
-   --> src/arch/x86_64/npt.rs:110:45
-    |
-110 |         let pdpt = self.get_or_create_child(self.pml4.as_mut() as *mut _, pml4_idx);
-    |                                             ^^^^^^^^^^^^^^^^^^
-help: ...and then using that local as the argument to this call
-   --> src/arch/x86_64/npt.rs:110:20
-    |
-110 |         let pdpt = self.get_or_create_child(self.pml4.as_mut() as *mut _, pml4_idx);
-    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: unused variable: `unusable_ar`
    --> src/arch/x86_64/vmx.rs:714:13
@@ -1307,50 +1298,50 @@ warning: value assigned to `aux` is never read
    = help: maybe it is overwritten before being read?
 
 warning[E0133]: dereference of raw pointer is unsafe and requires unsafe block
-   --> src/arch/x86_shared/gdt.rs:151:20
+   --> src/arch/x86_shared/gdt.rs:171:20
     |
-151 |     let pcr = &mut *pcr_ptr;
+171 |     let pcr = &mut *pcr_ptr;
     |                    ^^^^^^^^ dereference of raw pointer
     |
     = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
     = note: raw pointers may be null, dangling or unaligned; they can violate aliasing rules and cause data races: all of these are undefined behavior
 note: an unsafe function restricts its caller, but its body is safe by default
-   --> src/arch/x86_shared/gdt.rs:150:1
+   --> src/arch/x86_shared/gdt.rs:170:1
     |
-150 | pub unsafe fn install_pcr(pcr_ptr: *mut ProcessorControlRegion) {
+170 | pub unsafe fn install_pcr(pcr_ptr: *mut ProcessorControlRegion) {
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning[E0133]: call to unsafe function `x86::msr::wrmsr` is unsafe and requires unsafe block
-   --> src/arch/x86_shared/gdt.rs:152:5
+   --> src/arch/x86_shared/gdt.rs:172:5
     |
-152 |     x86::msr::wrmsr(x86::msr::IA32_GS_BASE, pcr as *mut _ as u64);
+172 |     x86::msr::wrmsr(x86::msr::IA32_GS_BASE, pcr as *mut _ as u64);
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
     |
     = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
     = note: consult the function's documentation for information on how to avoid undefined behavior
 
 warning[E0133]: call to unsafe function `x86::msr::wrmsr` is unsafe and requires unsafe block
-   --> src/arch/x86_shared/gdt.rs:153:5
+   --> src/arch/x86_shared/gdt.rs:173:5
     |
-153 |     x86::msr::wrmsr(x86::msr::IA32_KERNEL_GSBASE, pcr as *mut _ as u64);
+173 |     x86::msr::wrmsr(x86::msr::IA32_KERNEL_GSBASE, pcr as *mut _ as u64);
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
     |
     = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
     = note: consult the function's documentation for information on how to avoid undefined behavior
 
 warning[E0133]: call to unsafe function `x86::dtables::lgdt` is unsafe and requires unsafe block
-   --> src/arch/x86_shared/gdt.rs:159:5
+   --> src/arch/x86_shared/gdt.rs:179:5
     |
-159 |     dtables::lgdt(&gdtr);
+179 |     dtables::lgdt(&gdtr);
     |     ^^^^^^^^^^^^^^^^^^^^ call to unsafe function
     |
     = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
     = note: consult the function's documentation for information on how to avoid undefined behavior
 
 warning[E0133]: call to unsafe function `x86::task::load_tr` is unsafe and requires unsafe block
-   --> src/arch/x86_shared/gdt.rs:160:5
+   --> src/arch/x86_shared/gdt.rs:180:5
     |
-160 |     x86::task::load_tr(SegmentSelector::new(GDT_TSS, Ring::Ring0));
+180 |     x86::task::load_tr(SegmentSelector::new(GDT_TSS, Ring::Ring0));
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
     |
     = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
@@ -1515,10 +1506,10 @@ help: if this is intentional, prefix it with an underscore
    |
 98 | pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, _offset: usize, size: usize) {
    |                                                                  +
-help: you might have meant to pattern match on the similarly named constant `CLOCK_MONOTONIC`
+help: you might have meant to pattern match on the similarly named constant `SYS_SCHED_SET_SCHEDULER`
    |
 98 - pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, offset: usize, size: usize) {
-98 + pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, syscall::time::CLOCK_MONOTONIC: usize, size: usize) {
+98 + pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, syscall::syscall::SYS_SCHED_SET_SCHEDULER: usize, size: usize) {
    |
 
 warning: unused variable: `size`
@@ -1531,10 +1522,10 @@ help: if this is intentional, prefix it with an underscore
    |
 98 | pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, offset: usize, _size: usize) {
    |                                                                                 +
-help: you might have meant to pattern match on the similarly named constant `CLOCK_MONOTONIC`
+help: you might have meant to pattern match on the similarly named constant `SYS_SCHED_SET_SCHEDULER`
    |
 98 - pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, offset: usize, size: usize) {
-98 + pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, offset: usize, syscall::time::CLOCK_MONOTONIC: usize) {
+98 + pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, offset: usize, syscall::syscall::SYS_SCHED_SET_SCHEDULER: usize) {
    |
 
 warning: variable does not need to be mutable
@@ -1562,34 +1553,34 @@ warning: unused variable: `flusher`
    |         ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_flusher`
 
 warning[E0133]: call to unsafe function `rmm::PageMapper::<A, F>::map_phys` is unsafe and requires unsafe block
-   --> src/context/memory.rs:411:9
+   --> src/context/memory.rs:436:9
     |
-411 |         self.0.map_phys(virt, phys, flags)
+436 |         self.0.map_phys(virt, phys, flags)
     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
     |
     = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>
     = note: consult the function's documentation for information on how to avoid undefined behavior
 note: an unsafe function restricts its caller, but its body is safe by default
-   --> src/context/memory.rs:405:5
+   --> src/context/memory.rs:430:5
     |
-405 | /     pub unsafe fn map_phys(
-406 | |         &mut self,
-407 | |         virt: VirtualAddress,
-408 | |         phys: PhysicalAddress,
-409 | |         flags: PageFlags<RmmA>,
-410 | |     ) -> Option<rmm::PageFlush<RmmA>> {
+430 | /     pub unsafe fn map_phys(
+431 | |         &mut self,
+432 | |         virt: VirtualAddress,
+433 | |         phys: PhysicalAddress,
+434 | |         flags: PageFlags<RmmA>,
+435 | |     ) -> Option<rmm::PageFlush<RmmA>> {
     | |_____________________________________^
 
 warning: unused variable: `flusher`
-   --> src/context/memory.rs:654:17
+   --> src/context/memory.rs:679:17
     |
-654 |         let mut flusher = TlbShootdownActions::new();
+679 |         let mut flusher = TlbShootdownActions::new();
     |                 ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_flusher`
 
 warning: variable does not need to be mutable
-   --> src/context/memory.rs:654:13
+   --> src/context/memory.rs:679:13
     |
-654 |         let mut flusher = TlbShootdownActions::new();
+679 |         let mut flusher = TlbShootdownActions::new();
     |             ----^^^^^^^
     |             |
     |             help: remove this `mut`
@@ -1614,6 +1605,54 @@ note: an unsafe function restricts its caller, but its body is safe by default
 36 |     pub unsafe fn new(base: usize) -> &'static mut Self {
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+warning: variable does not need to be mutable
+  --> src/memory/mglru.rs:95:17
+   |
+95 |             let mut context = context_lock.write(token.token());
+   |                 ----^^^^^^^
+   |                 |
+   |                 help: remove this `mut`
+
+warning: unused variable: `context_id`
+  --> src/memory/mthp.rs:41:11
+   |
+41 |     for (&context_id, context_lock) in contexts_guard.iter() {
+   |           ^^^^^^^^^^
+   |
+help: if this is intentional, prefix it with an underscore
+   |
+41 |     for (&_context_id, context_lock) in contexts_guard.iter() {
+   |           +
+help: you might have meant to pattern match on the similarly named constant `SYS_SCHED_SET_SCHEDULER`
+   |
+41 -     for (&context_id, context_lock) in contexts_guard.iter() {
+41 +     for (&syscall::syscall::SYS_SCHED_SET_SCHEDULER, context_lock) in contexts_guard.iter() {
+   |
+
+warning: unused variable: `page_count`
+  --> src/memory/mthp.rs:61:34
+   |
+61 |                 for (start_page, page_count, flags) in to_compact {
+   |                                  ^^^^^^^^^^
+   |
+help: if this is intentional, prefix it with an underscore
+   |
+61 |                 for (start_page, _page_count, flags) in to_compact {
+   |                                  +
+help: you might have meant to pattern match on the similarly named constant `SYS_SCHED_SET_SCHEDULER`
+   |
+61 -                 for (start_page, page_count, flags) in to_compact {
+61 +                 for (start_page, syscall::syscall::SYS_SCHED_SET_SCHEDULER, flags) in to_compact {
+   |
+
+warning: variable does not need to be mutable
+  --> src/memory/mthp.rs:43:17
+   |
+43 |             let mut context = context_lock.write(token.token());
+   |                 ----^^^^^^^
+   |                 |
+   |                 help: remove this `mut`
+
 warning: unused variable: `breakpoint`
    --> src/ptrace.rs:228:13
     |
@@ -1636,10 +1675,10 @@ help: if this is intentional, prefix it with an underscore
     |
 335 |     fn kfpath(&self, _id: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
     |                      +
-help: you might have meant to pattern match on the similarly named constant `CLOCK_MONOTONIC`
+help: you might have meant to pattern match on the similarly named constant `SYS_SCHED_SET_SCHEDULER`
     |
 335 -     fn kfpath(&self, id: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
-335 +     fn kfpath(&self, syscall::time::CLOCK_MONOTONIC: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
+335 +     fn kfpath(&self, syscall::syscall::SYS_SCHED_SET_SCHEDULER: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
     |
 
 warning: unused variable: `token`
@@ -1658,10 +1697,10 @@ help: if this is intentional, prefix it with an underscore
     |
 631 |     fn kfpath(&self, _id: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
     |                      +
-help: you might have meant to pattern match on the similarly named constant `CLOCK_MONOTONIC`
+help: you might have meant to pattern match on the similarly named constant `SYS_SCHED_SET_SCHEDULER`
     |
 631 -     fn kfpath(&self, id: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
-631 +     fn kfpath(&self, syscall::time::CLOCK_MONOTONIC: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
+631 +     fn kfpath(&self, syscall::syscall::SYS_SCHED_SET_SCHEDULER: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
     |
 
 warning: unused variable: `token`
@@ -1775,14 +1814,3523 @@ help: if this is intentional, prefix it with an underscore
     |
 261 |     _handle: usize,
     |     +
-help: you might have meant to pattern match on the similarly named constant `CLOCK_MONOTONIC`
+help: you might have meant to pattern match on the similarly named constant `SYS_SCHED_SET_SCHEDULER`
     |
 261 -     handle: usize,
-261 +     syscall::time::CLOCK_MONOTONIC: usize,
+261 +     syscall::syscall::SYS_SCHED_SET_SCHEDULER: usize,
     |
 
-Some errors have detailed explanations: E0133, E0308, E0499.
-For more information about an error, try `rustc --explain E0133`.
-warning: `kernel` (bin "kernel") generated 160 warnings
-warning: kernel@0.3.0: config.toml not found, using config.toml.example
-error: could not compile `kernel` (bin "kernel") due to 3 previous errors; 160 warnings emitted
+warning: unused variable: `cpu_id`
+  --> src/topology/faez_governor.rs:12:26
+   |
+12 | pub fn monitor_and_scale(cpu_id: LogicalCpuId) {
+   |                          ^^^^^^
+   |
+help: if this is intentional, prefix it with an underscore
+   |
+12 | pub fn monitor_and_scale(_cpu_id: LogicalCpuId) {
+   |                          +
+help: you might have meant to pattern match on the similarly named constant `PROFILER_CPU`
+   |
+12 - pub fn monitor_and_scale(cpu_id: LogicalCpuId) {
+12 + pub fn monitor_and_scale(profiling::PROFILER_CPU: LogicalCpuId) {
+   |
+
+warning: struct `AltReloc` is never constructed
+ --> src/arch/x86_64/alternative.rs:7:12
+  |
+7 | pub struct AltReloc {
+  |            ^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `apply_alternatives` is never used
+  --> src/arch/x86_64/alternative.rs:27:15
+   |
+27 | pub unsafe fn apply_alternatives() {
+   |               ^^^^^^^^^^^^^^^^^^
+
+warning: function `kfx_size` is never used
+  --> src/arch/x86_64/alternative.rs:43:8
+   |
+43 | pub fn kfx_size() -> usize {
+   |        ^^^^^^^^
+
+warning: constant `PML4_MASK` is never used
+  --> src/arch/x86_64/consts.rs:13:11
+   |
+13 | pub const PML4_MASK: usize = 0x0000_ff80_0000_0000;
+   |           ^^^^^^^^^
+
+warning: constant `KERNEL_PML4` is never used
+  --> src/arch/x86_64/consts.rs:18:11
+   |
+18 | pub const KERNEL_PML4: usize = (KERNEL_OFFSET & PML4_MASK) / PML4_SIZE;
+   |           ^^^^^^^^^^^
+
+warning: constant `KERNEL_HEAP_PML4` is never used
+  --> src/arch/x86_64/consts.rs:22:11
+   |
+22 | pub const KERNEL_HEAP_PML4: usize = (KERNEL_HEAP_OFFSET & PML4_MASK) / PML4_SIZE;
+   |           ^^^^^^^^^^^^^^^^
+
+warning: constant `PHYS_PML4` is never used
+  --> src/arch/x86_64/consts.rs:29:11
+   |
+29 | pub const PHYS_PML4: usize = (PHYS_OFFSET & PML4_MASK) / PML4_SIZE;
+   |           ^^^^^^^^^
+
+warning: methods `unmap_range` and `unmap_page` are never used
+   --> src/arch/x86_64/ept.rs:108:12
+    |
+ 65 | impl EptRoot {
+    | ------------ methods in this implementation
+...
+108 |     pub fn unmap_range(&mut self, guest_phys: u64, size: u64) {
+    |            ^^^^^^^^^^^
+...
+139 |     fn unmap_page(&mut self, gpa: u64) {
+    |        ^^^^^^^^^^
+
+warning: function `invept` is never used
+   --> src/arch/x86_64/ept.rs:203:15
+    |
+203 | pub unsafe fn invept(eptp: u64) {
+    |               ^^^^^^
+
+warning: constant `FLAG_SINGLESTEP` is never used
+ --> src/arch/x86_64/flags.rs:3:11
+  |
+3 | pub const FLAG_SINGLESTEP: usize = 1 << 8;
+  |           ^^^^^^^^^^^^^^^
+
+warning: methods `frame_pointer`, `stack_pointer`, `load`, `save`, `load_from`, and `save_to` are never used
+   --> src/arch/x86_64/interrupt/handler.rs:66:12
+    |
+ 36 | impl InterruptStack {
+    | ------------------- methods in this implementation
+...
+ 66 |     pub fn frame_pointer(&self) -> usize {
+    |            ^^^^^^^^^^^^^
+...
+ 69 |     pub fn stack_pointer(&self) -> usize {
+    |            ^^^^^^^^^^^^^
+...
+ 72 |     pub fn load(&self) {
+    |            ^^^^
+...
+ 75 |     pub fn save(&mut self) {
+    |            ^^^^
+...
+ 78 |     pub fn load_from(&mut self, regs: &syscall::IntRegisters) {
+    |            ^^^^^^^^^
+...
+101 |     pub fn save_to(&self, regs: &mut syscall::IntRegisters) {
+    |            ^^^^^^^
+
+warning: function `enter_usermode` is never used
+   --> src/arch/x86_64/interrupt/syscall.rs:233:12
+    |
+233 |     pub fn enter_usermode();
+    |            ^^^^^^^^^^^^^^
+
+warning: function `init` is never used
+ --> src/arch/x86_64/misc.rs:9:15
+  |
+9 | pub unsafe fn init(cpu_id: LogicalCpuId) {
+  |               ^^^^
+
+warning: function `read_stack_ptr` is never used
+  --> src/arch/x86_64/misc.rs:54:8
+   |
+54 | pub fn read_stack_ptr(addr: usize) -> Option<usize> {
+   |        ^^^^^^^^^^^^^^
+
+warning: function `get_orc_unwind_slice` is never used
+  --> src/arch/x86_64/misc.rs:70:8
+   |
+70 | pub fn get_orc_unwind_slice() -> &'static [u8] {
+   |        ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `get_orc_unwind_ip_slice` is never used
+  --> src/arch/x86_64/misc.rs:79:8
+   |
+79 | pub fn get_orc_unwind_ip_slice() -> &'static [i32] {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `OrcEntry` is never constructed
+ --> src/arch/x86_64/orc_unwinder.rs:7:12
+  |
+7 | pub struct OrcEntry {
+  |            ^^^^^^^^
+
+warning: enum `KernelError` is never used
+  --> src/arch/x86_64/orc_unwinder.rs:16:10
+   |
+16 | pub enum KernelError {
+   |          ^^^^^^^^^^^
+
+warning: function `lookup_orc` is never used
+  --> src/arch/x86_64/orc_unwinder.rs:21:8
+   |
+21 | pub fn lookup_orc(ip: usize) -> Option<OrcEntry> {
+   |        ^^^^^^^^^^
+
+warning: function `unwind_stack` is never used
+  --> src/arch/x86_64/orc_unwinder.rs:73:8
+   |
+73 | pub fn unwind_stack(
+   |        ^^^^^^^^^^^^
+
+warning: field `asid` is never read
+  --> src/arch/x86_64/npt.rs:53:5
+   |
+49 | pub struct NptRoot {
+   |            ------- field in this struct
+...
+53 |     asid: u32,
+   |     ^^^^
+
+warning: methods `unmap_range` and `unmap_page` are never used
+   --> src/arch/x86_64/npt.rs:90:12
+    |
+ 56 | impl NptRoot {
+    | ------------ methods in this implementation
+...
+ 90 |     pub fn unmap_range(&mut self, guest_phys: u64, size: u64) {
+    |            ^^^^^^^^^^^
+...
+120 |     fn unmap_page(&mut self, gpa: u64) {
+    |        ^^^^^^^^^^
+
+warning: function `invlpga` is never used
+   --> src/arch/x86_64/npt.rs:180:15
+    |
+180 | pub unsafe fn invlpga(va: u64, asid: u32) {
+    |               ^^^^^^^
+
+warning: function `feature_info` is never used
+  --> src/arch/x86_shared/cpuid.rs:22:8
+   |
+22 | pub fn feature_info() -> FeatureInfo {
+   |        ^^^^^^^^^^^^
+
+warning: function `has_ext_feat` is never used
+  --> src/arch/x86_shared/cpuid.rs:30:8
+   |
+30 | pub fn has_ext_feat(feat: impl FnOnce(ExtendedFeatures) -> bool) -> bool {
+   |        ^^^^^^^^^^^^
+
+warning: function `get_amd_feature_leaf_21` is never used
+  --> src/arch/x86_shared/cpuid.rs:61:8
+   |
+61 | pub fn get_amd_feature_leaf_21() -> CpuIdResult {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `init_after_acpi` is never used
+  --> src/arch/x86_shared/device/mod.rs:29:15
+   |
+29 | pub unsafe fn init_after_acpi() {
+   |               ^^^^^^^^^^^^^^^
+
+warning: variants `Edge` and `Level` are never constructed
+   --> src/arch/x86_shared/device/ioapic.rs:199:5
+    |
+197 | pub enum TriggerMode {
+    |          ----------- variants in this enum
+198 |     ConformsToSpecs,
+199 |     Edge,
+    |     ^^^^
+200 |     Level,
+    |     ^^^^^
+    |
+    = note: `TriggerMode` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: variants `ActiveHigh` and `ActiveLow` are never constructed
+   --> src/arch/x86_shared/device/ioapic.rs:206:5
+    |
+204 | pub enum Polarity {
+    |          -------- variants in this enum
+205 |     ConformsToSpecs,
+206 |     ActiveHigh,
+    |     ^^^^^^^^^^
+207 |     ActiveLow,
+    |     ^^^^^^^^^
+    |
+    = note: `Polarity` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: multiple methods are never used
+   --> src/arch/x86_shared/device/local_apic.rs:129:12
+    |
+ 54 | impl LocalApic {
+    | -------------- methods in this implementation
+...
+129 |     pub fn version(&self) -> u32 {
+    |            ^^^^^^^
+...
+137 |     pub fn icr(&self) -> u64 {
+    |            ^^^
+...
+169 |     pub fn ipi_nmi(&mut self, apic_id: ApicId) {
+    |            ^^^^^^^
+...
+215 |     pub unsafe fn init_count(&mut self) -> u32 {
+    |                   ^^^^^^^^^^
+...
+233 |     pub unsafe fn cur_count(&mut self) -> u32 {
+    |                   ^^^^^^^^^
+...
+242 |     pub unsafe fn div_conf(&mut self) -> u32 {
+    |                   ^^^^^^^^
+...
+260 |     pub unsafe fn lvt_error(&mut self) -> u32 {
+    |                   ^^^^^^^^^
+
+warning: variant `Periodic` is never constructed
+   --> src/arch/x86_shared/device/local_apic.rs:351:5
+    |
+349 | pub enum LvtTimerMode {
+    |          ------------ variant in this enum
+350 |     OneShot = 0b00,
+351 |     Periodic = 0b01,
+    |     ^^^^^^^^
+
+warning: function `disable` is never used
+  --> src/arch/x86_shared/device/pic.rs:54:15
+   |
+54 | pub unsafe fn disable() {
+   |               ^^^^^^^
+
+warning: constant `MODE_2` is never used
+  --> src/arch/x86_shared/device/pit.rs:23:7
+   |
+23 | const MODE_2: u8 = 0b010 << 1; // Rate generator (periodic)
+   |       ^^^^^^
+
+warning: constant `GDT_NULL` is never used
+  --> src/arch/x86_shared/gdt.rs:15:11
+   |
+15 | pub const GDT_NULL: u16 = 0;
+   |           ^^^^^^^^
+
+warning: function `init` is never used
+  --> src/arch/x86_shared/gdt.rs:39:15
+   |
+39 | pub unsafe fn init() {
+   |               ^^^^
+
+warning: function `set_tss_stack` is never used
+   --> src/arch/x86_shared/gdt.rs:156:15
+    |
+156 | pub unsafe fn set_tss_stack(index: usize, stack: usize) {
+    |               ^^^^^^^^^^^^^
+
+warning: function `set_userspace_io_allowed` is never used
+   --> src/arch/x86_shared/gdt.rs:164:15
+    |
+164 | pub unsafe fn set_userspace_io_allowed(allowed: bool, pcr: &mut ProcessorControlRegion) {
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `kfx_size` is never used
+   --> src/arch/x86_shared/macros.rs:271:8
+    |
+271 | pub fn kfx_size() -> usize {
+    |        ^^^^^^^^
+
+warning: function `allocate_and_init_idt` is never used
+   --> src/arch/x86_shared/idt.rs:158:8
+    |
+158 | pub fn allocate_and_init_idt(cpu_id: LogicalCpuId) -> *mut Idt {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+
+warning: variants `Current` and `All` are never constructed
+  --> src/arch/x86_shared/ipi.rs:23:5
+   |
+21 | pub enum IpiTarget {
+   |          --------- variants in this enum
+22 |     /// The current CPU.
+23 |     Current = 1,
+   |     ^^^^^^^
+24 |     /// All CPUs.
+25 |     All = 2,
+   |     ^^^
+   |
+   = note: `IpiTarget` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: constant `ENTRY_COUNT` is never used
+  --> src/arch/x86_shared/paging/mod.rs:28:11
+   |
+28 | pub const ENTRY_COUNT: usize = RmmA::PAGE_ENTRIES;
+   |           ^^^^^^^^^^^
+
+warning: method `offset_from` is never used
+   --> src/arch/x86_shared/paging/mod.rs:110:12
+    |
+ 83 | impl Page {
+    | --------- method in this implementation
+...
+110 |     pub fn offset_from(self, other: Self) -> usize {
+    |            ^^^^^^^^^^^
+
+warning: function `round_down_pages` is never used
+   --> src/arch/x86_shared/paging/mod.rs:144:8
+    |
+144 | pub fn round_down_pages(number: usize) -> usize {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `round_up_pages` is never used
+   --> src/arch/x86_shared/paging/mod.rs:148:8
+    |
+148 | pub fn round_up_pages(number: usize) -> usize {
+    |        ^^^^^^^^^^^^^^
+
+warning: associated items `NEW_MAPPING`, `flush`, and `queue` are never used
+   --> src/arch/x86_shared/paging/mod.rs:156:15
+    |
+155 | impl TlbShootdownActions {
+    | ------------------------ associated items in this implementation
+156 |     pub const NEW_MAPPING: Self = Self;
+    |               ^^^^^^^^^^^
+...
+160 |     pub fn flush(&mut self) {}
+    |            ^^^^^
+161 |     pub fn queue(&mut self, _frame: Frame, _page: Option<Page>, _action: TlbShootdownActions) {}
+    |            ^^^^^
+
+warning: function `page_table_allocator` is never used
+ --> src/arch/x86_shared/paging/mapper.rs:7:15
+  |
+7 | pub unsafe fn page_table_allocator() -> Option<Frame> {
+  |               ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `kstart_ap` is never used
+   --> src/arch/x86_shared/start.rs:197:12
+    |
+197 |     pub fn kstart_ap();
+    |            ^^^^^^^^^
+
+warning: static `FRAMES_ALLOCATED` is never used
+  --> src/allocator/mod.rs:17:8
+   |
+17 | static FRAMES_ALLOCATED: AtomicUsize = AtomicUsize::new(0);
+   |        ^^^^^^^^^^^^^^^^
+
+warning: methods `init`, `allocate_frame`, and `deallocate_frame` are never used
+  --> src/allocator/mod.rs:26:19
+   |
+24 | impl FrameAllocator {
+   | ------------------- methods in this implementation
+25 |     // Placeholder implementation (omitted for brevity)
+26 |     pub unsafe fn init(&mut self, _base: usize, _size: usize) { /* ... */
+   |                   ^^^^
+27 |     }
+28 |     pub fn allocate_frame(&mut self) -> Option<Frame> {
+   |            ^^^^^^^^^^^^^^
+...
+42 |     pub fn deallocate_frame(&mut self, _frame: Frame) { /* ... */
+   |            ^^^^^^^^^^^^^^^^
+
+warning: function `allocate_frame_by_node` is never used
+  --> src/allocator/mod.rs:49:8
+   |
+49 | pub fn allocate_frame_by_node(node_id: NumaNodeId) -> Option<Frame> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `allocate_frame` is never used
+  --> src/allocator/mod.rs:81:8
+   |
+81 | pub fn allocate_frame() -> Option<Frame> {
+   |        ^^^^^^^^^^^^^^
+
+warning: function `deallocate_frame` is never used
+  --> src/allocator/mod.rs:87:8
+   |
+87 | pub fn deallocate_frame(_frame: Frame) {
+   |        ^^^^^^^^^^^^^^^^
+
+warning: function `allocate_frames` is never used
+  --> src/allocator/mod.rs:93:8
+   |
+93 | pub fn allocate_frames(_count: usize) -> Option<Frame> {
+   |        ^^^^^^^^^^^^^^^
+
+warning: associated function `init` is never used
+  --> src/allocator/linked_list.rs:14:19
+   |
+13 | impl Allocator {
+   | -------------- associated function in this implementation
+14 |     pub unsafe fn init(offset: usize, size: usize) {
+   |                   ^^^^
+
+warning: type alias `ContextId` is never used
+  --> src/context/mod.rs:20:10
+   |
+20 | pub type ContextId = usize;
+   |          ^^^^^^^^^
+
+warning: function `init_features` is never used
+  --> src/context/arch/x86_64.rs:42:8
+   |
+42 | pub fn init_features() {
+   |        ^^^^^^^^^^^^^
+
+warning: static `CONTEXT_SWITCH_LOCK` is never used
+  --> src/context/arch/x86_64.rs:83:12
+   |
+83 | pub static CONTEXT_SWITCH_LOCK: AtomicBool = AtomicBool::new(false);
+   |            ^^^^^^^^^^^^^^^^^^^
+
+warning: associated items `new`, `set_stack`, and `setup_initial_call` are never used
+   --> src/context/arch/x86_64.rs:118:12
+    |
+117 | impl Context {
+    | ------------ associated items in this implementation
+118 |     pub fn new() -> Context {
+    |            ^^^
+...
+136 |     fn set_stack(&mut self, address: usize) {
+    |        ^^^^^^^^^
+...
+140 |     pub(crate) fn setup_initial_call(
+    |                   ^^^^^^^^^^^^^^^^^^
+
+warning: multiple methods are never used
+   --> src/context/arch/x86_64.rs:184:12
+    |
+183 | impl crate::context::Context {
+    | ---------------------------- methods in this implementation
+184 |     pub fn get_fx_regs(&self) -> FloatRegisters {
+    |            ^^^^^^^^^^^
+...
+188 |     pub fn set_fx_regs(&mut self, mut new: FloatRegisters) {
+    |            ^^^^^^^^^^^
+...
+194 |     pub fn set_userspace_io_allowed(&mut self, allowed: bool) {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+218 |     pub(crate) fn read_current_env_regs(&self) -> Result<EnvRegisters> {
+    |                   ^^^^^^^^^^^^^^^^^^^^^
+...
+227 |     pub(crate) fn read_env_regs(&self) -> Result<EnvRegisters> {
+    |                   ^^^^^^^^^^^^^
+...
+234 |     pub(crate) fn write_current_env_regs(&mut self, regs: EnvRegisters) -> Result<()> {
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+...
+251 |     pub(crate) fn write_env_regs(&mut self, regs: EnvRegisters) -> Result<()> {
+    |                   ^^^^^^^^^^^^^^
+
+warning: static `EMPTY_CR3` is never used
+   --> src/context/arch/x86_64.rs:264:12
+    |
+264 | pub static EMPTY_CR3: Once<rmm::PhysicalAddress> = Once::new();
+    |            ^^^^^^^^^
+
+warning: function `empty_cr3` is never used
+   --> src/context/arch/x86_64.rs:266:15
+    |
+266 | pub unsafe fn empty_cr3() -> rmm::PhysicalAddress {
+    |               ^^^^^^^^^
+
+warning: function `switch_to` is never used
+   --> src/context/arch/x86_64.rs:284:15
+    |
+284 | pub unsafe fn switch_to(prev: &mut crate::context::Context, next: &mut crate::context::Context) {
+    |               ^^^^^^^^^
+
+warning: function `switch_to_inner` is never used
+   --> src/context/arch/x86_64.rs:392:27
+    |
+392 | unsafe extern "sysv64" fn switch_to_inner(_prev: &mut Context, _next: &mut Context) {
+    |                           ^^^^^^^^^^^^^^^
+
+warning: function `setup_new_utable` is never used
+   --> src/context/arch/x86_64.rs:429:8
+    |
+429 | pub fn setup_new_utable() -> Result<Table> {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `test_avx512_switch` is never used
+   --> src/context/arch/x86_64.rs:494:12
+    |
+494 |     pub fn test_avx512_switch() {
+    |            ^^^^^^^^^^^^^^^^^^
+
+warning: fields `offset` and `internal_flags` are never read
+  --> src/context/file.rs:17:9
+   |
+15 | pub struct FileDescription {
+   |            --------------- fields in this struct
+16 |     /// The current file offset (seek)
+17 |     pub offset: u64,
+   |         ^^^^^^
+...
+24 |     pub internal_flags: InternalFlags,
+   |         ^^^^^^^^^^^^^^
+   |
+   = note: `FileDescription` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: method `rw_flags` is never used
+  --> src/context/file.rs:33:12
+   |
+32 | impl FileDescription {
+   | -------------------- method in this implementation
+33 |     pub fn rw_flags(&self, rw: RwFlags) -> u32 {
+   |            ^^^^^^^^
+
+warning: field `cloexec` is never read
+  --> src/context/file.rs:68:9
+   |
+64 | pub struct FileDescriptor {
+   |            -------------- field in this struct
+...
+68 |     pub cloexec: bool,
+   |         ^^^^^^^
+   |
+   = note: `FileDescriptor` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: method `close` is never used
+  --> src/context/file.rs:88:12
+   |
+87 | impl FileDescriptor {
+   | ------------------- method in this implementation
+88 |     pub fn close(self, token: &mut CleanLockToken) -> Result<()> {
+   |            ^^^^^
+
+warning: function `spawn` is never used
+  --> src/context/list.rs:37:8
+   |
+37 | pub fn spawn(
+   |        ^^^^^
+
+warning: variant `RecursionLimitExceeded` is never constructed
+  --> src/context/memory.rs:23:5
+   |
+20 | pub enum PfError {
+   |          ------- variant in this enum
+...
+23 |     RecursionLimitExceeded,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `PfError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: multiple associated items are never used
+   --> src/context/memory.rs:65:12
+    |
+ 50 | impl Grant {
+    | ---------- associated items in this implementation
+...
+ 65 |     pub fn grant_flags(&self) -> MapFlags {
+    |            ^^^^^^^^^^^
+...
+ 75 |     pub fn file_ref(&self) -> Option<&GrantFileRef> {
+    |            ^^^^^^^^
+...
+ 82 |     pub fn start_address(&self) -> VirtualAddress {
+    |            ^^^^^^^^^^^^^
+...
+ 86 |     pub fn zeroed_phys_contiguous(
+    |            ^^^^^^^^^^^^^^^^^^^^^^
+...
+143 |     pub fn zeroed_hugepage(
+    |            ^^^^^^^^^^^^^^^
+...
+196 |     pub fn prefault_populate(&self, mapper: &mut PageMapper) -> SysResult<()> {
+    |            ^^^^^^^^^^^^^^^^^
+...
+225 |     pub fn physmap(
+    |            ^^^^^^^
+...
+244 |     pub fn unmap(mut self) {
+    |            ^^^^^
+...
+263 |     pub fn borrow_grant(
+    |            ^^^^^^^^^^^^
+...
+290 |     pub fn borrow_fmap(
+    |            ^^^^^^^^^^^
+...
+303 |     pub fn allocated_one_page_nomap(_page: Page, _flags: PageFlags<RmmA>) -> Grant {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+307 |     pub fn flags(&self) -> PageFlags<RmmA> {
+    |            ^^^^^
+
+warning: type alias `Table` is never used
+   --> src/context/memory.rs:398:10
+    |
+398 | pub type Table = TableWrapper;
+    |          ^^^^^
+
+warning: methods `map_phys` and `table` are never used
+   --> src/context/memory.rs:430:19
+    |
+418 | impl UTableWrapper {
+    | ------------------ methods in this implementation
+...
+430 |     pub unsafe fn map_phys(
+    |                   ^^^^^^^^
+...
+446 |     pub fn table(&self) -> rmm::PageTable<crate::arch::x86_shared::CurrentRmmArch> {
+    |            ^^^^^
+
+warning: associated items `new` and `try_clone` are never used
+   --> src/context/memory.rs:460:12
+    |
+459 | impl AddrSpaceWrapper {
+    | --------------------- associated items in this implementation
+460 |     pub fn new() -> SysResult<Arc<Self>> {
+    |            ^^^
+...
+505 |     pub fn try_clone(&self) -> SysResult<Arc<Self>> {
+    |            ^^^^^^^^^
+
+warning: methods `borrow_frame_enforce_rw_allocated` and `mprotect` are never used
+   --> src/context/memory.rs:515:12
+    |
+514 | impl AddrSpaceInner {
+    | ------------------- methods in this implementation
+515 |     pub fn borrow_frame_enforce_rw_allocated(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+522 |     pub fn mprotect(&mut self, _base: Page, _count: usize, _flags: MapFlags) -> SysResult<()> {
+    |            ^^^^^^^^
+
+warning: method `move` is never used
+   --> src/context/memory.rs:656:12
+    |
+655 | impl AddrSpaceInner {
+    | ------------------- method in this implementation
+656 |     pub fn r#move(
+    |            ^^^^^^
+
+warning: fields `base_offset` and `description` are never read
+   --> src/context/memory.rs:731:9
+    |
+730 | pub struct GrantFileRef {
+    |            ------------ fields in this struct
+731 |     pub base_offset: usize,
+    |         ^^^^^^^^^^^
+732 |     pub description: Arc<RwLock<FileDescription>>,
+    |         ^^^^^^^^^^^
+    |
+    = note: `GrantFileRef` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: method `unmap` is never used
+   --> src/context/memory.rs:736:12
+    |
+735 | impl GrantFileRef {
+    | ----------------- method in this implementation
+736 |     pub fn unmap(&self, _token: &mut CleanLockToken) -> SysResult<()> {
+    |            ^^^^^
+
+warning: associated function `validate_nonempty` is never used
+   --> src/context/memory.rs:760:12
+    |
+747 | impl PageSpan {
+    | ------------- associated function in this implementation
+...
+760 |     pub fn validate_nonempty(base: VirtualAddress, size: usize) -> Option<Self> {
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: variants `PhysBorrowed`, `External`, and `FmapBorrowed` are never constructed
+   --> src/context/memory.rs:772:5
+    |
+770 | pub enum Provider {
+    |          -------- variants in this enum
+771 |     Allocated { flags: PageFlags<RmmA> },
+772 |     PhysBorrowed { base: Frame },
+    |     ^^^^^^^^^^^^
+773 |     External { address: usize, size: usize },
+    |     ^^^^^^^^
+774 |     FmapBorrowed { file_ref: GrantFileRef },
+    |     ^^^^^^^^^^^^
+    |
+    = note: `Provider` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: struct `BorrowedFmapSource` is never constructed
+   --> src/context/memory.rs:778:12
+    |
+778 | pub struct BorrowedFmapSource<'a> {
+    |            ^^^^^^^^^^^^^^^^^^
+
+warning: enum `MmapMode` is never used
+   --> src/context/memory.rs:786:10
+    |
+786 | pub enum MmapMode {
+    |          ^^^^^^^^
+
+warning: function `handle_notify_files` is never used
+   --> src/context/memory.rs:793:8
+    |
+793 | pub fn handle_notify_files(_files: Vec<GrantFileRef>, _token: &mut CleanLockToken) {}
+    |        ^^^^^^^^^^^^^^^^^^^
+
+warning: function `cleanup_context` is never used
+  --> src/context/reap.rs:10:8
+   |
+10 | pub fn cleanup_context(_context: &mut Context) {
+   |        ^^^^^^^^^^^^^^^
+
+warning: field `priority` is never read
+  --> src/context/ring.rs:14:9
+   |
+10 | pub struct ContextRingEntry {
+   |            ---------------- field in this struct
+...
+14 |     pub priority: u8,
+   |         ^^^^^^^^
+
+warning: field `head` is never read
+  --> src/context/ring.rs:21:5
+   |
+19 | pub struct ContextRing {
+   |            ----------- field in this struct
+20 |     slots: [Mutex<Option<ContextRingEntry>>; 256],
+21 |     head: AtomicUsize,
+   |     ^^^^
+
+warning: methods `peek_earliest`, `clean`, and `is_empty` are never used
+   --> src/context/ring.rs:135:12
+    |
+ 28 | impl ContextRing {
+    | ---------------- methods in this implementation
+...
+135 |     pub fn peek_earliest(&self) -> Option<ContextRef> {
+    |            ^^^^^^^^^^^^^
+...
+153 |     pub fn clean<F>(&self, mut predicate: F)
+    |            ^^^^^
+...
+185 |     pub fn is_empty(&self) -> bool {
+    |            ^^^^^^^^
+
+warning: variant `Dead` is never constructed
+  --> src/context/context.rs:48:5
+   |
+35 | pub enum Status {
+   |          ------ variant in this enum
+...
+48 |     Dead {
+   |     ^^^^
+   |
+   = note: `Status` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: variants `Stopped` and `AwaitingMmap` are never constructed
+  --> src/context/context.rs:65:5
+   |
+63 | pub enum HardBlockedReason {
+   |          ----------------- variants in this enum
+64 |     /// "SIGSTOP", only procmgr is allowed to switch contexts this state
+65 |     Stopped,
+   |     ^^^^^^^
+66 |     AwaitingMmap {
+   |     ^^^^^^^^^^^^
+   |
+   = note: `HardBlockedReason` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: fields `syscall_debug_info`, `owner_proc_id`, `capabilities`, and `mlock` are never read
+   --> src/context/context.rs:116:9
+    |
+ 92 | pub struct Context {
+    |            ------- fields in this struct
+...
+116 |     pub syscall_debug_info: crate::syscall::debug::SyscallDebugInfo,
+    |         ^^^^^^^^^^^^^^^^^^
+...
+148 |     pub owner_proc_id: Option<NonZeroUsize>,
+    |         ^^^^^^^^^^^^^
+...
+155 |     pub capabilities: Capabilities,
+    |         ^^^^^^^^^^^^
+...
+170 |     pub mlock: u32,
+    |         ^^^^^
+    |
+    = note: `Context` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: fields `user_handler` and `excp_handler` are never read
+   --> src/context/context.rs:184:9
+    |
+182 | pub struct SignalState {
+    |            ----------- fields in this struct
+183 |     /// Offset to jump to when a signal is received.
+184 |     pub user_handler: NonZeroUsize,
+    |         ^^^^^^^^^^^^
+185 |     /// Offset to jump to when a program fault occurs. If None, the context is sigkilled.
+186 |     pub excp_handler: Option<NonZeroUsize>,
+    |         ^^^^^^^^^^^^
+    |
+    = note: `SignalState` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: multiple associated items are never used
+   --> src/context/context.rs:197:12
+    |
+196 | impl Context {
+    | ------------ associated items in this implementation
+197 |     pub fn new(owner_proc_id: Option<NonZeroUsize>) -> Result<Context> {
+    |            ^^^
+...
+276 |     pub fn set_realtime(&mut self, is_rt: bool) {
+    |            ^^^^^^^^^^^^
+...
+292 |     pub fn hard_block(&mut self, reason: HardBlockedReason) -> bool {
+    |            ^^^^^^^^^^
+...
+347 |     pub fn bulk_add_files_posix(
+    |            ^^^^^^^^^^^^^^^^^^^^
+...
+355 |     pub fn bulk_insert_files_upper(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^
+...
+363 |     pub fn bulk_insert_files_upper_manual(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+379 |     pub fn bulk_get_files(&self, handles: &[FileHandle]) -> Result<Vec<FileDescriptor>> {
+    |            ^^^^^^^^^^^^^^
+...
+396 |     pub fn bulk_remove_files(&self, handles: &[FileHandle]) -> Result<Vec<FileDescriptor>> {
+    |            ^^^^^^^^^^^^^^^^^
+...
+512 |     pub fn has_capability(&self, cap: Capabilities) -> bool {
+    |            ^^^^^^^^^^^^^^
+...
+516 |     pub fn set_entry_point(&mut self, call: extern "C" fn()) -> Result<()> {
+    |            ^^^^^^^^^^^^^^^
+
+warning: associated function `new` is never used
+   --> src/context/context.rs:626:12
+    |
+625 | impl Kstack {
+    | ----------- associated function in this implementation
+626 |     pub fn new() -> Result<Self, Enomem> {
+    |            ^^^
+
+warning: multiple associated items are never used
+   --> src/context/context.rs:658:12
+    |
+657 | impl FdTbl {
+    | ---------- associated items in this implementation
+658 |     pub fn new() -> Self {
+    |            ^^^
+...
+686 |     fn validate_handles(&self, handles: &[FileHandle]) -> Result<()> {
+    |        ^^^^^^^^^^^^^^^^
+...
+704 |     fn validate_free_slots(&self, handles: &[FileHandle]) -> Result<()> {
+    |        ^^^^^^^^^^^^^^^^^^^
+...
+755 |     fn bulk_add_files_posix(
+    |        ^^^^^^^^^^^^^^^^^^^^
+...
+807 |     fn bulk_insert_files_upper(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
+...
+831 |     fn bulk_insert_files_upper_manual(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+871 |     pub fn get_mut(&mut self, index: usize) -> Option<&mut Option<FileDescriptor>> {
+    |            ^^^^^^^
+...
+881 |     fn bulk_get_files(&self, handles: &[FileHandle]) -> Result<Vec<FileDescriptor>> {
+    |        ^^^^^^^^^^^^^^
+...
+895 |     pub fn find_by_scheme(
+    |            ^^^^^^^^^^^^^^
+...
+922 |     fn bulk_remove_files(&mut self, handles: &[FileHandle]) -> Result<Vec<FileDescriptor>> {
+    |        ^^^^^^^^^^^^^^^^^
+...
+934 |     fn find_free_posix_slots(&self, count: usize) -> Vec<FileHandle> {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+...
+954 |     fn find_free_upper_block(&mut self, len: usize) -> FileHandle {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+...
+984 |     pub fn force_close_all(&mut self, token: &mut CleanLockToken) {
+    |            ^^^^^^^^^^^^^^^
+
+warning: methods `iter` and `iter_mut` are never used
+    --> src/context/context.rs:1004:12
+     |
+ 994 | impl FdTbl {
+     | ---------- methods in this implementation
+...
+1004 |     pub fn iter(&self) -> impl Iterator<Item = &Option<FileDescriptor>> {
+     |            ^^^^
+...
+1008 |     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Option<FileDescriptor>> {
+     |            ^^^^^^^^
+
+warning: associated items `all`, `add`, `remove`, `override_from`, and `to_raw` are never used
+   --> src/cpu_set.rs:48:12
+    |
+ 41 | impl CpuSet {
+    | ----------- associated items in this implementation
+...
+ 48 |     pub fn all() -> Self {
+    |            ^^^
+...
+ 66 |     pub fn add(&mut self, id: LogicalCpuId) {
+    |            ^^^
+...
+ 75 |     pub fn remove(&mut self, id: LogicalCpuId) {
+    |            ^^^^^^
+...
+108 |     pub fn override_from(&mut self, mask: &RawMask) {
+    |            ^^^^^^^^^^^^^
+...
+112 |     pub fn to_raw(&self) -> RawMask {
+    |            ^^^^^^
+
+warning: type alias `RawMask` is never used
+   --> src/cpu_set.rs:125:10
+    |
+125 | pub type RawMask = [u64; WORD_COUNT];
+    |          ^^^^^^^
+
+warning: function `mask_as_bytes` is never used
+   --> src/cpu_set.rs:127:8
+    |
+127 | pub fn mask_as_bytes(mask: &RawMask) -> &[u8] {
+    |        ^^^^^^^^^^^^^
+
+warning: enum `CpuState` is never used
+  --> src/cpu_stats.rs:17:10
+   |
+17 | pub enum CpuState {
+   |          ^^^^^^^^
+
+warning: field `state` is never read
+  --> src/cpu_stats.rs:41:5
+   |
+29 | pub struct CpuStats {
+   |            -------- field in this struct
+...
+41 |     state: AtomicU8,
+   |     ^^^^^
+   |
+   = note: `CpuStats` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: methods `set_state` and `add_time` are never used
+  --> src/cpu_stats.rs:78:12
+   |
+72 | impl CpuStats {
+   | ------------- methods in this implementation
+...
+78 |     pub fn set_state(&self, new_state: CpuState) {
+   |            ^^^^^^^^^
+...
+89 |     pub fn add_time(&self, nanos: u64) {
+   |            ^^^^^^^^
+
+warning: function `add_context_switch` is never used
+   --> src/cpu_stats.rs:141:8
+    |
+141 | pub fn add_context_switch() {
+    |        ^^^^^^^^^^^^^^^^^^
+
+warning: function `add_context` is never used
+   --> src/cpu_stats.rs:152:8
+    |
+152 | pub fn add_context() {
+    |        ^^^^^^^^^^^
+
+warning: function `debugger` is never used
+  --> src/debugger.rs:20:15
+   |
+20 | pub unsafe fn debugger(target_id: Option<*const ContextLock>, token: &mut CleanLockToken) {
+   |               ^^^^^^^^
+
+warning: function `dump_stack` is never used
+   --> src/debugger.rs:191:4
+    |
+191 | fn dump_stack(context: &Context, mut sp: usize) {
+    |    ^^^^^^^^^^
+
+warning: function `check_page_table_consistency` is never used
+   --> src/debugger.rs:223:11
+    |
+223 | unsafe fn check_page_table_consistency(
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `COM1` is never used
+ --> src/devices/uart_16550.rs:7:11
+  |
+7 | pub const COM1: u16 = 0x3F8;
+  |           ^^^^
+
+warning: constant `COM2` is never used
+ --> src/devices/uart_16550.rs:8:11
+  |
+8 | pub const COM2: u16 = 0x2F8;
+  |           ^^^^
+
+warning: static `SERIAL_PORT` is never used
+  --> src/devices/uart_16550.rs:10:12
+   |
+10 | pub static SERIAL_PORT: Mutex<Option<SerialPort<Pio<u8>>>> = Mutex::new(None);
+   |            ^^^^^^^^^^^
+
+warning: function `init` is never used
+  --> src/devices/uart_16550.rs:98:15
+   |
+98 | pub unsafe fn init() {
+   |               ^^^^
+
+warning: static `HAS_RNDR` is never used
+  --> src/entropy.rs:20:8
+   |
+20 | static HAS_RNDR: AtomicBool = AtomicBool::new(false);
+   |        ^^^^^^^^
+
+warning: function `fill_bytes` is never used
+   --> src/entropy.rs:397:8
+    |
+397 | pub fn fill_bytes(buf: &mut [u8]) {
+    |        ^^^^^^^^^^
+
+warning: function `generate_seed` is never used
+   --> src/entropy.rs:410:8
+    |
+410 | pub fn generate_seed() -> [u8; 32] {
+    |        ^^^^^^^^^^^^^
+
+warning: method `read` is never used
+  --> src/event.rs:46:12
+   |
+31 | impl EventQueue {
+   | --------------- method in this implementation
+...
+46 |     pub fn read(&self, buf: UserSliceWo, block: bool, token: &mut CleanLockToken) -> Result<usize> {
+   |            ^^^^
+
+warning: function `unregister_queue` is never used
+   --> src/event.rs:190:8
+    |
+190 | pub fn unregister_queue(queue_id: EventQueueId) {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_CHANNELS` is never used
+  --> src/ipc.rs:37:11
+   |
+37 | pub const MAX_CHANNELS: usize = 1024;
+   |           ^^^^^^^^^^^^
+
+warning: constant `SHARED_BUFFER_POOL_SIZE` is never used
+  --> src/ipc.rs:43:11
+   |
+43 | pub const SHARED_BUFFER_POOL_SIZE: usize = 256;
+   |           ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `SHARED_BUFFER_SIZE` is never used
+  --> src/ipc.rs:46:11
+   |
+46 | pub const SHARED_BUFFER_SIZE: usize = PAGE_SIZE;
+   |           ^^^^^^^^^^^^^^^^^^
+
+warning: constant `DEFAULT_IPC_TIMEOUT_NS` is never used
+  --> src/ipc.rs:49:11
+   |
+49 | pub const DEFAULT_IPC_TIMEOUT_NS: u64 = 5_000_000_000; // 5 seconds
+   |           ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `SharedBuffer` is never constructed
+   --> src/ipc.rs:151:12
+    |
+151 | pub struct SharedBuffer {
+    |            ^^^^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> src/ipc.rs:164:8
+    |
+162 | impl SharedBuffer {
+    | ----------------- associated items in this implementation
+163 |     /// Create a new shared buffer backed by a physical frame
+164 |     fn new(frame: Frame) -> Self {
+    |        ^^^
+...
+175 |     pub fn as_ptr(&self) -> *mut u8 {
+    |            ^^^^^^
+...
+181 |     pub fn as_slice(&self) -> &[u8] {
+    |            ^^^^^^^^
+...
+187 |     pub fn as_slice_mut(&mut self) -> &mut [u8] {
+    |            ^^^^^^^^^^^^
+...
+192 |     fn acquire(&self, owner_id: usize) -> bool {
+    |        ^^^^^^^
+...
+199 |     fn release(&self) {
+    |        ^^^^^^^
+...
+206 |     fn add_ref(&self) {
+    |        ^^^^^^^
+...
+211 |     fn remove_ref(&self) -> bool {
+    |        ^^^^^^^^^^
+...
+216 |     pub fn map_to_context(
+    |            ^^^^^^^^^^^^^^
+
+warning: struct `SharedBufferPool` is never constructed
+   --> src/ipc.rs:258:12
+    |
+258 | pub struct SharedBufferPool {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: struct `BufferPoolStats` is never constructed
+   --> src/ipc.rs:269:12
+    |
+269 | pub struct BufferPoolStats {
+    |            ^^^^^^^^^^^^^^^
+
+warning: associated items `new`, `allocate`, `release`, `get`, and `get_mut` are never used
+   --> src/ipc.rs:278:12
+    |
+276 | impl SharedBufferPool {
+    | --------------------- associated items in this implementation
+277 |     /// Create a new buffer pool with the specified capacity
+278 |     pub fn new(capacity: usize) -> Result<Self> {
+    |            ^^^
+...
+296 |     pub fn allocate(&self, owner_id: usize) -> Option<u32> {
+    |            ^^^^^^^^
+...
+332 |     pub fn release(&self, buffer_id: u32) {
+    |            ^^^^^^^
+...
+341 |     pub fn get(&self, buffer_id: u32) -> Option<&SharedBuffer> {
+    |            ^^^
+...
+346 |     pub fn get_mut(&mut self, buffer_id: u32) -> Option<&mut SharedBuffer> {
+    |            ^^^^^^^
+
+warning: enum `ChannelState` is never used
+   --> src/ipc.rs:367:10
+    |
+367 | pub enum ChannelState {
+    |          ^^^^^^^^^^^^
+
+warning: struct `IpcChannel` is never constructed
+   --> src/ipc.rs:379:12
+    |
+379 | pub struct IpcChannel {
+    |            ^^^^^^^^^^
+
+warning: struct `ChannelStats` is never constructed
+   --> src/ipc.rs:400:12
+    |
+400 | pub struct ChannelStats {
+    |            ^^^^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> src/ipc.rs:409:12
+    |
+407 | impl IpcChannel {
+    | --------------- associated items in this implementation
+408 |     /// Create a new IPC channel
+409 |     pub fn new(id: u64) -> Self {
+    |            ^^^
+...
+424 |     pub fn id(&self) -> u64 {
+    |            ^^
+...
+429 |     pub fn state(&self) -> ChannelState {
+    |            ^^^^^
+...
+439 |     pub fn send(&self, mut msg: ZeroCopyMessage) -> Result<u64> {
+    |            ^^^^
+...
+479 |     pub fn try_recv(&self) -> Option<ZeroCopyMessage> {
+    |            ^^^^^^^^
+...
+498 |     pub fn recv_blocking(
+    |            ^^^^^^^^^^^^^
+...
+554 |     pub fn reply(&self, reply: ZeroCopyMessage) -> Result<()> {
+    |            ^^^^^
+...
+568 |     pub fn wait_reply(
+    |            ^^^^^^^^^^
+...
+597 |     pub fn close(&self) {
+    |            ^^^^^
+...
+609 |     fn wake_waiter(&self, context_id: usize) {
+    |        ^^^^^^^^^^^
+...
+626 |     fn update_avg_latency(&self, latency: u64) {
+    |        ^^^^^^^^^^^^^^^^^^
+
+warning: function `direct_transfer` is never used
+   --> src/ipc.rs:644:8
+    |
+644 | pub fn direct_transfer(
+    |        ^^^^^^^^^^^^^^^
+
+warning: struct `IpcRegistry` is never constructed
+   --> src/ipc.rs:694:12
+    |
+694 | pub struct IpcRegistry {
+    |            ^^^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> src/ipc.rs:702:18
+    |
+700 | impl IpcRegistry {
+    | ---------------- associated items in this implementation
+701 |     /// Create a new IPC registry
+702 |     pub const fn new() -> Self {
+    |                  ^^^
+...
+711 |     pub fn init_buffer_pool(&mut self) -> Result<()> {
+    |            ^^^^^^^^^^^^^^^^
+...
+717 |     pub fn create_channel(&self) -> Result<u64> {
+    |            ^^^^^^^^^^^^^^
+...
+730 |     pub fn get_channel(&self, id: u64) -> Option<Arc<IpcChannel>> {
+    |            ^^^^^^^^^^^
+...
+735 |     pub fn close_channel(&self, id: u64) -> Result<()> {
+    |            ^^^^^^^^^^^^^
+...
+742 |     pub fn alloc_buffer(&self, owner_id: usize) -> Option<u32> {
+    |            ^^^^^^^^^^^^
+...
+747 |     pub fn release_buffer(&self, buffer_id: u32) {
+    |            ^^^^^^^^^^^^^^
+...
+754 |     pub fn get_buffer(&self, buffer_id: u32) -> Option<&SharedBuffer> {
+    |            ^^^^^^^^^^
+...
+759 |     pub fn map_buffer(
+    |            ^^^^^^^^^^
+
+warning: static `IPC_REGISTRY` is never used
+   --> src/ipc.rs:773:16
+    |
+773 | pub static mut IPC_REGISTRY: IpcRegistry = IpcRegistry::new();
+    |                ^^^^^^^^^^^^
+
+warning: function `registry` is never used
+   --> src/ipc.rs:776:8
+    |
+776 | pub fn registry() -> &'static IpcRegistry {
+    |        ^^^^^^^^
+
+warning: function `registry_mut` is never used
+   --> src/ipc.rs:781:8
+    |
+781 | pub fn registry_mut() -> &'static mut IpcRegistry {
+    |        ^^^^^^^^^^^^
+
+warning: struct `PreemptState` is never constructed
+   --> src/ipc.rs:795:16
+    |
+795 |     pub struct PreemptState {
+    |                ^^^^^^^^^^^^
+
+warning: associated items `new`, `disable`, `enable`, `is_enabled`, `set_pending`, and `check_pending` are never used
+   --> src/ipc.rs:803:22
+    |
+802 |     impl PreemptState {
+    |     ----------------- associated items in this implementation
+803 |         pub const fn new() -> Self {
+    |                      ^^^
+...
+812 |         pub fn disable(&self) {
+    |                ^^^^^^^
+...
+819 |         pub fn enable(&self) -> bool {
+    |                ^^^^^^
+...
+829 |         pub fn is_enabled(&self) -> bool {
+    |                ^^^^^^^^^^
+...
+835 |         pub fn set_pending(&self) {
+    |                ^^^^^^^^^^^
+...
+841 |         pub fn check_pending(&self) -> bool {
+    |                ^^^^^^^^^^^^^
+
+warning: static `GRACE_PERIOD` is never used
+   --> src/ipc.rs:865:12
+    |
+865 |     static GRACE_PERIOD: AtomicU64 = AtomicU64::new(0);
+    |            ^^^^^^^^^^^^
+
+warning: struct `RcuState` is never constructed
+   --> src/ipc.rs:869:16
+    |
+869 |     pub struct RcuState {
+    |                ^^^^^^^^
+
+warning: associated function `new` is never used
+   --> src/ipc.rs:877:22
+    |
+876 |     impl RcuState {
+    |     ------------- associated function in this implementation
+877 |         pub const fn new() -> Self {
+    |                      ^^^
+
+warning: static `RCU_STATE` is never used
+   --> src/ipc.rs:886:12
+    |
+886 |     static RCU_STATE: RcuState = RcuState::new();
+    |            ^^^^^^^^^
+
+warning: function `rcu_read_lock` is never used
+   --> src/ipc.rs:894:12
+    |
+894 |     pub fn rcu_read_lock() {
+    |            ^^^^^^^^^^^^^
+
+warning: function `rcu_read_unlock` is never used
+   --> src/ipc.rs:907:12
+    |
+907 |     pub fn rcu_read_unlock() {
+    |            ^^^^^^^^^^^^^^^
+
+warning: function `rcu_read_lock_held` is never used
+   --> src/ipc.rs:914:12
+    |
+914 |     pub fn rcu_read_lock_held() -> bool {
+    |            ^^^^^^^^^^^^^^^^^^
+
+warning: function `synchronize_rcu` is never used
+   --> src/ipc.rs:921:12
+    |
+921 |     pub fn synchronize_rcu() {
+    |            ^^^^^^^^^^^^^^^
+
+warning: struct `RcuReadGuard` is never constructed
+   --> src/ipc.rs:947:16
+    |
+947 |     pub struct RcuReadGuard {
+    |                ^^^^^^^^^^^^
+
+warning: associated function `new` is never used
+   --> src/ipc.rs:953:16
+    |
+951 |     impl RcuReadGuard {
+    |     ----------------- associated function in this implementation
+952 |         #[inline(always)]
+953 |         pub fn new() -> Self {
+    |                ^^^
+
+warning: function `heap_slide` is never used
+   --> src/kaslr.rs:109:8
+    |
+109 | pub fn heap_slide() -> usize {
+    |        ^^^^^^^^^^
+
+warning: function `stack_slide` is never used
+   --> src/kaslr.rs:118:8
+    |
+118 | pub fn stack_slide() -> usize {
+    |        ^^^^^^^^^^^
+
+warning: function `is_enabled` is never used
+   --> src/kaslr.rs:124:8
+    |
+124 | pub fn is_enabled() -> bool {
+    |        ^^^^^^^^^^
+
+warning: function `entropy_quality` is never used
+   --> src/kaslr.rs:129:8
+    |
+129 | pub fn entropy_quality() -> &'static str {
+    |        ^^^^^^^^^^^^^^^
+
+warning: variant `Normal` is never constructed
+  --> src/memory/mod.rs:59:5
+   |
+58 | pub enum PlacementStrategy {
+   |          ----------------- variant in this enum
+59 |     Normal,
+   |     ^^^^^^
+   |
+   = note: `PlacementStrategy` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: function `free_frames` is never used
+  --> src/memory/mod.rs:62:8
+   |
+62 | pub fn free_frames() -> usize {
+   |        ^^^^^^^^^^^
+
+warning: function `allocate_giant_frame` is never used
+  --> src/memory/mod.rs:93:8
+   |
+93 | pub fn allocate_giant_frame() -> Option<Frame> {
+   |        ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `map_device_memory` is never used
+   --> src/memory/mod.rs:266:15
+    |
+266 | pub unsafe fn map_device_memory(addr: PhysicalAddress, len: usize) -> VirtualAddress {
+    |               ^^^^^^^^^^^^^^^^^
+
+warning: method `is_aligned_to_order` is never used
+   --> src/memory/mod.rs:370:12
+    |
+338 | impl Frame {
+    | ---------- method in this implementation
+...
+370 |     pub fn is_aligned_to_order(self, order: u32) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: associated items `allocate` and `take` are never used
+   --> src/memory/mod.rs:393:12
+    |
+392 | impl RaiiFrame {
+    | -------------- associated items in this implementation
+393 |     pub fn allocate() -> Result<Self, Enomem> {
+    |            ^^^^^^^^
+...
+404 |     pub fn take(self) -> Frame {
+    |            ^^^^
+
+warning: constant `RC_MAX` is never used
+   --> src/memory/mod.rs:444:7
+    |
+444 | const RC_MAX: usize = 1 << (usize::BITS - 3);
+    |       ^^^^^^
+
+warning: constant `RC_COUNT_MASK` is never used
+   --> src/memory/mod.rs:445:7
+    |
+445 | const RC_COUNT_MASK: usize = !(RC_USED_NOT_FREE | RC_SHARED_NOT_COW);
+    |       ^^^^^^^^^^^^^
+
+warning: constant `MAX_SECTION_SIZE_BITS` is never used
+   --> src/memory/mod.rs:472:11
+    |
+472 | pub const MAX_SECTION_SIZE_BITS: u32 = 27;
+    |           ^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_SECTION_SIZE` is never used
+   --> src/memory/mod.rs:473:11
+    |
+473 | pub const MAX_SECTION_SIZE: usize = 1 << MAX_SECTION_SIZE_BITS;
+    |           ^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_SECTION_PAGE_COUNT` is never used
+   --> src/memory/mod.rs:474:11
+    |
+474 | pub const MAX_SECTION_PAGE_COUNT: usize = MAX_SECTION_SIZE / PAGE_SIZE;
+    |           ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: enum `AddRefError` is never used
+   --> src/memory/mod.rs:499:10
+    |
+499 | pub enum AddRefError {
+    |          ^^^^^^^^^^^
+
+warning: method `add_ref` is never used
+   --> src/memory/mod.rs:544:12
+    |
+505 | impl PageInfo {
+    | ------------- method in this implementation
+...
+544 |     pub fn add_ref(&self, kind: RefKind) -> Result<(), AddRefError> {
+    |            ^^^^^^^
+
+warning: enum `RefKind` is never used
+   --> src/memory/mod.rs:610:10
+    |
+610 | pub enum RefKind {
+    |          ^^^^^^^
+
+warning: struct `Segv` is never constructed
+   --> src/memory/mod.rs:667:12
+    |
+667 | pub struct Segv;
+    |            ^^^^
+
+warning: function `the_zeroed_frame` is never used
+   --> src/memory/mod.rs:735:8
+    |
+735 | pub fn the_zeroed_frame() -> (Frame, &'static PageInfo) {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `init_frame` is never used
+   --> src/memory/mod.rs:744:8
+    |
+744 | pub fn init_frame(init_rc: RefCount) -> Result<Frame, PfError> {
+    |        ^^^^^^^^^^
+
+warning: function `mlockall` is never used
+   --> src/memory/mod.rs:790:8
+    |
+790 | pub fn mlockall(flags: MlockFlags) -> Result<(), Error> {
+    |        ^^^^^^^^
+
+warning: function `munlockall` is never used
+   --> src/memory/mod.rs:816:8
+    |
+816 | pub fn munlockall() -> Result<(), Error> {
+    |        ^^^^^^^^^^
+
+warning: function `map_page` is never used
+   --> src/memory/mod.rs:858:8
+    |
+858 | pub fn map_page(
+    |        ^^^^^^^^
+
+warning: function `deallocate_p2frame_safe` is never used
+   --> src/memory/mod.rs:925:8
+    |
+925 | pub fn deallocate_p2frame_safe(frame: Frame, order: u32) {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `Zone` is never constructed
+  --> src/memory/model.rs:27:12
+   |
+27 | pub struct Zone {
+   |            ^^^^
+
+warning: associated items `empty` and `contains` are never used
+  --> src/memory/model.rs:35:18
+   |
+34 | impl Zone {
+   | --------- associated items in this implementation
+35 |     pub const fn empty() -> Self {
+   |                  ^^^^^
+...
+44 |     pub fn contains(&self, addr: usize) -> bool {
+   |            ^^^^^^^^
+
+warning: struct `MpuManager` is never constructed
+  --> src/memory/model.rs:51:12
+   |
+51 | pub struct MpuManager {
+   |            ^^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> src/memory/model.rs:56:18
+    |
+ 55 | impl MpuManager {
+    | --------------- associated items in this implementation
+ 56 |     pub const fn new() -> Self {
+    |                  ^^^
+...
+ 62 |     pub fn add_region(
+    |            ^^^^^^^^^^
+...
+ 82 |     pub fn remove_region(&mut self, index: usize) -> Result<()> {
+    |            ^^^^^^^^^^^^^
+...
+ 90 |     pub fn find_zone(&self, addr: usize) -> Option<(usize, Zone)> {
+    |            ^^^^^^^^^
+...
+ 99 |     pub fn check_permission(&self, addr: usize, perm: MpuPermissions) -> Result<()> {
+    |            ^^^^^^^^^^^^^^^^
+...
+109 |     pub fn load_zones(&mut self, zones: &[Zone]) {
+    |            ^^^^^^^^^^
+...
+123 |     pub fn active_zones(&self) -> &[Zone; 8] {
+    |            ^^^^^^^^^^^^
+
+warning: type alias `MpuConfigureFn` is never used
+   --> src/memory/model.rs:129:10
+    |
+129 | pub type MpuConfigureFn = fn(&[Zone]) -> Result<()>;
+    |          ^^^^^^^^^^^^^^
+
+warning: static `HW_MPU_CONFIGURE` is never used
+   --> src/memory/model.rs:133:12
+    |
+133 | pub static HW_MPU_CONFIGURE: AtomicUsize = AtomicUsize::new(0);
+    |            ^^^^^^^^^^^^^^^^
+
+warning: trait `MemoryModel` is never used
+   --> src/memory/model.rs:136:11
+    |
+136 | pub trait MemoryModel {
+    |           ^^^^^^^^^^^
+
+warning: struct `VirtualMemoryModel` is never constructed
+   --> src/memory/model.rs:156:12
+    |
+156 | pub struct VirtualMemoryModel;
+    |            ^^^^^^^^^^^^^^^^^^
+
+warning: associated function `new` is never used
+   --> src/memory/model.rs:159:18
+    |
+158 | impl VirtualMemoryModel {
+    | ----------------------- associated function in this implementation
+159 |     pub const fn new() -> Self {
+    |                  ^^^
+
+warning: struct `FlatMemoryModel` is never constructed
+   --> src/memory/model.rs:197:12
+    |
+197 | pub struct FlatMemoryModel {
+    |            ^^^^^^^^^^^^^^^
+
+warning: associated function `new` is never used
+   --> src/memory/model.rs:202:18
+    |
+201 | impl FlatMemoryModel {
+    | -------------------- associated function in this implementation
+202 |     pub const fn new() -> Self {
+    |                  ^^^
+
+warning: type alias `SystemMemoryModel` is never used
+   --> src/memory/model.rs:274:10
+    |
+274 | pub type SystemMemoryModel = VirtualMemoryModel;
+    |          ^^^^^^^^^^^^^^^^^
+
+warning: static `MEMORY_MODEL` is never used
+   --> src/memory/model.rs:277:12
+    |
+277 | pub static MEMORY_MODEL: SystemMemoryModel = SystemMemoryModel::new();
+    |            ^^^^^^^^^^^^
+
+warning: function `handle_mpu_fault` is never used
+   --> src/memory/model.rs:304:8
+    |
+304 | pub fn handle_mpu_fault(addr: usize, access: MpuPermissions) -> Result<()> {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `check_fragmentation` is never used
+  --> src/memory/mthp.rs:15:8
+   |
+15 | pub fn check_fragmentation() -> f32 {
+   |        ^^^^^^^^^^^^^^^^^^^
+
+warning: function `user_stack_trace` is never used
+   --> src/panic.rs:154:15
+    |
+154 | pub unsafe fn user_stack_trace(stack: &InterruptStack) {
+    |               ^^^^^^^^^^^^^^^^
+
+warning: fields `switch_internals`, `new_addrsp_tmp`, `inside_syscall`, and `syscall_debug_info` are never read
+  --> src/percpu.rs:31:9
+   |
+24 | pub struct PercpuBlock {
+   |            ----------- fields in this struct
+...
+31 |     pub switch_internals: ContextSwitchPercpu,
+   |         ^^^^^^^^^^^^^^^^
+...
+34 |     pub new_addrsp_tmp: Cell<Option<Arc<AddrSpaceWrapper>>>,
+   |         ^^^^^^^^^^^^^^
+...
+41 |     pub inside_syscall: Cell<bool>,
+   |         ^^^^^^^^^^^^^^
+42 |
+43 |     pub syscall_debug_info: Cell<SyscallDebugInfo>,
+   |         ^^^^^^^^^^^^^^^^^^
+
+warning: function `shootdown_tlb_ipi` is never used
+  --> src/percpu.rs:80:8
+   |
+80 | pub fn shootdown_tlb_ipi(target: Option<LogicalCpuId>) {
+   |        ^^^^^^^^^^^^^^^^^
+
+warning: function `switch_arch_hook` is never used
+   --> src/percpu.rs:138:15
+    |
+138 | pub unsafe fn switch_arch_hook() {
+    |               ^^^^^^^^^^^^^^^^
+
+warning: methods `set_breakpoint`, `is_reached`, `session_fevent_flags`, and `recv_events` are never used
+  --> src/ptrace.rs:44:12
+   |
+34 | impl SessionData {
+   | ---------------- methods in this implementation
+...
+44 |     pub fn set_breakpoint(&mut self, flags: Option<PtraceFlags>) {
+   |            ^^^^^^^^^^^^^^
+...
+53 |     pub fn is_reached(&self) -> bool {
+   |            ^^^^^^^^^^
+...
+58 |     pub fn session_fevent_flags(&self) -> EventFlags {
+   |            ^^^^^^^^^^^^^^^^^^^^
+...
+69 |     pub fn recv_events(&mut self, out: &mut [PtraceEvent]) -> usize {
+   |            ^^^^^^^^^^^
+
+warning: associated function `new` is never used
+  --> src/ptrace.rs:98:12
+   |
+88 | impl Session {
+   | ------------ associated function in this implementation
+...
+98 |     pub fn new(file_id: usize) -> Arc<Session> {
+   |            ^^^
+
+warning: function `close_session` is never used
+   --> src/ptrace.rs:113:8
+    |
+113 | pub fn close_session(session: &Session, token: &mut CleanLockToken) {
+    |        ^^^^^^^^^^^^^
+
+warning: function `close_tracee` is never used
+   --> src/ptrace.rs:124:8
+    |
+124 | pub fn close_tracee(session: &Session, token: &mut CleanLockToken) {
+    |        ^^^^^^^^^^^^
+
+warning: function `wait` is never used
+   --> src/ptrace.rs:184:8
+    |
+184 | pub fn wait(session: Arc<Session>, token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^
+
+warning: constant `RT_PRIORITY_LEVELS` is never used
+  --> src/scheduler.rs:50:11
+   |
+50 | pub const RT_PRIORITY_LEVELS: usize = 100;
+   |           ^^^^^^^^^^^^^^^^^^
+
+warning: constant `BALANCE_INTERVAL_NS` is never used
+  --> src/scheduler.rs:53:7
+   |
+53 | const BALANCE_INTERVAL_NS: u64 = 4_000_000;
+   |       ^^^^^^^^^^^^^^^^^^^
+
+warning: constant `IMBALANCE_THRESHOLD_PERCENT` is never used
+  --> src/scheduler.rs:57:7
+   |
+57 | const IMBALANCE_THRESHOLD_PERCENT: u64 = 25;
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `ESTIMATED_CORES_PER_SOCKET` is never used
+  --> src/scheduler.rs:61:7
+   |
+61 | const ESTIMATED_CORES_PER_SOCKET: u32 = 8;
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: enum `SchedPolicy` is never used
+  --> src/scheduler.rs:66:10
+   |
+66 | pub enum SchedPolicy {
+   |          ^^^^^^^^^^^
+
+warning: field `fd` is never read
+  --> src/scheduler.rs:85:9
+   |
+84 | pub struct IpcScheduler {
+   |            ------------ field in this struct
+85 |     pub fd: usize,
+   |         ^^
+
+warning: fields `balance_ops` and `preemptions` are never read
+   --> src/scheduler.rs:189:9
+    |
+183 | pub struct SchedulerStats {
+    |            -------------- fields in this struct
+...
+189 |     pub balance_ops: AtomicU64,
+    |         ^^^^^^^^^^^
+190 |     pub migrations: AtomicU64,
+191 |     pub preemptions: AtomicU64,
+    |         ^^^^^^^^^^^
+    |
+    = note: `SchedulerStats` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: fields `vdeadline` and `time_slice` are never read
+   --> src/scheduler.rs:256:9
+    |
+253 | pub struct RunQueueEntry {
+    |            ------------- fields in this struct
+...
+256 |     pub vdeadline: u64,
+    |         ^^^^^^^^^
+257 |     pub priority: u8,
+258 |     pub time_slice: u64,
+    |         ^^^^^^^^^^
+    |
+    = note: `RunQueueEntry` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: methods `peek`, `check_preempt`, and `highest_rt_priority` are never used
+   --> src/scheduler.rs:460:12
+    |
+307 | impl RunQueue {
+    | ------------- methods in this implementation
+...
+460 |     pub fn peek(&self) -> Option<ContextRef> {
+    |            ^^^^
+...
+538 |     pub fn check_preempt(&self) -> bool {
+    |            ^^^^^^^^^^^^^
+...
+554 |     pub fn highest_rt_priority(&self) -> Option<u8> {
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: fields `last_balance_time` and `tickless` are never read
+   --> src/scheduler.rs:583:9
+    |
+578 | pub struct Scheduler {
+    |            --------- fields in this struct
+...
+583 |     pub last_balance_time: AtomicU64,
+    |         ^^^^^^^^^^^^^^^^^
+584 |     pub stats: SchedulerStats,
+585 |     pub tickless: AtomicBool,
+    |         ^^^^^^^^
+
+warning: methods `context_blocked`, `context_unblocked`, `should_preempt`, and `try_balance` are never used
+   --> src/scheduler.rs:765:12
+    |
+590 | impl Scheduler {
+    | -------------- methods in this implementation
+...
+765 |     pub fn context_blocked(&mut self, context_id: usize) {
+    |            ^^^^^^^^^^^^^^^
+...
+769 |     pub fn context_unblocked(&mut self, context_ref: ContextRef, token: &mut CleanLockToken) {
+    |            ^^^^^^^^^^^^^^^^^
+...
+773 |     pub fn should_preempt(&self, _token: &mut CleanLockToken) -> bool {
+    |            ^^^^^^^^^^^^^^
+...
+798 |     pub fn try_balance(&mut self, _token: &mut CleanLockToken) {
+    |            ^^^^^^^^^^^
+
+warning: function `select_best_cpu_on_socket` is never used
+   --> src/scheduler.rs:901:4
+    |
+901 | fn select_best_cpu_on_socket(start_cpu: LogicalCpuId) -> LogicalCpuId {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `request_preemption` is never used
+   --> src/scheduler.rs:935:8
+    |
+935 | pub fn request_preemption(token: &mut CleanLockToken) {
+    |        ^^^^^^^^^^^^^^^^^^
+
+warning: function `balance` is never used
+   --> src/scheduler.rs:945:8
+    |
+945 | pub fn balance(token: &mut CleanLockToken) {
+    |        ^^^^^^^
+
+warning: field `0` is never read
+   --> src/scheme/mod.rs:113:14
+    |
+113 |     External(Arc<RwLock<FileDescription>>),
+    |     -------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |     |
+    |     field in this variant
+    |
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+    |
+113 -     External(Arc<RwLock<FileDescription>>),
+113 +     External(()),
+    |
+
+warning: enum `StrOrBytes` is never used
+   --> src/scheme/mod.rs:117:10
+    |
+117 | pub enum StrOrBytes<'a> {
+    |          ^^^^^^^^^^
+
+warning: methods `as_str` and `as_bytes` are never used
+   --> src/scheme/mod.rs:123:12
+    |
+122 | impl<'a> StrOrBytes<'a> {
+    | ----------------------- methods in this implementation
+123 |     pub fn as_str(&self) -> Option<&'a str> {
+    |            ^^^^^^
+...
+130 |     pub fn as_bytes(&self) -> &'a [u8] {
+    |            ^^^^^^^^
+
+warning: multiple methods are never used
+   --> src/scheme/mod.rs:153:8
+    |
+145 | pub trait KernelScheme: Send + Sync {
+    |           ------------ methods in this trait
+...
+153 |     fn kopenat(
+    |        ^^^^^^^
+...
+164 |     fn rmdir(&self, _path: &str, _ctx: CallerCtx, _token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^
+...
+167 |     fn unlink(&self, _path: &str, _ctx: CallerCtx, _token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^^
+...
+173 |     fn kread(
+    |        ^^^^^
+...
+183 |     fn kreadoff(
+    |        ^^^^^^^^
+...
+204 |     fn kwriteoff(
+    |        ^^^^^^^^^
+...
+215 |     fn legacy_seek(
+    |        ^^^^^^^^^^^
+...
+224 |     fn kfmap(
+    |        ^^^^^
+...
+234 |     fn kfunmap(
+    |        ^^^^^^^
+...
+244 |     fn kfstat(&self, _file: usize, _stat: UserSliceWo, _token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^^
+...
+247 |     fn kfstatvfs(
+    |        ^^^^^^^^^
+...
+263 |     fn kfutimens(
+    |        ^^^^^^^^^
+...
+271 |     fn fsize(&self, _file: usize, _token: &mut CleanLockToken) -> Result<u64> {
+    |        ^^^^^
+...
+274 |     fn fchmod(&self, _file: usize, _mode: u16, _token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^^
+...
+277 |     fn fchown(
+    |        ^^^^^^
+...
+286 |     fn fcntl(
+    |        ^^^^^
+...
+303 |     fn fsync(&self, _file: usize, _token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^
+...
+306 |     fn ftruncate(&self, _file: usize, _len: usize, _token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^^^^^
+...
+309 |     fn flink(
+    |        ^^^^^
+...
+318 |     fn frename(
+    |        ^^^^^^^
+...
+327 |     fn kdup(
+    |        ^^^^
+...
+336 |     fn kcall(
+    |        ^^^^^
+...
+346 |     fn kfdwrite(
+    |        ^^^^^^^^
+...
+357 |     fn kfdread(
+    |        ^^^^^^^
+...
+367 |     fn getdents(
+    |        ^^^^^^^^
+
+warning: associated items `new`, `get_name`, and `make_ns` are never used
+    --> src/scheme/mod.rs:1060:12
+     |
+1059 | impl SchemeList {
+     | --------------- associated items in this implementation
+1060 |     pub fn new() -> Self {
+     |            ^^^
+...
+1070 |     pub fn get_name<'a>(
+     |            ^^^^^^^^
+...
+1130 |     pub fn make_ns(
+     |            ^^^^^^^
+
+warning: constant `DRM_IOCTL_BASE` is never used
+  --> src/scheme/gpu.rs:13:11
+   |
+13 | pub const DRM_IOCTL_BASE: usize = 0x6400;
+   |           ^^^^^^^^^^^^^^
+
+warning: constant `DRM_IOCTL_MODE_GETRESOURCES` is never used
+  --> src/scheme/gpu.rs:14:11
+   |
+14 | pub const DRM_IOCTL_MODE_GETRESOURCES: usize = DRM_IOCTL_BASE + 0xA0;
+   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `DRM_IOCTL_MODE_GETCONNECTOR` is never used
+  --> src/scheme/gpu.rs:15:11
+   |
+15 | pub const DRM_IOCTL_MODE_GETCONNECTOR: usize = DRM_IOCTL_BASE + 0xA7;
+   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `DRM_IOCTL_MODE_GETENCODER` is never used
+  --> src/scheme/gpu.rs:16:11
+   |
+16 | pub const DRM_IOCTL_MODE_GETENCODER: usize = DRM_IOCTL_BASE + 0xA6;
+   |           ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `DRM_IOCTL_MODE_GETCRTC` is never used
+  --> src/scheme/gpu.rs:17:11
+   |
+17 | pub const DRM_IOCTL_MODE_GETCRTC: usize = DRM_IOCTL_BASE + 0xA1;
+   |           ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `DRM_IOCTL_MODE_SETCRTC` is never used
+  --> src/scheme/gpu.rs:18:11
+   |
+18 | pub const DRM_IOCTL_MODE_SETCRTC: usize = DRM_IOCTL_BASE + 0xA2;
+   |           ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `DRM_IOCTL_MODE_PAGE_FLIP` is never used
+  --> src/scheme/gpu.rs:19:11
+   |
+19 | pub const DRM_IOCTL_MODE_PAGE_FLIP: usize = DRM_IOCTL_BASE + 0xB0;
+   |           ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `id`, `encoder_id`, `status`, and `connection` are never read
+  --> src/scheme/gpu.rs:24:9
+   |
+23 | pub struct Connector {
+   |            --------- fields in this struct
+24 |     pub id: u32,
+   |         ^^
+25 |     pub encoder_id: u32,
+   |         ^^^^^^^^^^
+26 |     pub status: u32, // 1: Connected
+   |         ^^^^^^
+27 |     pub connection: u32,
+   |         ^^^^^^^^^^
+   |
+   = note: `Connector` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: fields `id`, `crtc_id`, and `encoder_type` are never read
+  --> src/scheme/gpu.rs:32:9
+   |
+31 | pub struct Encoder {
+   |            ------- fields in this struct
+32 |     pub id: u32,
+   |         ^^
+33 |     pub crtc_id: u32,
+   |         ^^^^^^^
+34 |     pub encoder_type: u32,
+   |         ^^^^^^^^^^^^
+   |
+   = note: `Encoder` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: multiple fields are never read
+  --> src/scheme/gpu.rs:39:9
+   |
+38 | pub struct Crtc {
+   |            ---- fields in this struct
+39 |     pub id: u32,
+   |         ^^
+40 |     pub buffer_id: u32,
+   |         ^^^^^^^^^
+41 |     pub x: u32,
+   |         ^
+42 |     pub y: u32,
+   |         ^
+43 |     pub width: u32,
+   |         ^^^^^
+44 |     pub height: u32,
+   |         ^^^^^^
+45 |     pub mode_valid: bool,
+   |         ^^^^^^^^^^
+   |
+   = note: `Crtc` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: fields `connectors`, `encoders`, and `crtcs` are never read
+  --> src/scheme/gpu.rs:50:9
+   |
+49 | pub struct MockAmdGpu {
+   |            ---------- fields in this struct
+50 |     pub connectors: Vec<Connector>,
+   |         ^^^^^^^^^^
+51 |     pub encoders: Vec<Encoder>,
+   |         ^^^^^^^^
+52 |     pub crtcs: Vec<Crtc>,
+   |         ^^^^^
+
+warning: method `submit_command` is never used
+  --> src/scheme/gpu.rs:81:12
+   |
+55 | impl MockAmdGpu {
+   | --------------- method in this implementation
+...
+81 |     pub fn submit_command(&mut self, _cmd: u32) {
+   |            ^^^^^^^^^^^^^^
+
+warning: field `driver` is never read
+  --> src/scheme/gpu.rs:89:5
+   |
+86 | pub struct GpuScheme {
+   |            --------- field in this struct
+...
+89 |     driver: RwLock<MockAmdGpu>,
+   |     ^^^^^^
+
+warning: associated functions `fmap_anonymous` and `physmap` are never used
+   --> src/scheme/memory.rs:77:12
+    |
+ 76 | impl MemoryScheme {
+    | ----------------- associated functions in this implementation
+ 77 |     pub fn fmap_anonymous(
+    |            ^^^^^^^^^^^^^^
+...
+119 |     pub fn physmap(
+    |            ^^^^^^^
+
+warning: constant `NET_FAST_IOCTL_SUBMIT` is never used
+  --> src/scheme/net_fast.rs:16:11
+   |
+16 | pub const NET_FAST_IOCTL_SUBMIT: usize = 0x4E01;
+   |           ^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `id` and `ring` are never read
+  --> src/scheme/net_fast.rs:35:9
+   |
+34 | pub struct NetFastInterface {
+   |            ---------------- fields in this struct
+35 |     pub id: usize,
+   |         ^^
+36 |     pub ring: Arc<RwLock<PacketRing>>,
+   |         ^^^^
+
+warning: field `has_run_dup` is never read
+   --> src/scheme/pipe.rs:355:5
+    |
+349 | pub struct Pipe {
+    |            ---- field in this struct
+...
+355 |     has_run_dup: AtomicBool,
+    |     ^^^^^^^^^^^
+
+warning: function `read_from` is never used
+  --> src/scheme/proc.rs:44:4
+   |
+44 | fn read_from(dst: UserSliceWo, src: &[u8], offset: u64) -> Result<usize> {
+   |    ^^^^^^^^^
+
+warning: variants `Float`, `Int`, and `Env` are never constructed
+  --> src/scheme/proc.rs:97:5
+   |
+96 | enum RegsKind {
+   |      -------- variants in this enum
+97 |     Float,
+   |     ^^^^^
+98 |     Int,
+   |     ^^^
+99 |     Env,
+   |     ^^^
+   |
+   = note: `RegsKind` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: multiple variants are never constructed
+   --> src/scheme/proc.rs:106:5
+    |
+102 | enum ContextHandle {
+    |      ------------- variants in this enum
+...
+106 |     Attr,
+    |     ^^^^
+107 |
+108 |     Status {
+    |     ^^^^^^
+...
+112 |     Regs(RegsKind),
+    |     ^^^^
+113 |     Sighandler,
+    |     ^^^^^^^^^^
+114 |     Start,
+    |     ^^^^^
+115 |     NewFiletable {
+    |     ^^^^^^^^^^^^
+...
+119 |     Filetable {
+    |     ^^^^^^^^^
+...
+123 |     AddrSpace {
+    |     ^^^^^^^^^
+...
+126 |     CurrentAddrSpace,
+    |     ^^^^^^^^^^^^^^^^
+127 |
+128 |     AwaitingAddrSpaceChange {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+...
+134 |     CurrentFiletable,
+    |     ^^^^^^^^^^^^^^^^
+135 |
+136 |     AwaitingFiletableChange {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+...
+142 |     OpenViaDup,
+    |     ^^^^^^^^^^
+143 |     SchedAffinity,
+    |     ^^^^^^^^^^^^^
+144 |
+145 |     MmapMinAddr(Arc<AddrSpaceWrapper>),
+    |     ^^^^^^^^^^^
+    |
+    = note: `ContextHandle` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: function `new_handle` is never used
+   --> src/scheme/proc.rs:176:4
+    |
+176 | fn new_handle(
+    |    ^^^^^^^^^^
+
+warning: enum `OpenTy` is never used
+   --> src/scheme/proc.rs:185:6
+    |
+185 | enum OpenTy {
+    |      ^^^^^^
+
+warning: methods `openat_context` and `open_inner` are never used
+   --> src/scheme/proc.rs:191:8
+    |
+190 | impl ProcScheme {
+    | --------------- methods in this implementation
+191 |     fn openat_context(
+    |        ^^^^^^^^^^^^^^
+...
+267 |     fn open_inner(
+    |        ^^^^^^^^^^
+
+warning: function `extract_scheme_number` is never used
+   --> src/scheme/proc.rs:801:4
+    |
+801 | fn extract_scheme_number(
+    |    ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `verify_scheme` is never used
+   --> src/scheme/proc.rs:818:4
+    |
+818 | fn verify_scheme(scheme: &KernelSchemes) -> Result<()> {
+    |    ^^^^^^^^^^^^^
+
+warning: method `fsize` is never used
+   --> src/scheme/proc.rs:825:8
+    |
+824 | impl Handle {
+    | ----------- method in this implementation
+825 |     fn fsize(&self) -> Result<u64> {
+    |        ^^^^^
+
+warning: methods `kwriteoff` and `kreadoff` are never used
+    --> src/scheme/proc.rs:834:8
+     |
+ 833 | impl ContextHandle {
+     | ------------------ methods in this implementation
+ 834 |     fn kwriteoff(
+     |        ^^^^^^^^^
+...
+1196 |     fn kreadoff(
+     |        ^^^^^^^^
+
+warning: function `write_env_regs` is never used
+    --> src/scheme/proc.rs:1371:4
+     |
+1371 | fn write_env_regs(
+     |    ^^^^^^^^^^^^^^
+
+warning: function `read_env_regs` is never used
+    --> src/scheme/proc.rs:1385:4
+     |
+1385 | fn read_env_regs(context: Arc<ContextLock>, token: &mut CleanLockToken) -> Result<EnvRegisters> {
+     |    ^^^^^^^^^^^^^
+
+warning: constant `F_SETOWN` is never used
+  --> src/scheme/ring.rs:51:7
+   |
+51 | const F_SETOWN: usize = 8;
+   |       ^^^^^^^^
+
+warning: constant `F_GETOWN` is never used
+  --> src/scheme/ring.rs:52:7
+   |
+52 | const F_GETOWN: usize = 9;
+   |       ^^^^^^^^
+
+warning: constant `IORING_OP_LINK_TIMEOUT` is never used
+   --> src/scheme/ring.rs:127:11
+    |
+127 | pub const IORING_OP_LINK_TIMEOUT: u8 = 13;
+    |           ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `IOSQE_FIXED_FILE` is never used
+   --> src/scheme/ring.rs:137:11
+    |
+137 | pub const IOSQE_FIXED_FILE: u8 = 1 << 0;
+    |           ^^^^^^^^^^^^^^^^
+
+warning: constant `IOSQE_IO_DRAIN` is never used
+   --> src/scheme/ring.rs:138:11
+    |
+138 | pub const IOSQE_IO_DRAIN: u8 = 1 << 1;
+    |           ^^^^^^^^^^^^^^
+
+warning: constant `IOSQE_IO_HARDLINK` is never used
+   --> src/scheme/ring.rs:140:11
+    |
+140 | pub const IOSQE_IO_HARDLINK: u8 = 1 << 3;
+    |           ^^^^^^^^^^^^^^^^^
+
+warning: constant `IOSQE_ASYNC` is never used
+   --> src/scheme/ring.rs:141:11
+    |
+141 | pub const IOSQE_ASYNC: u8 = 1 << 4;
+    |           ^^^^^^^^^^^
+
+warning: constant `IOSQE_RDMA_FENCE` is never used
+   --> src/scheme/ring.rs:142:11
+    |
+142 | pub const IOSQE_RDMA_FENCE: u8 = 1 << 5; // RDMA Fence
+    |           ^^^^^^^^^^^^^^^^
+
+warning: constant `IORING_CQE_F_BUFFER` is never used
+   --> src/scheme/ring.rs:145:11
+    |
+145 | pub const IORING_CQE_F_BUFFER: u32 = 1 << 0;
+    |           ^^^^^^^^^^^^^^^^^^^
+
+warning: constant `IORING_CQE_F_MORE` is never used
+   --> src/scheme/ring.rs:146:11
+    |
+146 | pub const IORING_CQE_F_MORE: u32 = 1 << 1;
+    |           ^^^^^^^^^^^^^^^^^
+
+warning: constant `IORING_SQ_NEED_WAKEUP` is never used
+   --> src/scheme/ring.rs:149:11
+    |
+149 | pub const IORING_SQ_NEED_WAKEUP: u32 = 1 << 0;
+    |           ^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `cq_entries` and `completion_wait_queue` are never read
+   --> src/scheme/ring.rs:164:9
+    |
+157 | pub struct RingHandle {
+    |            ---------- fields in this struct
+...
+164 |     pub cq_entries: usize,
+    |         ^^^^^^^^^^
+...
+171 |     pub completion_wait_queue: OptimizedWaitQueue<()>,
+    |         ^^^^^^^^^^^^^^^^^^^^^
+
+warning: field `flags` is never read
+   --> src/scheme/ring.rs:196:9
+    |
+192 | pub struct MemoryRegion {
+    |            ------------ field in this struct
+...
+196 |     pub flags: u32,
+    |         ^^^^^
+    |
+    = note: `MemoryRegion` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: method `cq_is_full` is never used
+   --> src/scheme/ring.rs:224:8
+    |
+203 | impl RingHandle {
+    | --------------- method in this implementation
+...
+224 |     fn cq_is_full(&self) -> bool {
+    |        ^^^^^^^^^^
+
+warning: associated functions `ring_complete` and `clear_overflow` are never used
+   --> src/scheme/ring.rs:585:12
+    |
+278 | impl RingScheme {
+    | --------------- associated functions in this implementation
+...
+585 |     pub fn ring_complete(handle: &Arc<RingHandle>, cqe: &Cqe, token: &mut CleanLockToken) {
+    |            ^^^^^^^^^^^^^
+...
+598 |     pub fn clear_overflow(handle: &Arc<RingHandle>) {
+    |            ^^^^^^^^^^^^^^
+
+warning: field `ens` is never read
+  --> src/scheme/root.rs:34:12
+   |
+34 |     List { ens: SchemeNamespace },
+   |     ----   ^^^
+   |     |
+   |     field in this variant
+   |
+   = note: `Handle` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: field `data` is never read
+  --> src/scheme/sys/mod.rs:54:9
+   |
+52 |     Resource {
+   |     -------- field in this variant
+53 |         path: &'static str,
+54 |         data: Option<Vec<u8>>,
+   |         ^^^^
+
+warning: field `0` is never read
+  --> src/scheme/sys/mod.rs:60:8
+   |
+60 |     Wr(fn(&[u8], &mut CleanLockToken) -> Result<usize>),
+   |     -- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |     |
+   |     field in this variant
+   |
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+   |
+60 -     Wr(fn(&[u8], &mut CleanLockToken) -> Result<usize>),
+60 +     Wr(()),
+   |
+
+warning: function `resource` is never used
+ --> src/scheme/sys/pmu.rs:7:8
+  |
+7 | pub fn resource() -> Result<&'static [u8], ()> {
+  |        ^^^^^^^^
+
+warning: variant `Fmap` is never constructed
+  --> src/scheme/user.rs:72:5
+   |
+64 | enum State {
+   |      ----- variant in this enum
+...
+72 |     Fmap(Weak<ContextLock>),
+   |     ^^^^
+
+warning: field `num_fds` is never read
+   --> src/scheme/user.rs:104:9
+    |
+102 |     ResponseWithMultipleFds {
+    |     ----------------------- field in this variant
+103 |         tag: u32,
+104 |         num_fds: usize,
+    |         ^^^^^^^
+
+warning: multiple associated items are never used
+    --> src/scheme/user.rs:227:12
+     |
+ 202 | impl UserInner {
+     | -------------- associated items in this implementation
+...
+ 227 |     pub fn unmount(&self, token: &mut CleanLockToken) -> Result<()> {
+     |            ^^^^^^^
+...
+ 731 |     pub fn read(&self, buf: UserSliceWo, flags: u32, token: &mut CleanLockToken) -> Result<usize> {
+     |            ^^^^
+...
+ 773 |     fn translate_sqe_to_packet(&self, sqe: &Sqe) -> Result<Packet> {
+     |        ^^^^^^^^^^^^^^^^^^^^^^^
+...
+ 917 |     pub fn request_fmap(
+     |            ^^^^^^^^^^^^
+...
+1183 |     pub fn fsync(&self) -> Result<()> {
+     |            ^^^^^
+...
+1187 |     fn fmap_inner(
+     |        ^^^^^^^^^^
+...
+1341 |     pub fn call_fdwrite(
+     |            ^^^^^^^^^^^^
+...
+1373 |     fn handle_movefd(
+     |        ^^^^^^^^^^^^^
+...
+1393 |     pub fn call_fdread(
+     |            ^^^^^^^^^^^
+...
+1431 |     fn handle_obtainfd(
+     |        ^^^^^^^^^^^^^^^
+...
+1457 |     fn bulk_add_fds(
+     |        ^^^^^^^^^^^^
+...
+1490 |     fn bulk_insert_fds(
+     |        ^^^^^^^^^^^^^^^
+
+warning: function `current_uid_gid` is never used
+    --> src/scheme/user.rs:2259:4
+     |
+2259 | fn current_uid_gid(token: &mut CleanLockToken) -> [u32; 2] {
+     |    ^^^^^^^^^^^^^^^
+
+warning: constant `VMM_IOCTL_BASE` is never used
+  --> src/scheme/vmm.rs:44:11
+   |
+44 | pub const VMM_IOCTL_BASE: usize = 0x7000;
+   |           ^^^^^^^^^^^^^^
+
+warning: constant `VMM_IOCTL_SET_MEMORY` is never used
+  --> src/scheme/vmm.rs:45:11
+   |
+45 | pub const VMM_IOCTL_SET_MEMORY: usize = VMM_IOCTL_BASE + 0x01;
+   |           ^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `VMM_IOCTL_CREATE_VCPU` is never used
+  --> src/scheme/vmm.rs:46:11
+   |
+46 | pub const VMM_IOCTL_CREATE_VCPU: usize = VMM_IOCTL_BASE + 0x02;
+   |           ^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `VMM_IOCTL_RUN_VCPU` is never used
+  --> src/scheme/vmm.rs:47:11
+   |
+47 | pub const VMM_IOCTL_RUN_VCPU: usize = VMM_IOCTL_BASE + 0x03;
+   |           ^^^^^^^^^^^^^^^^^^
+
+warning: constant `VMM_IOCTL_GET_REGS` is never used
+  --> src/scheme/vmm.rs:48:11
+   |
+48 | pub const VMM_IOCTL_GET_REGS: usize = VMM_IOCTL_BASE + 0x04;
+   |           ^^^^^^^^^^^^^^^^^^
+
+warning: constant `VMM_IOCTL_SET_REGS` is never used
+  --> src/scheme/vmm.rs:49:11
+   |
+49 | pub const VMM_IOCTL_SET_REGS: usize = VMM_IOCTL_BASE + 0x05;
+   |           ^^^^^^^^^^^^^^^^^^
+
+warning: constant `VMM_IOCTL_DESTROY_VM` is never used
+  --> src/scheme/vmm.rs:50:11
+   |
+50 | pub const VMM_IOCTL_DESTROY_VM: usize = VMM_IOCTL_BASE + 0x06;
+   |           ^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `VMM_IOCTL_GET_SERIAL` is never used
+  --> src/scheme/vmm.rs:51:11
+   |
+51 | pub const VMM_IOCTL_GET_SERIAL: usize = VMM_IOCTL_BASE + 0x07;
+   |           ^^^^^^^^^^^^^^^^^^^^
+
+warning: field `id` is never read
+   --> src/scheme/vmm.rs:160:9
+    |
+159 | pub struct VmInstance {
+    |            ---------- field in this struct
+160 |     pub id: usize,
+    |         ^^
+
+warning: methods `run_until_halt`, `get_vcpu_regs`, and `drain_serial` are never used
+   --> src/scheme/vmm.rs:315:12
+    |
+181 | impl VmInstance {
+    | --------------- methods in this implementation
+...
+315 |     pub fn run_until_halt(&mut self, vcpu_id: u32) -> Result<VmExitReason> {
+    |            ^^^^^^^^^^^^^^
+...
+325 |     pub fn get_vcpu_regs(&self, vcpu_id: u32) -> Result<VcpuState> {
+    |            ^^^^^^^^^^^^^
+...
+336 |     pub fn drain_serial(&mut self) -> Vec<u8> {
+    |            ^^^^^^^^^^^^
+
+warning: function `get_canary` is never used
+  --> src/stack_guard.rs:53:8
+   |
+53 | pub fn get_canary() -> u64 {
+   |        ^^^^^^^^^^
+
+warning: function `context_canary` is never used
+  --> src/stack_guard.rs:60:8
+   |
+60 | pub fn context_canary(context_id: usize) -> u64 {
+   |        ^^^^^^^^^^^^^^
+
+warning: function `check_canary` is never used
+  --> src/stack_guard.rs:69:8
+   |
+69 | pub fn check_canary(expected: u64, actual: u64) {
+   |        ^^^^^^^^^^^^
+
+warning: function `refresh_canary` is never used
+   --> src/stack_guard.rs:128:8
+    |
+128 | pub fn refresh_canary() {
+    |        ^^^^^^^^^^^^^^
+
+warning: enum `ShadowStackStatus` is never used
+   --> src/stack_guard.rs:145:10
+    |
+145 | pub enum ShadowStackStatus {
+    |          ^^^^^^^^^^^^^^^^^
+
+warning: function `shadow_stack_status` is never used
+   --> src/stack_guard.rs:153:8
+    |
+153 | pub fn shadow_stack_status() -> ShadowStackStatus {
+    |        ^^^^^^^^^^^^^^^^^^^
+
+warning: methods `top` and `push_return_address` are never used
+   --> src/stack_guard.rs:243:12
+    |
+193 | impl ShadowStack {
+    | ---------------- methods in this implementation
+...
+243 |     pub fn top(&self) -> usize {
+    |            ^^^
+...
+250 |     pub fn push_return_address(&self, return_addr: usize) -> Result<usize, &'static str> {
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: function `enable_shadow_stack` is never used
+   --> src/stack_guard.rs:359:15
+    |
+359 | pub unsafe fn enable_shadow_stack() -> Result<(), &'static str> {
+    |               ^^^^^^^^^^^^^^^^^^^
+
+warning: struct `PercpuStackGuard` is never constructed
+   --> src/stack_guard.rs:422:12
+    |
+422 | pub struct PercpuStackGuard {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: associated items `new` and `init` are never used
+   --> src/stack_guard.rs:430:18
+    |
+429 | impl PercpuStackGuard {
+    | --------------------- associated items in this implementation
+430 |     pub const fn new() -> Self {
+    |                  ^^^
+...
+438 |     pub fn init(&mut self) {
+    |            ^^^^
+
+warning: associated function `containing_address` is never used
+   --> src/stubs.rs:260:12
+    |
+259 | impl Frame {
+    | ---------- associated function in this implementation
+260 |     pub fn containing_address(addr: PhysicalAddress) -> Self {
+    |            ^^^^^^^^^^^^^^^^^^
+
+warning: struct `NumaNodeId` is never constructed
+  --> src/stubs.rs:10:16
+   |
+10 |     pub struct NumaNodeId(pub u8);
+   |                ^^^^^^^^^^
+
+warning: struct `CpuTopology` is never constructed
+  --> src/stubs.rs:18:16
+   |
+18 |     pub struct CpuTopology;
+   |                ^^^^^^^^^^^
+
+warning: method `get` is never used
+  --> src/stubs.rs:21:16
+   |
+20 |     impl CpuTopology {
+   |     ---------------- method in this implementation
+21 |         pub fn get(&self) -> Option<()> {
+   |                ^^^
+
+warning: static `CPU_TOPOLOGY` is never used
+  --> src/stubs.rs:26:16
+   |
+26 |     pub static CPU_TOPOLOGY: CpuTopology = CpuTopology;
+   |                ^^^^^^^^^^^^
+
+warning: constant `GDT_KERNEL_CODE` is never used
+  --> src/stubs.rs:33:15
+   |
+33 |     pub const GDT_KERNEL_CODE: u16 = 0x08;
+   |               ^^^^^^^^^^^^^^^
+
+warning: constant `GDT_USER_CODE32_UNUSED` is never used
+  --> src/stubs.rs:34:15
+   |
+34 |     pub const GDT_USER_CODE32_UNUSED: u16 = 0x18;
+   |               ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `GDT_USER_DATA` is never used
+  --> src/stubs.rs:35:15
+   |
+35 |     pub const GDT_USER_DATA: u16 = 0x20;
+   |               ^^^^^^^^^^^^^
+
+warning: constant `GDT_USER_CODE` is never used
+  --> src/stubs.rs:36:15
+   |
+36 |     pub const GDT_USER_CODE: u16 = 0x28;
+   |               ^^^^^^^^^^^^^
+
+warning: struct `ProcessorControlRegion` is never constructed
+  --> src/stubs.rs:38:16
+   |
+38 |     pub struct ProcessorControlRegion;
+   |                ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `init_bsp` is never used
+  --> src/stubs.rs:40:19
+   |
+40 |     pub unsafe fn init_bsp() {}
+   |                   ^^^^^^^^
+
+warning: function `install_pcr` is never used
+  --> src/stubs.rs:41:19
+   |
+41 |     pub unsafe fn install_pcr(_cpu_id: usize, _region: &ProcessorControlRegion) {}
+   |                   ^^^^^^^^^^^
+
+warning: function `pcr` is never used
+  --> src/stubs.rs:42:12
+   |
+42 |     pub fn pcr() -> &'static ProcessorControlRegion {
+   |            ^^^
+
+warning: function `set_tss_stack` is never used
+  --> src/stubs.rs:46:19
+   |
+46 |     pub unsafe fn set_tss_stack(_index: usize, _stack: usize) {}
+   |                   ^^^^^^^^^^^^^
+
+warning: function `set_userspace_io_allowed` is never used
+  --> src/stubs.rs:47:19
+   |
+47 |     pub unsafe fn set_userspace_io_allowed(_allowed: bool, _pcr: &ProcessorControlRegion) {}
+   |                   ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `FloatRegisters` is never constructed
+  --> src/stubs.rs:54:16
+   |
+54 |     pub struct FloatRegisters {
+   |                ^^^^^^^^^^^^^^
+
+warning: struct `IntRegisters` is never constructed
+  --> src/stubs.rs:60:16
+   |
+60 |     pub struct IntRegisters {
+   |                ^^^^^^^^^^^^
+
+warning: constant `F_DUPFD_CLOEXEC` is never used
+  --> src/stubs.rs:81:15
+   |
+81 |     pub const F_DUPFD_CLOEXEC: i32 = 1030;
+   |               ^^^^^^^^^^^^^^^
+
+warning: function `contexts_mut` is never used
+   --> src/stubs.rs:140:12
+    |
+140 |     pub fn contexts_mut(
+    |            ^^^^^^^^^^^^
+
+warning: function `switch_finish_hook` is never used
+   --> src/stubs.rs:149:12
+    |
+149 |     pub fn switch_finish_hook() {}
+    |            ^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_region` is never used
+   --> src/stubs.rs:175:12
+    |
+175 |     pub fn validate_region(_ptr: usize, _len: usize) -> crate::syscall::error::Result<PageSpan> {
+    |            ^^^^^^^^^^^^^^^
+
+warning: function `exit_this_context` is never used
+   --> src/stubs.rs:182:12
+    |
+182 |     pub fn exit_this_context(_status: usize) -> ! {
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: function `copy_path_to_buf` is never used
+   --> src/stubs.rs:186:12
+    |
+186 |     pub fn copy_path_to_buf(
+    |            ^^^^^^^^^^^^^^^^
+
+warning: struct `ExceptionStack` is never constructed
+   --> src/stubs.rs:197:16
+    |
+197 |     pub struct ExceptionStack {
+    |                ^^^^^^^^^^^^^^
+
+warning: function `divide_by_zero` is never used
+   --> src/stubs.rs:206:30
+    |
+206 |     pub unsafe extern "C" fn divide_by_zero() {}
+    |                              ^^^^^^^^^^^^^^
+
+warning: function `debug` is never used
+   --> src/stubs.rs:207:30
+    |
+207 |     pub unsafe extern "C" fn debug() {}
+    |                              ^^^^^
+
+warning: function `non_maskable` is never used
+   --> src/stubs.rs:208:30
+    |
+208 |     pub unsafe extern "C" fn non_maskable() {}
+    |                              ^^^^^^^^^^^^
+
+warning: function `breakpoint` is never used
+   --> src/stubs.rs:209:30
+    |
+209 |     pub unsafe extern "C" fn breakpoint() {}
+    |                              ^^^^^^^^^^
+
+warning: function `overflow` is never used
+   --> src/stubs.rs:210:30
+    |
+210 |     pub unsafe extern "C" fn overflow() {}
+    |                              ^^^^^^^^
+
+warning: function `bound_range` is never used
+   --> src/stubs.rs:211:30
+    |
+211 |     pub unsafe extern "C" fn bound_range() {}
+    |                              ^^^^^^^^^^^
+
+warning: function `invalid_opcode` is never used
+   --> src/stubs.rs:212:30
+    |
+212 |     pub unsafe extern "C" fn invalid_opcode() {}
+    |                              ^^^^^^^^^^^^^^
+
+warning: function `device_not_available` is never used
+   --> src/stubs.rs:213:30
+    |
+213 |     pub unsafe extern "C" fn device_not_available() {}
+    |                              ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `double_fault` is never used
+   --> src/stubs.rs:214:30
+    |
+214 |     pub unsafe extern "C" fn double_fault() {}
+    |                              ^^^^^^^^^^^^
+
+warning: function `invalid_tss` is never used
+   --> src/stubs.rs:215:30
+    |
+215 |     pub unsafe extern "C" fn invalid_tss() {}
+    |                              ^^^^^^^^^^^
+
+warning: function `segment_not_present` is never used
+   --> src/stubs.rs:216:30
+    |
+216 |     pub unsafe extern "C" fn segment_not_present() {}
+    |                              ^^^^^^^^^^^^^^^^^^^
+
+warning: function `stack_segment` is never used
+   --> src/stubs.rs:217:30
+    |
+217 |     pub unsafe extern "C" fn stack_segment() {}
+    |                              ^^^^^^^^^^^^^
+
+warning: function `protection` is never used
+   --> src/stubs.rs:218:30
+    |
+218 |     pub unsafe extern "C" fn protection() {}
+    |                              ^^^^^^^^^^
+
+warning: function `page` is never used
+   --> src/stubs.rs:219:30
+    |
+219 |     pub unsafe extern "C" fn page() {}
+    |                              ^^^^
+
+warning: function `fpu_fault` is never used
+   --> src/stubs.rs:220:30
+    |
+220 |     pub unsafe extern "C" fn fpu_fault() {}
+    |                              ^^^^^^^^^
+
+warning: function `alignment_check` is never used
+   --> src/stubs.rs:221:30
+    |
+221 |     pub unsafe extern "C" fn alignment_check() {}
+    |                              ^^^^^^^^^^^^^^^
+
+warning: function `machine_check` is never used
+   --> src/stubs.rs:222:30
+    |
+222 |     pub unsafe extern "C" fn machine_check() {}
+    |                              ^^^^^^^^^^^^^
+
+warning: function `simd` is never used
+   --> src/stubs.rs:223:30
+    |
+223 |     pub unsafe extern "C" fn simd() {}
+    |                              ^^^^
+
+warning: function `virtualization` is never used
+   --> src/stubs.rs:224:30
+    |
+224 |     pub unsafe extern "C" fn virtualization() {}
+    |                              ^^^^^^^^^^^^^^
+
+warning: function `security` is never used
+   --> src/stubs.rs:225:30
+    |
+225 |     pub unsafe extern "C" fn security() {}
+    |                              ^^^^^^^^
+
+warning: function `pit_stack` is never used
+   --> src/stubs.rs:230:30
+    |
+230 |     pub unsafe extern "C" fn pit_stack() {}
+    |                              ^^^^^^^^^
+
+warning: function `keyboard` is never used
+   --> src/stubs.rs:231:30
+    |
+231 |     pub unsafe extern "C" fn keyboard() {}
+    |                              ^^^^^^^^
+
+warning: function `cascade` is never used
+   --> src/stubs.rs:232:30
+    |
+232 |     pub unsafe extern "C" fn cascade() {}
+    |                              ^^^^^^^
+
+warning: function `com2` is never used
+   --> src/stubs.rs:233:30
+    |
+233 |     pub unsafe extern "C" fn com2() {}
+    |                              ^^^^
+
+warning: function `com1` is never used
+   --> src/stubs.rs:234:30
+    |
+234 |     pub unsafe extern "C" fn com1() {}
+    |                              ^^^^
+
+warning: function `lpt2` is never used
+   --> src/stubs.rs:235:30
+    |
+235 |     pub unsafe extern "C" fn lpt2() {}
+    |                              ^^^^
+
+warning: function `floppy` is never used
+   --> src/stubs.rs:236:30
+    |
+236 |     pub unsafe extern "C" fn floppy() {}
+    |                              ^^^^^^
+
+warning: function `lpt1` is never used
+   --> src/stubs.rs:237:30
+    |
+237 |     pub unsafe extern "C" fn lpt1() {}
+    |                              ^^^^
+
+warning: function `rtc` is never used
+   --> src/stubs.rs:238:30
+    |
+238 |     pub unsafe extern "C" fn rtc() {}
+    |                              ^^^
+
+warning: function `pci1` is never used
+   --> src/stubs.rs:239:30
+    |
+239 |     pub unsafe extern "C" fn pci1() {}
+    |                              ^^^^
+
+warning: function `pci2` is never used
+   --> src/stubs.rs:240:30
+    |
+240 |     pub unsafe extern "C" fn pci2() {}
+    |                              ^^^^
+
+warning: function `pci3` is never used
+   --> src/stubs.rs:241:30
+    |
+241 |     pub unsafe extern "C" fn pci3() {}
+    |                              ^^^^
+
+warning: function `mouse` is never used
+   --> src/stubs.rs:242:30
+    |
+242 |     pub unsafe extern "C" fn mouse() {}
+    |                              ^^^^^
+
+warning: function `fpu` is never used
+   --> src/stubs.rs:243:30
+    |
+243 |     pub unsafe extern "C" fn fpu() {}
+    |                              ^^^
+
+warning: function `ata1` is never used
+   --> src/stubs.rs:244:30
+    |
+244 |     pub unsafe extern "C" fn ata1() {}
+    |                              ^^^^
+
+warning: function `ata2` is never used
+   --> src/stubs.rs:245:30
+    |
+245 |     pub unsafe extern "C" fn ata2() {}
+    |                              ^^^^
+
+warning: function `lapic_timer` is never used
+   --> src/stubs.rs:246:30
+    |
+246 |     pub unsafe extern "C" fn lapic_timer() {}
+    |                              ^^^^^^^^^^^
+
+warning: function `lapic_error` is never used
+   --> src/stubs.rs:247:30
+    |
+247 |     pub unsafe extern "C" fn lapic_error() {}
+    |                              ^^^^^^^^^^^
+
+warning: function `wakeup` is never used
+   --> src/stubs.rs:252:30
+    |
+252 |     pub unsafe extern "C" fn wakeup() {}
+    |                              ^^^^^^
+
+warning: function `switch` is never used
+   --> src/stubs.rs:253:30
+    |
+253 |     pub unsafe extern "C" fn switch() {}
+    |                              ^^^^^^
+
+warning: function `tlb` is never used
+   --> src/stubs.rs:254:30
+    |
+254 |     pub unsafe extern "C" fn tlb() {}
+    |                              ^^^
+
+warning: function `pit` is never used
+   --> src/stubs.rs:255:30
+    |
+255 |     pub unsafe extern "C" fn pit() {}
+    |                              ^^^
+
+warning: struct `TimeSpec` is never constructed
+   --> src/stubs.rs:269:16
+    |
+269 |     pub struct TimeSpec {
+    |                ^^^^^^^^
+
+warning: associated function `new` is never used
+  --> src/sync/mod.rs:50:18
+   |
+49 | impl<T> Mutex<T> {
+   | ---------------- associated function in this implementation
+50 |     pub const fn new(user_data: T) -> Self {
+   |                  ^^^
+
+warning: method `notify_boosted` is never used
+  --> src/sync/wait_condition.rs:52:12
+   |
+18 | impl WaitCondition {
+   | ------------------ method in this implementation
+...
+52 |     pub fn notify_boosted(&self, token: &mut CleanLockToken) -> usize {
+   |            ^^^^^^^^^^^^^^
+
+warning: methods `is_currently_empty` and `receive_into_user` are never used
+  --> src/sync/wait_queue.rs:48:12
+   |
+41 | impl<T> WaitQueue<T> {
+   | -------------------- methods in this implementation
+...
+48 |     pub fn is_currently_empty(&self) -> bool {
+   |            ^^^^^^^^^^^^^^^^^^
+...
+79 |     pub fn receive_into_user(
+   |            ^^^^^^^^^^^^^^^^^
+
+warning: methods `dequeue` and `len_approx` are never used
+  --> src/sync/lockfree_queue.rs:52:12
+   |
+34 | impl<T> LockFreeQueue<T> {
+   | ------------------------ methods in this implementation
+...
+52 |     pub fn dequeue(&self) -> Option<T> {
+   |            ^^^^^^^
+...
+63 |     pub fn len_approx(&self) -> usize {
+   |            ^^^^^^^^^^
+
+warning: methods `receive` and `len` are never used
+   --> src/sync/optimized_wait_queue.rs:45:12
+    |
+ 26 | impl<T> OptimizedWaitQueue<T> {
+    | ----------------------------- methods in this implementation
+...
+ 45 |     pub fn receive(
+    |            ^^^^^^^
+...
+158 |     pub fn len(&self) -> usize {
+    |            ^^^
+
+warning: method `receive_into_user` is never used
+   --> src/sync/optimized_wait_queue.rs:170:12
+    |
+169 | impl<T: Copy> OptimizedWaitQueue<T> {
+    | ----------------------------------- method in this implementation
+170 |     pub fn receive_into_user(
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: variants `Realtime` and `High` are never constructed
+  --> src/sync/priority.rs:16:5
+   |
+14 | pub enum Priority {
+   |          -------- variants in this enum
+15 |     /// Real-time critical (IPC servers, interrupt handlers)
+16 |     Realtime = 0,
+   |     ^^^^^^^^
+17 |     /// High priority (IPC completion boost)
+18 |     High = 64,
+   |     ^^^^
+   |
+   = note: `Priority` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: associated items `from_u8` and `as_u8` are never used
+  --> src/sync/priority.rs:27:12
+   |
+25 | impl Priority {
+   | ------------- associated items in this implementation
+26 |     #[inline]
+27 |     pub fn from_u8(val: u8) -> Self {
+   |            ^^^^^^^
+...
+37 |     pub fn as_u8(self) -> u8 {
+   |            ^^^^^
+
+warning: field `ipc_critical_count` is never read
+  --> src/sync/priority.rs:54:5
+   |
+44 | pub struct PriorityTracker {
+   |            --------------- field in this struct
+...
+54 |     ipc_critical_count: AtomicU8,
+   |     ^^^^^^^^^^^^^^^^^^
+   |
+   = note: `PriorityTracker` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: methods `boost_for_ipc`, `enter_ipc_critical`, `exit_ipc_critical`, `is_ipc_critical`, and `set_base_priority` are never used
+   --> src/sync/priority.rs:106:12
+    |
+ 57 | impl PriorityTracker {
+    | -------------------- methods in this implementation
+...
+106 |     pub fn boost_for_ipc(&self, duration_cycles: u64) {
+    |            ^^^^^^^^^^^^^
+...
+123 |     pub fn enter_ipc_critical(&self) {
+    |            ^^^^^^^^^^^^^^^^^^
+...
+135 |     pub fn exit_ipc_critical(&self) {
+    |            ^^^^^^^^^^^^^^^^^
+...
+143 |     pub fn is_ipc_critical(&self) -> bool {
+    |            ^^^^^^^^^^^^^^^
+...
+168 |     pub fn set_base_priority(&mut self, priority: Priority) {
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: struct `IpcCriticalGuard` is never constructed
+   --> src/sync/priority.rs:184:12
+    |
+184 | pub struct IpcCriticalGuard<'a> {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: associated function `new` is never used
+   --> src/sync/priority.rs:189:12
+    |
+188 | impl<'a> IpcCriticalGuard<'a> {
+    | ----------------------------- associated function in this implementation
+189 |     pub fn new(tracker: &'a PriorityTracker) -> Self {
+    |            ^^^
+
+warning: method `format_call` is never used
+ --> src/syscall/debug.rs:9:12
+  |
+8 | impl SyscallDebugInfo {
+  | --------------------- method in this implementation
+9 |     pub fn format_call(
+  |            ^^^^^^^^^^^
+
+warning: function `file_op_generic` is never used
+  --> src/syscall/fs.rs:22:8
+   |
+22 | pub fn file_op_generic<T>(
+   |        ^^^^^^^^^^^^^^^
+
+warning: function `file_op_generic_ext` is never used
+  --> src/syscall/fs.rs:29:8
+   |
+29 | pub fn file_op_generic_ext<T>(
+   |        ^^^^^^^^^^^^^^^^^^^
+
+warning: function `copy_path_to_buf` is never used
+  --> src/syscall/fs.rs:54:8
+   |
+54 | pub fn copy_path_to_buf(raw_path: UserSliceRo, max_len: usize) -> Result<String> {
+   |        ^^^^^^^^^^^^^^^^
+
+warning: constant `PATH_MAX` is never used
+  --> src/syscall/fs.rs:65:7
+   |
+65 | const PATH_MAX: usize = PAGE_SIZE;
+   |       ^^^^^^^^
+
+warning: function `is_legacy` is never used
+  --> src/syscall/fs.rs:68:4
+   |
+68 | fn is_legacy(path_buf: &String) -> bool {
+   |    ^^^^^^^^^
+
+warning: function `open` is never used
+  --> src/syscall/fs.rs:77:8
+   |
+77 | pub fn open(raw_path: UserSliceRo, flags: usize, token: &mut CleanLockToken) -> Result<FileHandle> {
+   |        ^^^^
+
+warning: constant `F_DUPFD_CLOEXEC` is never used
+   --> src/syscall/fs.rs:142:11
+    |
+142 | pub const F_DUPFD_CLOEXEC: usize = 1030;
+    |           ^^^^^^^^^^^^^^^
+
+warning: function `openat` is never used
+   --> src/syscall/fs.rs:144:8
+    |
+144 | pub fn openat(
+    |        ^^^^^^
+
+warning: function `rmdir` is never used
+   --> src/syscall/fs.rs:206:8
+    |
+206 | pub fn rmdir(raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^
+
+warning: function `unlink` is never used
+   --> src/syscall/fs.rs:232:8
+    |
+232 | pub fn unlink(raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^^
+
+warning: function `close` is never used
+   --> src/syscall/fs.rs:257:8
+    |
+257 | pub fn close(fd: FileHandle, token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^
+
+warning: function `duplicate_file` is never used
+   --> src/syscall/fs.rs:267:4
+    |
+267 | fn duplicate_file(
+    |    ^^^^^^^^^^^^^^
+
+warning: function `dup` is never used
+   --> src/syscall/fs.rs:319:8
+    |
+319 | pub fn dup(fd: FileHandle, buf: UserSliceRo, token: &mut CleanLockToken) -> Result<FileHandle> {
+    |        ^^^
+
+warning: function `dup2` is never used
+   --> src/syscall/fs.rs:329:8
+    |
+329 | pub fn dup2(
+    |        ^^^^
+
+warning: function `call` is never used
+   --> src/syscall/fs.rs:349:8
+    |
+349 | pub fn call(
+    |        ^^^^
+
+warning: function `call_normal` is never used
+   --> src/syscall/fs.rs:374:4
+    |
+374 | fn call_normal(
+    |    ^^^^^^^^^^^
+
+warning: function `call_fdwrite` is never used
+   --> src/syscall/fs.rs:401:4
+    |
+401 | fn call_fdwrite(
+    |    ^^^^^^^^^^^^
+
+warning: function `fdwrite_inner` is never used
+   --> src/syscall/fs.rs:423:4
+    |
+423 | fn fdwrite_inner(
+    |    ^^^^^^^^^^^^^
+
+warning: function `call_fdread` is never used
+   --> src/syscall/fs.rs:478:4
+    |
+478 | fn call_fdread(
+    |    ^^^^^^^^^^^
+
+warning: function `sendfd` is never used
+   --> src/syscall/fs.rs:503:8
+    |
+503 | pub fn sendfd(
+    |        ^^^^^^
+
+warning: function `fcntl` is never used
+   --> src/syscall/fs.rs:522:8
+    |
+522 | pub fn fcntl(fd: FileHandle, cmd: usize, arg: usize, token: &mut CleanLockToken) -> Result<usize> {
+    |        ^^^^^
+
+warning: function `flink` is never used
+   --> src/syscall/fs.rs:588:8
+    |
+588 | pub fn flink(fd: FileHandle, raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^
+
+warning: function `frename` is never used
+   --> src/syscall/fs.rs:624:8
+    |
+624 | pub fn frename(fd: FileHandle, raw_path: UserSliceRo, token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^^^
+
+warning: function `fstat` is never used
+   --> src/syscall/fs.rs:661:8
+    |
+661 | pub fn fstat(fd: FileHandle, user_buf: UserSliceWo, token: &mut CleanLockToken) -> Result<()> {
+    |        ^^^^^
+
+warning: function `funmap` is never used
+   --> src/syscall/fs.rs:683:8
+    |
+683 | pub fn funmap(virtual_address: usize, length: usize, token: &mut CleanLockToken) -> Result<usize> {
+    |        ^^^^^^
+
+warning: function `mremap` is never used
+   --> src/syscall/fs.rs:711:8
+    |
+711 | pub fn mremap(
+    |        ^^^^^^
+
+warning: function `lseek` is never used
+   --> src/syscall/fs.rs:798:8
+    |
+798 | pub fn lseek(fd: FileHandle, pos: i64, whence: usize, token: &mut CleanLockToken) -> Result<usize> {
+    |        ^^^^^
+
+warning: function `sys_read` is never used
+   --> src/syscall/fs.rs:835:8
+    |
+835 | pub fn sys_read(fd: FileHandle, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
+    |        ^^^^^^^^
+
+warning: function `sys_write` is never used
+   --> src/syscall/fs.rs:855:8
+    |
+855 | pub fn sys_write(fd: FileHandle, buf: UserSliceRo, token: &mut CleanLockToken) -> Result<usize> {
+    |        ^^^^^^^^^
+
+warning: function `sys_mlock` is never used
+   --> src/syscall/fs.rs:877:8
+    |
+877 | pub fn sys_mlock(addr: usize, len: usize, token: &mut CleanLockToken) -> Result<usize> {
+    |        ^^^^^^^^^
+
+warning: function `sys_munlock` is never used
+   --> src/syscall/fs.rs:892:8
+    |
+892 | pub fn sys_munlock(addr: usize, len: usize, token: &mut CleanLockToken) -> Result<usize> {
+    |        ^^^^^^^^^^^
+
+warning: constant `FUTEX_WAIT_BITSET` is never used
+  --> src/syscall/futex.rs:50:7
+   |
+50 | const FUTEX_WAIT_BITSET: usize = 9;
+   |       ^^^^^^^^^^^^^^^^^
+
+warning: field `waiter_priority` is never read
+  --> src/syscall/futex.rs:77:5
+   |
+69 | pub struct FutexEntry {
+   |            ---------- field in this struct
+...
+77 |     waiter_priority: u8,
+   |     ^^^^^^^^^^^^^^^
+
+warning: field `original_priority` is never read
+  --> src/syscall/futex.rs:87:5
+   |
+83 | pub struct FutexOwner {
+   |            ---------- field in this struct
+...
+87 |     original_priority: u8,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: function `restore_priority_on_wake` is never used
+   --> src/syscall/futex.rs:203:4
+    |
+203 | fn restore_priority_on_wake(
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `sys_mlockall` is never used
+  --> src/syscall/memory.rs:14:8
+   |
+14 | pub fn sys_mlockall(flags: usize) -> Result<usize> {
+   |        ^^^^^^^^^^^^
+
+warning: function `sys_munlockall` is never used
+  --> src/syscall/memory.rs:23:8
+   |
+23 | pub fn sys_munlockall() -> Result<usize> {
+   |        ^^^^^^^^^^^^^^
+
+warning: function `mkns` is never used
+  --> src/syscall/privilege.rs:10:8
+   |
+10 | pub fn mkns(mut user_buf: UserSliceRo, token: &mut CleanLockToken) -> Result<usize> {
+   |        ^^^^
+
+warning: function `exit_this_context` is never used
+  --> src/syscall/process.rs:29:8
+   |
+29 | pub fn exit_this_context(excp: Option<syscall::Exception>, token: &mut CleanLockToken) -> ! {
+   |        ^^^^^^^^^^^^^^^^^
+
+warning: function `mprotect` is never used
+  --> src/syscall/process.rs:70:8
+   |
+70 | pub fn mprotect(
+   |        ^^^^^^^^
+
+warning: constant `CLOCK_REALTIME` is never used
+ --> src/syscall/time.rs:6:11
+  |
+6 | pub const CLOCK_REALTIME: usize = 0;
+  |           ^^^^^^^^^^^^^^
+
+warning: constant `CLOCK_MONOTONIC` is never used
+ --> src/syscall/time.rs:7:11
+  |
+7 | pub const CLOCK_MONOTONIC: usize = 1;
+  |           ^^^^^^^^^^^^^^^
+
+warning: function `clock_gettime` is never used
+ --> src/syscall/time.rs:9:8
+  |
+9 | pub fn clock_gettime(clock_id: usize, time: &mut time::TimeSpec) -> Result<usize> {
+  |        ^^^^^^^^^^^^^
+
+warning: methods `read_u32`, `read_u64`, and `usizes` are never used
+   --> src/syscall/usercopy.rs:141:12
+    |
+ 96 | impl<const WRITE: bool> UserSlice<true, WRITE> {
+    | ---------------------------------------------- methods in this implementation
+...
+141 |     pub fn read_u32(self) -> Result<u32> {
+    |            ^^^^^^^^
+...
+148 |     pub fn read_u64(self) -> Result<u64> {
+    |            ^^^^^^^^
+...
+155 |     pub fn usizes(self) -> impl Iterator<Item = Result<usize>> {
+    |            ^^^^^^
+
+warning: function `validate_region` is never used
+   --> src/syscall/usercopy.rs:231:8
+    |
+231 | pub fn validate_region(address: usize, size: usize) -> Result<PageSpan> {
+    |        ^^^^^^^^^^^^^^^
+
+warning: function `thread_set_affinity` is never used
+  --> src/topology/mod.rs:12:8
+   |
+12 | pub fn thread_set_affinity(
+   |        ^^^^^^^^^^^^^^^^^^^
+
+For more information about this error, try `rustc --explain E0133`.
+warning: `kernel` (bin "kernel") generated 585 warnings (run `cargo fix --bin "kernel"` to apply 76 suggestions)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 1.16s

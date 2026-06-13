@@ -11,6 +11,7 @@ pub mod flags;
 pub mod interrupt;
 pub mod macros;
 pub mod misc;
+pub mod orc_unwinder;
 pub mod npt;
 pub mod svm;
 pub mod vmx;

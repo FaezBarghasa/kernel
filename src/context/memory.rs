@@ -237,6 +237,10 @@ impl Grant {
         self.phys = Some(raii);
     }
 
+    pub fn clear_phys(&mut self) -> Option<RaiiFrame> {
+        self.phys.take()
+    }
+
     pub fn unmap(mut self) {
         drop(self.phys.take());
     }
@@ -317,27 +321,48 @@ pub fn try_correcting_page_tables(
     let current_context_ref = crate::context::current();
     let current_context_guard = current_context_ref.read(token.token());
 
-    if current_context_guard.memory_locked_count > 0 {
-        if let Some(addr_space) = current_context_guard.addr_space.as_ref() {
-            let mut inner = addr_space.inner.write();
-            if let Some(grant) = inner.grants.get_mut(&faulting_page) {
-                if grant.locked {
-                    // Page is locked and not present, so we need to make it present
-                    if grant.phys.is_none() {
-                        let frame = memory::allocate_frame().ok_or(PfError::Oom)?;
-                        grant.set_phys(frame);
-                        let mut kernel_mapper = crate::memory::KernelMapper::lock();
-                        let mapper = kernel_mapper
-                            .get_mut()
-                            .expect("failed to lock kernel mapper");
-                        unsafe {
-                            mapper
-                                .map_phys(faulting_page.start_address(), frame.base(), grant.flags)
-                                .ok_or(PfError::Oom)?
-                                .flush();
-                        }
-                        return Ok(());
+    if let Some(addr_space) = current_context_guard.addr_space.as_ref() {
+        let mut inner = addr_space.inner.write();
+        if let Some(grant) = inner.grants.get_mut(&faulting_page) {
+            // Check if swapped to zram first
+            if let Provider::ZramSwapped { zram_idx, flags } = grant.provider {
+                let frame = memory::allocate_frame().ok_or(PfError::Oom)?;
+                let phys_addr = frame.base();
+                if crate::memory::mglru::swap_in(zram_idx, phys_addr) {
+                    let mut kernel_mapper = crate::memory::KernelMapper::lock();
+                    let mapper = kernel_mapper
+                        .get_mut()
+                        .expect("failed to lock kernel mapper");
+                    unsafe {
+                        mapper
+                            .map_phys(faulting_page.start_address(), phys_addr, flags)
+                            .ok_or(PfError::Oom)?
+                            .flush();
                     }
+                    grant.phys = Some(unsafe { RaiiFrame::new_unchecked(frame) });
+                    grant.provider = Provider::Allocated { flags };
+                    return Ok(());
+                } else {
+                    return Err(PfError::NonfatalInternalError);
+                }
+            }
+
+            if grant.locked {
+                // Page is locked and not present, so we need to make it present
+                if grant.phys.is_none() {
+                    let frame = memory::allocate_frame().ok_or(PfError::Oom)?;
+                    grant.set_phys(frame);
+                    let mut kernel_mapper = crate::memory::KernelMapper::lock();
+                    let mapper = kernel_mapper
+                        .get_mut()
+                        .expect("failed to lock kernel mapper");
+                    unsafe {
+                        mapper
+                            .map_phys(faulting_page.start_address(), frame.base(), grant.flags)
+                            .ok_or(PfError::Oom)?
+                            .flush();
+                    }
+                    return Ok(());
                 }
             }
         }
@@ -739,7 +764,6 @@ impl PageSpan {
         })
     }
 }
-
 pub use crate::arch::paging::TlbShootdownActions;
 
 #[derive(Debug)]
@@ -748,9 +772,9 @@ pub enum Provider {
     PhysBorrowed { base: Frame },
     External { address: usize, size: usize },
     FmapBorrowed { file_ref: GrantFileRef },
+    ZramSwapped { zram_idx: usize, flags: PageFlags<RmmA> },
 }
 
-#[derive(Debug)]
 pub struct BorrowedFmapSource<'a> {
     pub src_base: Page,
     pub addr_space_lock: Arc<AddrSpaceWrapper>,

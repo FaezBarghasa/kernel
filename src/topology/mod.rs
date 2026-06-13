@@ -7,6 +7,7 @@ use crate::{
 };
 
 pub use crate::stubs::topology::*;
+pub mod faez_governor;
 
 pub fn thread_set_affinity(
     pid: usize,

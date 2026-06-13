@@ -41,6 +41,18 @@ SECTIONS {
         __altfeatures_end = .;
     }
 
+    .orc_unwind ALIGN(4) : AT(ADDR(.orc_unwind) - KERNEL_OFFSET) {
+        __start_orc_unwind = .;
+        KEEP(*(.orc_unwind))
+        __stop_orc_unwind = .;
+    }
+
+    .orc_unwind_ip ALIGN(4) : AT(ADDR(.orc_unwind_ip) - KERNEL_OFFSET) {
+        __start_orc_unwind_ip = .;
+        KEEP(*(.orc_unwind_ip))
+        __stop_orc_unwind_ip = .;
+    }
+
     .data ALIGN(4K) : AT(ADDR(.data) - KERNEL_OFFSET) {
         __rodata_end = .;
         *(.data*)

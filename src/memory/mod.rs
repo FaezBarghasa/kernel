@@ -3,6 +3,8 @@
 
 mod kernel_mapper;
 pub mod model;
+pub mod mglru;
+pub mod mthp;
 
 use core::{
     cell::SyncUnsafeCell,
@@ -818,4 +820,110 @@ pub fn munlockall() -> Result<(), Error> {
 
     context.mlock = 0;
     Ok(())
+}
+
+pub fn copy_page_to_slice(phys_addr: PhysicalAddress, dest: &mut [u8]) {
+    unsafe {
+        let src = RmmA::phys_to_virt(phys_addr).data() as *const u8;
+        core::ptr::copy_nonoverlapping(src, dest.as_mut_ptr(), PAGE_SIZE);
+    }
+}
+
+pub fn copy_slice_to_page(src: &[u8], phys_addr: PhysicalAddress) {
+    unsafe {
+        let dest = RmmA::phys_to_virt(phys_addr).data() as *mut u8;
+        core::ptr::copy_nonoverlapping(src.as_ptr(), dest, PAGE_SIZE);
+    }
+}
+
+pub fn remap_page_flags(
+    mapper: &mut rmm::PageMapper<RmmA, TheFrameAllocator>,
+    virt: VirtualAddress,
+    flags: PageFlags<RmmA>,
+) -> Option<rmm::PageFlush<RmmA>> {
+    unsafe {
+        mapper.remap(virt, flags)
+    }
+}
+
+pub fn unmap_page(
+    mapper: &mut rmm::PageMapper<RmmA, TheFrameAllocator>,
+    virt: VirtualAddress,
+) -> Option<rmm::PageFlush<RmmA>> {
+    unsafe {
+        mapper.unmap(virt, false)
+    }
+}
+
+pub fn map_page(
+    mapper: &mut rmm::PageMapper<RmmA, TheFrameAllocator>,
+    virt: VirtualAddress,
+    phys: PhysicalAddress,
+    flags: PageFlags<RmmA>,
+) -> Option<rmm::PageFlush<RmmA>> {
+    unsafe {
+        mapper.map_phys(virt, phys, flags)
+    }
+}
+
+pub fn map_huge_page(
+    mapper: &mut rmm::PageMapper<RmmA, TheFrameAllocator>,
+    virt: VirtualAddress,
+    phys: PhysicalAddress,
+    flags: PageFlags<RmmA>,
+) -> Option<rmm::PageFlush<RmmA>> {
+    unsafe {
+        let huge_flags = flags.custom_flag(crate::paging::entry::EntryFlags::HUGE_PAGE.bits(), true);
+        mapper.map_phys(virt, phys, huge_flags)
+    }
+}
+
+pub fn copy_pages_contiguous(src_phys: &[PhysicalAddress], dst_phys: PhysicalAddress) {
+    unsafe {
+        let dest = RmmA::phys_to_virt(dst_phys).data() as *mut u8;
+        for (i, &src_addr) in src_phys.iter().enumerate() {
+            let src = RmmA::phys_to_virt(src_addr).data() as *const u8;
+            core::ptr::copy_nonoverlapping(src, dest.add(i * PAGE_SIZE), PAGE_SIZE);
+        }
+    }
+}
+
+pub fn shootdown_tlb_for_cpu(cpu_id: crate::cpu_set::LogicalCpuId) {
+    if cpu_id == crate::cpu_id() {
+        return;
+    }
+    let ptr = crate::percpu::ALL_PERCPU_BLOCKS[cpu_id.get() as usize].load(core::sync::atomic::Ordering::Acquire);
+    if !ptr.is_null() {
+        unsafe {
+            let target = &*ptr;
+            crate::arch::ipi::ipi_single(crate::arch::ipi::IpiKind::Tlb, target);
+        }
+    }
+}
+
+pub fn yield_now() {
+    let mut token = unsafe { CleanLockToken::new() };
+    unsafe {
+        let _ = crate::context::switch(&mut token);
+    }
+}
+
+pub fn with_clean_lock_token<F, R>(f: F) -> R
+where
+    F: FnOnce(&mut CleanLockToken) -> R,
+{
+    let mut token = unsafe { CleanLockToken::new() };
+    f(&mut token)
+}
+
+pub fn deallocate_frame_safe(frame: Frame) {
+    unsafe {
+        deallocate_frame(frame);
+    }
+}
+
+pub fn deallocate_p2frame_safe(frame: Frame, order: u32) {
+    unsafe {
+        deallocate_p2frame(frame, order);
+    }
 }

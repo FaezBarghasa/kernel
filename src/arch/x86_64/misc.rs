@@ -36,3 +36,51 @@ pub unsafe fn init(cpu_id: LogicalCpuId) {
         }
     }
 }
+
+pub fn write_hwp_request(val: u64) {
+    #[cfg(target_arch = "x86_64")]
+    unsafe {
+        x86::msr::wrmsr(0x774, val);
+    }
+}
+
+pub fn write_cppc_request(val: u64) {
+    #[cfg(target_arch = "x86_64")]
+    unsafe {
+        x86::msr::wrmsr(0xC00102B3, val);
+    }
+}
+
+pub fn read_stack_ptr(addr: usize) -> Option<usize> {
+    if addr % 8 != 0 {
+        return None;
+    }
+    unsafe {
+        Some(*(addr as *const usize))
+    }
+}
+
+unsafe extern "C" {
+    static __start_orc_unwind: u8;
+    static __stop_orc_unwind: u8;
+    static __start_orc_unwind_ip: u8;
+    static __stop_orc_unwind_ip: u8;
+}
+
+pub fn get_orc_unwind_slice() -> &'static [u8] {
+    unsafe {
+        let start = &__start_orc_unwind as *const u8;
+        let stop = &__stop_orc_unwind as *const u8;
+        let len = stop.offset_from(start) as usize;
+        core::slice::from_raw_parts(start, len)
+    }
+}
+
+pub fn get_orc_unwind_ip_slice() -> &'static [i32] {
+    unsafe {
+        let start = &__start_orc_unwind_ip as *const u8 as *const i32;
+        let stop = &__stop_orc_unwind_ip as *const u8 as *const i32;
+        let len = stop.offset_from(start) as usize;
+        core::slice::from_raw_parts(start, len)
+    }
+}

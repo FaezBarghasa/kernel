@@ -81,6 +81,24 @@ pub trait ExtSchedulerOps: Send + Sync {
 
 pub static EXT_SCHEDULER: RwLock<Option<Arc<dyn ExtSchedulerOps>>> = RwLock::new(None);
 
+pub struct IpcScheduler {
+    pub fd: usize,
+    pub queue: Arc<crossbeam_queue::SegQueue<ContextRef>>,
+}
+
+impl ExtSchedulerOps for IpcScheduler {
+    fn enqueue(&self, context: ContextRef) -> bool {
+        self.queue.push(context);
+        true
+    }
+    fn dequeue(&self, _context_id: usize) {
+        // No-op
+    }
+    fn select_next(&self, _cpu_id: LogicalCpuId) -> Option<ContextRef> {
+        self.queue.pop()
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CacheDomain {
     CacheRich,
@@ -359,7 +377,7 @@ impl RunQueue {
             }
         } else {
             // EEVDF: Calculate initial virtual deadline if it's currently 0 or behind monotonic time.
-            let now = monotonic();
+            let now = monotonic() as u64;
             let computed_vdeadline = if vdeadline < now {
                 let weight_div = if weight == 0 { 1 } else { weight };
                 let slice_factor = (BASE_TIME_SLICE_NS.saturating_mul(1024)) / weight_div;
@@ -371,7 +389,7 @@ impl RunQueue {
             // Store back to the context
             context_ref.write(token.token()).virtual_deadline = computed_vdeadline;
 
-            let enqueued = self.non_rt_ring.enqueue(context_ref, computed_vdeadline, priority);
+            let enqueued = self.non_rt_ring.enqueue(context_ref, id, computed_vdeadline, priority);
             if enqueued {
                 self.needs_preempt.store(true, Ordering::Release);
             }
@@ -402,6 +420,28 @@ impl RunQueue {
                     return Some(entry.context);
                 }
             }
+        }
+
+        // Try EXT_SCHEDULER if registered
+        let mut fallback = false;
+        let ext_sched_opt = {
+            let guard = EXT_SCHEDULER.read();
+            guard.clone()
+        };
+        if let Some(ext_sched) = ext_sched_opt {
+            let start = monotonic() as u64;
+            let res = ext_sched.select_next(crate::cpu_id());
+            let duration = (monotonic() as u64).saturating_sub(start);
+            if duration > 500_000 {
+                fallback = true;
+            } else if let Some(ctx_ref) = res {
+                return Some(ctx_ref);
+            }
+        }
+        if fallback {
+            let mut guard = EXT_SCHEDULER.write();
+            *guard = None;
+            log::warn!("ExtScheduler exceeded time budget. Falling back to EEVDF.");
         }
 
         // Try Non-RT queue with earliest EEVDF deadline
@@ -570,6 +610,8 @@ impl Scheduler {
             self.handle_current_context(&current_ctx_ref, token);
         }
 
+        crate::topology::faez_governor::monitor_and_scale(crate::cpu_id());
+
         // 1. Unconditionally try load balancing if the queue is empty
         if self.run_queue.len() == 0 {
             self.perform_work_stealing();
@@ -666,15 +708,15 @@ impl Scheduler {
             let priority = current_ctx.priority.effective_priority();
             let weight = RunQueue::priority_to_weight(priority);
             let weight_div = if weight == 0 { 1 } else { weight };
-            let virtual_time_increase = (time_spent.saturating_mul(1024)) / weight_div;
+            let virtual_time_increase = (time_spent.saturating_mul(1024)) / (weight_div as u128);
 
-            if current_ctx.virtual_deadline < now {
+            if (current_ctx.virtual_deadline as u128) < now {
                 let slice_factor = (BASE_TIME_SLICE_NS.saturating_mul(1024)) / weight_div;
-                current_ctx.virtual_deadline = now.saturating_add(slice_factor);
+                current_ctx.virtual_deadline = (now as u64).saturating_add(slice_factor);
             } else {
                 current_ctx.virtual_deadline = current_ctx
                     .virtual_deadline
-                    .saturating_add(virtual_time_increase);
+                    .saturating_add(virtual_time_increase as u64);
             }
         }
 

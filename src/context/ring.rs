@@ -9,6 +9,7 @@ use crate::context::ContextRef;
 /// A single entry in the ContextRing.
 pub struct ContextRingEntry {
     pub context: ContextRef,
+    pub id: usize,
     pub vdeadline: u64,
     pub priority: u8,
 }
@@ -36,7 +37,7 @@ impl ContextRing {
 
     /// Enqueues a context into the ring.
     /// Returns true if successfully enqueued, false if the ring is full.
-    pub fn enqueue(&self, context: ContextRef, vdeadline: u64, priority: u8) -> bool {
+    pub fn enqueue(&self, context: ContextRef, id: usize, vdeadline: u64, priority: u8) -> bool {
         let tail = self.tail.fetch_add(1, Ordering::Relaxed);
         let start_idx = tail % 256;
 
@@ -46,6 +47,7 @@ impl ContextRing {
                 if slot.is_none() {
                     *slot = Some(ContextRingEntry {
                         context,
+                        id,
                         vdeadline,
                         priority,
                     });
@@ -117,7 +119,7 @@ impl ContextRing {
         for idx in 0..256 {
             if let Some(mut slot) = self.slots[idx].try_lock() {
                 let matches = if let Some(entry) = &*slot {
-                    entry.context.id() == context_id
+                    entry.id == context_id
                 } else {
                     false
                 };
@@ -182,5 +184,24 @@ impl ContextRing {
     /// Returns true if empty.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    /// Returns the average virtual deadline of runnable contexts in the ring.
+    pub fn average_vruntime(&self) -> u64 {
+        let mut sum = 0;
+        let mut count = 0;
+        for idx in 0..256 {
+            if let Some(slot) = self.slots[idx].try_lock() {
+                if let Some(entry) = &*slot {
+                    sum += entry.vdeadline;
+                    count += 1;
+                }
+            }
+        }
+        if count == 0 {
+            0
+        } else {
+            sum / count
+        }
     }
 }

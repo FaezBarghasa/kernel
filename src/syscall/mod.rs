@@ -66,12 +66,15 @@ pub fn syscall(number: usize, a: usize, b: usize, c: usize, d: usize, e: usize, 
         return Error::mux(res);
     }
 
+    pub const SYS_SCHED_SET_SCHEDULER: usize = 1001;
+
     // Native Redox syscall dispatch
     let res = match number {
         number::SYS_FUTEX => futex::futex(a, b, c, d, e, &mut token),
         // Linux uses 449 for futex_waitv on x86_64, but Redox might use a different number.
         // We will assume 449 for now or a new constant if defined.
         449 => futex::futex_waitv(a, b, c, d, e, &mut token),
+        SYS_SCHED_SET_SCHEDULER => process::sys_sched_set_scheduler(a, &mut token),
 
         // TODO: Uncomment when SYS_MLOCKALL and SYS_MUNLOCKALL are added to redox_syscall crate
         // number::SYS_MLOCKALL => memory::sys_mlockall(a),

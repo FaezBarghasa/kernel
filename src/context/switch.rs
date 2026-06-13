@@ -32,8 +32,15 @@ pub unsafe fn switch(token: &mut CleanLockToken) -> SwitchResult {
         if next_context_id == current_context_id {
             // If the same context is scheduled, just ensure the timer is set for its next event
             let next_wake_time = next_context_ref.read(token.token()).wake;
-            if let Some(wake_time) = next_wake_time {
-                time::set_next_timer_event(wake_time as u64);
+            let mut next_timer = next_wake_time.map(|w| w as u64);
+            let sched_timer = scheduler::scheduler().get_next_timer();
+            if let Some(st) = sched_timer {
+                if next_timer.is_none() || st < next_timer.unwrap() {
+                    next_timer = Some(st);
+                }
+            }
+            if let Some(timer) = next_timer {
+                time::set_next_timer_event(timer);
             }
             return SwitchResult::Switched;
         }
@@ -52,10 +59,16 @@ pub unsafe fn switch(token: &mut CleanLockToken) -> SwitchResult {
         let mut next_guard = next_context_ref.write(token.token());
         next_guard.cpu_id = Some(cpu_id);
 
-        // Set the timer for the next context's wake time
-        let next_wake_time = next_guard.wake;
-        if let Some(wake_time) = next_wake_time {
-            time::set_next_timer_event(wake_time as u64);
+        // Set the timer for the next context's wake time or scheduler deadline
+        let mut next_timer = next_guard.wake.map(|w| w as u64);
+        let sched_timer = scheduler::scheduler().get_next_timer();
+        if let Some(st) = sched_timer {
+            if next_timer.is_none() || st < next_timer.unwrap() {
+                next_timer = Some(st);
+            }
+        }
+        if let Some(timer) = next_timer {
+            time::set_next_timer_event(timer);
         }
 
         if let Some(prev_lock) = prev_context_lock {

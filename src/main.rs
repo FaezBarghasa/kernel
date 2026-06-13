@@ -154,6 +154,28 @@ fn kmain(bootstrap: Bootstrap) -> ! {
             panic!("failed to spawn kmain_reaper: {:?}", err);
         }
     }
+    match context::spawn(false, owner.clone(), || crate::memory::mglru::mglru_daemon(), &mut token) {
+        Ok(context_lock) => {
+            let mut context = context_lock.write(token.token());
+            context.status = context::Status::Runnable;
+            context.name.clear();
+            context.name.push_str("[kmglru_daemon]");
+        }
+        Err(err) => {
+            panic!("failed to spawn kmglru_daemon: {:?}", err);
+        }
+    }
+    match context::spawn(false, owner.clone(), || crate::memory::mthp::mthp_daemon(), &mut token) {
+        Ok(context_lock) => {
+            let mut context = context_lock.write(token.token());
+            context.status = context::Status::Runnable;
+            context.name.clear();
+            context.name.push_str("[kmthp_daemon]");
+        }
+        Err(err) => {
+            panic!("failed to spawn kmthp_daemon: {:?}", err);
+        }
+    }
     match context::spawn(true, owner, || userspace_init(), &mut token) {
         Ok(context_lock) => {
             let mut context = context_lock.write(token.token());

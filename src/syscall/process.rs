@@ -164,3 +164,20 @@ pub unsafe fn bootstrap_mem(bootstrap: &crate::Bootstrap) -> &'static [u8] {
         )
     }
 }
+
+pub fn sys_sched_set_scheduler(fd: usize, token: &mut CleanLockToken) -> Result<usize> {
+    let context_ref = context::current();
+    let _file = {
+        let guard = context_ref.read(token.token());
+        guard.get_file(crate::scheme::FileHandle::from(fd)).ok_or(Error::new(EBADF))?
+    };
+
+    let ipc_sched = Arc::new(crate::scheduler::IpcScheduler {
+        fd,
+        queue: Arc::new(crossbeam_queue::SegQueue::new()),
+    });
+
+    let mut guard = crate::scheduler::EXT_SCHEDULER.write();
+    *guard = Some(ipc_sched);
+    Ok(0)
+}
