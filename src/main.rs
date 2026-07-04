@@ -74,6 +74,7 @@ mod profiling;
 mod ptrace;
 mod scheduler;
 mod sched_ext;
+pub mod sched;
 mod scheme;
 mod stack_guard;
 mod startup;

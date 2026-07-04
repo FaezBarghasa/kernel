@@ -30,6 +30,7 @@ pub mod privilege;
 pub mod process;
 pub mod time;
 pub mod usercopy;
+pub mod scx;
 
 use crate::{
     sync::CleanLockToken,
@@ -75,6 +76,12 @@ pub fn syscall(number: usize, a: usize, b: usize, c: usize, d: usize, e: usize, 
         // We will assume 449 for now or a new constant if defined.
         449 => futex::futex_waitv(a, b, c, d, e, &mut token),
         SYS_SCHED_SET_SCHEDULER => process::sys_sched_set_scheduler(a, &mut token),
+
+        scx::SYS_SCX_REGISTER | scx::SYS_SCX_UNREGISTER | scx::SYS_SCX_GET_STATS => {
+            let bridge = scx::get_scx_bridge();
+            scx::handle_scx_syscall(number, &[a, b, c, d, e, f], bridge)
+                .map_err(Error::from)
+        }
 
         // TODO: Uncomment when SYS_MLOCKALL and SYS_MUNLOCKALL are added to redox_syscall crate
         // number::SYS_MLOCKALL => memory::sys_mlockall(a),
