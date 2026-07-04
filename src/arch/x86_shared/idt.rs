@@ -5,7 +5,7 @@ use core::{
 };
 
 use alloc::boxed::Box;
-use hashbrown::{hash_map::DefaultHashBuilder, HashMap};
+use hashbrown::{DefaultHashBuilder, HashMap};
 
 use x86::{
     dtables::{self, DescriptorTablePointer},
