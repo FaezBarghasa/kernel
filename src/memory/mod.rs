@@ -34,6 +34,7 @@ pub(crate) static AREAS: SyncUnsafeCell<[rmm::MemoryArea; 512]> = SyncUnsafeCell
     [rmm::MemoryArea {
         base: PhysicalAddress::new(0),
         size: 0,
+        node_id: 0,
     }; 512],
 );
 pub(crate) static AREA_COUNT: SyncUnsafeCell<u16> = SyncUnsafeCell::new(0);

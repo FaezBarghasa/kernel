@@ -435,6 +435,23 @@ impl UTableWrapper {
     ) -> Option<rmm::PageFlush<RmmA>> {
         self.0.map_phys(virt, phys, flags)
     }
+
+    #[cfg(not(feature = "no-mmu"))]
+    pub unsafe fn unmap(
+        &mut self,
+        virt: VirtualAddress,
+    ) -> Option<rmm::PageFlush<RmmA>> {
+        self.0.unmap(virt, false)
+    }
+
+    #[cfg(feature = "no-mmu")]
+    pub unsafe fn unmap(
+        &mut self,
+        _virt: VirtualAddress,
+    ) -> Option<DummyFlusher> {
+        Some(DummyFlusher)
+    }
+
     pub unsafe fn make_current(&self) {
         #[cfg(not(feature = "no-mmu"))]
         unsafe {

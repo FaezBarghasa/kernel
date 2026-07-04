@@ -174,18 +174,25 @@ pub fn sys_dmabuf_map(
     let buf = arc.lock();
     let page_count = buf.page_count();
 
-    for i in 0..page_count {
-        let phys = buf.frames[i].base();
-        let virt = crate::paging::VirtualAddress::new(vaddr + i * PAGE_SIZE);
+    crate::memory::with_clean_lock_token(|token| {
+        let current_context_ref = crate::context::current();
+        let current_context_guard = current_context_ref.read(token.token());
+        let addr_space = current_context_guard.addr_space.as_ref().ok_or(Error::new(crate::syscall::error::ESRCH))?;
+        let mut inner = addr_space.inner.write();
 
-        // SAFETY: virt was validated by the caller. We are inside the kernel
-        // mapping path; the physical frame is owned by this DmaBuf.
-        let page_flags = dmabuf_flags_to_page_flags(flags);
-        crate::arch::paging::map_page_current(virt, phys, page_flags)
-            .map_err(|_| Error::new(EINVAL))?;
-    }
+        for i in 0..page_count {
+            let phys = buf.frames[i].base();
+            let virt = crate::paging::VirtualAddress::new(vaddr + i * PAGE_SIZE);
 
-    Ok(())
+            let page_flags = dmabuf_flags_to_page_flags(flags);
+            unsafe {
+                inner.table.utable.map_phys(virt, phys, page_flags)
+                    .ok_or(Error::new(ENOMEM))?
+                    .flush();
+            }
+        }
+        Ok::<(), Error>(())
+    })
 }
 
 /// `sys_dmabuf_unmap(fd, vaddr) -> Result<()>`
@@ -202,12 +209,22 @@ pub fn sys_dmabuf_unmap(fd: DmaBufFd, vaddr: usize) -> Result<()> {
 
     let page_count = arc.lock().page_count();
 
-    for i in 0..page_count {
-        let virt = crate::paging::VirtualAddress::new(vaddr + i * PAGE_SIZE);
-        // SAFETY: This virtual range was mapped by sys_dmabuf_map.
-        crate::arch::paging::unmap_page_current(virt)
-            .map_err(|_| Error::new(EINVAL))?;
-    }
+    crate::memory::with_clean_lock_token(|token| {
+        let current_context_ref = crate::context::current();
+        let current_context_guard = current_context_ref.read(token.token());
+        let addr_space = current_context_guard.addr_space.as_ref().ok_or(Error::new(crate::syscall::error::ESRCH))?;
+        let mut inner = addr_space.inner.write();
+
+        for i in 0..page_count {
+            let virt = crate::paging::VirtualAddress::new(vaddr + i * PAGE_SIZE);
+            unsafe {
+                inner.table.utable.unmap(virt)
+                    .ok_or(Error::new(EINVAL))?
+                    .flush();
+            }
+        }
+        Ok::<(), Error>(())
+    })?;
 
     // Decrement reference count.
     let prev = arc.lock().ref_count.fetch_sub(1, Ordering::Release);
@@ -251,7 +268,7 @@ fn dmabuf_flags_to_page_flags(
     use crate::paging::PageFlags;
     use crate::syscall::flag::MapFlags;
 
-    let mut pf = PageFlags::new_user();
+    let mut pf = PageFlags::new().user(true);
 
     if flags.contains(MapFlags::PROT_WRITE) {
         pf = pf.write(true);
