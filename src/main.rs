@@ -73,6 +73,7 @@ mod percpu;
 mod profiling;
 mod ptrace;
 mod scheduler;
+mod sched_ext;
 mod scheme;
 mod stack_guard;
 mod startup;
