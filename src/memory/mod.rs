@@ -5,6 +5,7 @@ mod kernel_mapper;
 pub mod model;
 pub mod mglru;
 pub mod mthp;
+pub mod dmabuf;
 
 use core::{
     cell::SyncUnsafeCell,
