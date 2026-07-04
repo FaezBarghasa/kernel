@@ -8,30 +8,42 @@ bitflags = "2.4.1"
 linked_list_allocator = "0.10.5"
 log = "0.4.20"
 rmm = { git = "https://github.com/FaezBarghasa/rmm", default-features = false }
-spin = "0.9.8"
-crossbeam-queue = { version = "0.3.11", default-features = false, features = ["alloc"] }
+spin = "0.12.1"
+crossbeam-queue = { version = "0.3.11", default-features = false, features = [
+    "alloc",
+] }
 crossbeam-utils = { version = "0.8.19", default-features = false }
-crossbeam-epoch = { version = "0.9.18", default-features = false, features = ["alloc"] }
+crossbeam-epoch = { version = "0.9.18", default-features = false, features = [
+    "alloc",
+] }
 arc-swap = { version = "1.7.1", default-features = false }
+zerocopy = { version = "0.8.52", default-features = false, features = [
+    "derive",
+] }
 rustc-demangle = "0.1.23"
-raw-cpuid = "10.7.0"
+raw-cpuid = "11.6.0"
 slab = { version = "0.4", default-features = false }
-hashbrown = { version = "0.14", default-features = false, features = ["ahash", "inline-more"] }
+hashbrown = { version = "0.17.1", default-features = false, features = [
+    "inline-more",
+] }
 arrayvec = { version = "0.7", default-features = false }
-object = { version = "0.32", default-features = false, features = ["read_core", "elf"] }
-redox-path = "0.2"
-syscall = { package = "redox_syscall", version = "0.5" }
+object = { version = "0.39.1", default-features = false, features = [
+    "read_core",
+    "elf",
+] }
+redox-path = "0.4.0"
+syscall = { package = "redox_syscall", version = "0.9.0" }
 
 [dependencies.goblin]
-version = "0.7.1"
+version = "0.10.7"
 default-features = false
 features = ["elf32", "elf64"]
 
 [build-dependencies]
-toml = "0.8"
+toml = "1.1.2+spec-1.1.0"
 
 [target.'cfg(any(target_arch = "riscv64", target_arch = "riscv32"))'.dependencies]
-sbi-rt = "0.0.2"
+sbi-rt = "0.0.4"
 
 [target.'cfg(any(target_arch = "x86", target_arch = "x86_64"))'.dependencies]
 x86 = { version = "0.52.0", default-features = false }

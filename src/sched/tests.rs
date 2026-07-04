@@ -307,7 +307,7 @@ fn test_register_duplicate_policy() {
     bridge.register_policy(policy1).unwrap();
     assert!(matches!(
         bridge.register_policy(policy2),
-        Err(crate::sched::scx_types::ScxError::PolicyAlreadyRegistered)
+        Err(crate::sched::scx_bridge::ScxError::PolicyAlreadyRegistered)
     ));
 }
 

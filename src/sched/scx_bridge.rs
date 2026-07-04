@@ -5,11 +5,13 @@ use alloc::vec::Vec;
 use core::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use crossbeam_queue::ArrayQueue;
 use spin::Mutex;
+use zerocopy::{FromBytes, IntoBytes, Immutable};
 
-use crate::sched::scx_types::{ScxError, ScxOperation, ScxPolicyInfo, ScxRequest, ScxResponse, ScxTaskData};
+use crate::sched::scx_types::{ScxOperation, ScxPolicyInfo, ScxRequest, ScxResponse, ScxTaskData};
 
 /// Watchdog statistics for SCX performance.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, FromBytes, IntoBytes, Immutable)]
+#[repr(C)]
 pub struct ScxStats {
     pub total_requests: u64,
     pub total_responses: u64,
