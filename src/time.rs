@@ -32,7 +32,17 @@ pub static ACTIVE_TIMER: Mutex<ActiveTimer> = Mutex::new(ActiveTimer::None);
 
 /// Returns the monotonic time in nanoseconds.
 pub fn monotonic() -> u128 {
-    crate::arch::time::monotonic_absolute()
+    #[cfg(test)]
+    {
+        thread_local! {
+            static START_INSTANT: std::time::Instant = std::time::Instant::now();
+        }
+        START_INSTANT.with(|start| start.elapsed().as_nanos())
+    }
+    #[cfg(not(test))]
+    {
+        crate::arch::time::monotonic_absolute()
+    }
 }
 
 /// Returns the realtime time in nanoseconds.

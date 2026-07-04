@@ -143,6 +143,7 @@ dependencies = [
  "spin",
  "toml",
  "x86",
+ "zerocopy",
 ]
 
 [[package]]

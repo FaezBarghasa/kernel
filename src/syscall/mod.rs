@@ -69,6 +69,11 @@ pub fn syscall(number: usize, a: usize, b: usize, c: usize, d: usize, e: usize, 
 
     pub const SYS_SCHED_SET_SCHEDULER: usize = 1001;
 
+    pub const SYS_DMABUF_CREATE: usize = 1100;
+    pub const SYS_DMABUF_MAP: usize = 1101;
+    pub const SYS_DMABUF_UNMAP: usize = 1102;
+    pub const SYS_DMABUF_RELEASE: usize = 1103;
+
     // Native Redox syscall dispatch
     let res = match number {
         number::SYS_FUTEX => futex::futex(a, b, c, d, e, &mut token),
@@ -76,6 +81,11 @@ pub fn syscall(number: usize, a: usize, b: usize, c: usize, d: usize, e: usize, 
         // We will assume 449 for now or a new constant if defined.
         449 => futex::futex_waitv(a, b, c, d, e, &mut token),
         SYS_SCHED_SET_SCHEDULER => process::sys_sched_set_scheduler(a, &mut token),
+
+        SYS_DMABUF_CREATE => memory::sys_dmabuf_create(a),
+        SYS_DMABUF_MAP => memory::sys_dmabuf_map(a, b, c),
+        SYS_DMABUF_UNMAP => memory::sys_dmabuf_unmap(a, b),
+        SYS_DMABUF_RELEASE => memory::sys_dmabuf_release(a),
 
         scx::SYS_SCX_REGISTER | scx::SYS_SCX_UNREGISTER | scx::SYS_SCX_GET_STATS => {
             let bridge = scx::get_scx_bridge();

@@ -29,6 +29,7 @@ use crate::{
 /// All public fields are read-only after construction. The reference count is
 /// managed atomically — `clone_ref` increments it, `drop_ref` decrements it
 /// and frees frames when it hits zero.
+#[derive(Debug)]
 pub struct DmaBuf {
     /// Backing physical frames (scatter-gather).
     pub frames: Vec<Frame>,
@@ -127,6 +128,14 @@ pub fn init() {
     }
 }
 
+/// Remove a DmaBuf from the global registry. Called automatically when the last reference drops.
+pub fn remove_from_registry(fd: DmaBufFd) {
+    let mut guard = DMABUF_REGISTRY.lock();
+    if let Some(registry) = guard.as_mut() {
+        registry.remove(&fd);
+    }
+}
+
 // =============================================================================
 // Syscall Implementations
 // =============================================================================
@@ -161,6 +170,10 @@ pub fn sys_dmabuf_map(
     vaddr: usize,
     flags: crate::syscall::flag::MapFlags,
 ) -> Result<()> {
+    if vaddr % PAGE_SIZE != 0 {
+        return Err(Error::new(EINVAL));
+    }
+
     // Retrieve the buffer arc while the registry lock is held momentarily.
     let arc = {
         let guard = DMABUF_REGISTRY.lock();
@@ -180,27 +193,48 @@ pub fn sys_dmabuf_map(
         let addr_space = current_context_guard.addr_space.as_ref().ok_or(Error::new(crate::syscall::error::ESRCH))?;
         let mut inner = addr_space.inner.write();
 
+        let requested = crate::paging::Page::containing_address(crate::paging::VirtualAddress::new(vaddr));
+
+        // Check for overlap in the address space
+        if inner.grants.range(requested..requested.next_by(page_count)).next().is_some() {
+            // Revert refcount increment if mapping fails due to overlap
+            drop(buf); // Release lock before mutating ref_count
+            arc.lock().ref_count.fetch_sub(1, Ordering::Release);
+            return Err(Error::new(crate::syscall::error::EEXIST));
+        }
+
+        let page_flags = dmabuf_flags_to_page_flags(flags);
+        let mut grant = crate::context::memory::Grant::new(requested, requested.next_by(page_count), page_flags);
+        grant.provider = crate::context::memory::Provider::DmaBuf { fd, arc: Arc::clone(&arc) };
+
         for i in 0..page_count {
             let phys = buf.frames[i].base();
-            let virt = crate::paging::VirtualAddress::new(vaddr + i * PAGE_SIZE);
+            let virt = requested.next_by(i).start_address();
 
-            let page_flags = dmabuf_flags_to_page_flags(flags);
             unsafe {
-                inner.table.utable.map_phys(virt, phys, page_flags)
-                    .ok_or(Error::new(ENOMEM))?
-                    .flush();
+                if inner.table.utable.map_phys(virt, phys, page_flags).is_none() {
+                    // Clean up already mapped pages
+                    for j in 0..i {
+                        let virt_unmap = requested.next_by(j).start_address();
+                        let _ = inner.table.utable.unmap(virt_unmap);
+                    }
+                    drop(buf);
+                    arc.lock().ref_count.fetch_sub(1, Ordering::Release);
+                    return Err(Error::new(ENOMEM));
+                }
             }
         }
+
+        inner.grants.insert(requested, grant);
         Ok::<(), Error>(())
     })
 }
 
-/// `sys_dmabuf_unmap(fd, vaddr) -> Result<()>`
-///
-/// Unmaps the DmaBuf identified by `fd` from the virtual address `vaddr` in
-/// the current process. Decrements the reference count; frees the buffer if
-/// the count reaches zero.
 pub fn sys_dmabuf_unmap(fd: DmaBufFd, vaddr: usize) -> Result<()> {
+    if vaddr % PAGE_SIZE != 0 {
+        return Err(Error::new(EINVAL));
+    }
+
     let arc = {
         let guard = DMABUF_REGISTRY.lock();
         let registry = guard.as_ref().ok_or(Error::new(EINVAL))?;
@@ -215,6 +249,24 @@ pub fn sys_dmabuf_unmap(fd: DmaBufFd, vaddr: usize) -> Result<()> {
         let addr_space = current_context_guard.addr_space.as_ref().ok_or(Error::new(crate::syscall::error::ESRCH))?;
         let mut inner = addr_space.inner.write();
 
+        let requested = crate::paging::Page::containing_address(crate::paging::VirtualAddress::new(vaddr));
+
+        // Verify that the grant actually exists at vaddr and is indeed a DmaBuf grant for this fd
+        let grant_exists = if let Some(grant) = inner.grants.get(&requested) {
+            if let crate::context::memory::Provider::DmaBuf { fd: grant_fd, .. } = &grant.provider {
+                *grant_fd == fd
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+
+        if !grant_exists {
+            return Err(Error::new(EINVAL));
+        }
+
+        // Unmap from page tables
         for i in 0..page_count {
             let virt = crate::paging::VirtualAddress::new(vaddr + i * PAGE_SIZE);
             unsafe {
@@ -223,20 +275,13 @@ pub fn sys_dmabuf_unmap(fd: DmaBufFd, vaddr: usize) -> Result<()> {
                     .flush();
             }
         }
+
+        // Remove from grants. This drops the Grant, which automatically decrements the refcount
+        // and removes it from the registry if needed.
+        inner.grants.remove(&requested);
+
         Ok::<(), Error>(())
-    })?;
-
-    // Decrement reference count.
-    let prev = arc.lock().ref_count.fetch_sub(1, Ordering::Release);
-    if prev == 1 {
-        // Last reference — remove from registry (Arc will drop and free frames).
-        let mut guard = DMABUF_REGISTRY.lock();
-        if let Some(registry) = guard.as_mut() {
-            registry.remove(&fd);
-        }
-    }
-
-    Ok(())
+    })
 }
 
 /// `sys_dmabuf_release(fd) -> Result<()>`
@@ -284,16 +329,135 @@ fn dmabuf_flags_to_page_flags(
 // Tests
 // =============================================================================
 
+static TEST_LOCK: spin::Mutex<()> = spin::Mutex::new(());
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::sync::Arc;
+
+    fn setup_mock_context() -> (Arc<crate::context::ContextLock>, usize) {
+        let mut token = unsafe { crate::sync::CleanLockToken::new() };
+        let addr_space = crate::context::memory::AddrSpace::new().unwrap();
+        let context_ref = Arc::new(crate::context::ContextLock::new(crate::context::Context::new(None).unwrap()));
+        let context_id = context_ref.read(token.token()).id;
+        {
+            let mut context = context_ref.write(token.token());
+            context.addr_space = Some(addr_space);
+        }
+        {
+            let mut contexts = crate::context::list::contexts().write();
+            contexts.insert(context_id, Arc::clone(&context_ref));
+        }
+        crate::percpu::PercpuBlock::current().context_id.set(context_id);
+        (context_ref, context_id)
+    }
+
+    #[test]
+    fn test_dmabuf_zero_copy() {
+        let _guard = TEST_LOCK.lock();
+
+        crate::allocator::linked_list::init_mock_heap();
+        crate::memory::init_mock_allocator();
+        init();
+
+        // 1. Setup mock current context
+        let (context_ref, context_id) = setup_mock_context();
+        let mut token = unsafe { crate::sync::CleanLockToken::new() };
+        
+        std::println!("SET CONTEXT ID: {}", context_id);
+        std::println!("PERCPU CONTEXT ID: {}", crate::percpu::PercpuBlock::current().context_id.get());
+        std::println!("CONTEXT LIST HAS ID? {}", crate::context::list::contexts().read().contains_key(&context_id));
+
+        // 2. Create a DmaBuf of size 4096 (1 page)
+        let fd = sys_dmabuf_create(PAGE_SIZE).unwrap();
+
+        // 3. Map it at virtual address VADDR1
+        let vaddr1 = 0x5000_0000;
+        sys_dmabuf_map(
+            fd,
+            vaddr1,
+            crate::syscall::flag::MapFlags::PROT_READ | crate::syscall::flag::MapFlags::PROT_WRITE,
+        )
+        .unwrap();
+
+        // 4. Verify that the grant is inserted and has correct properties
+        {
+            let current = crate::context::current();
+            let guard = current.read(token.token());
+            let addr_space = guard.addr_space.as_ref().unwrap();
+            let inner = addr_space.inner.read();
+
+            let requested = crate::paging::Page::containing_address(crate::paging::VirtualAddress::new(vaddr1));
+            let grant = inner.grants.get(&requested).unwrap();
+
+            assert_eq!(grant.start_address().data(), vaddr1);
+            assert_eq!(grant.page_count(), 1);
+            if let crate::context::memory::Provider::DmaBuf { fd: grant_fd, arc } = &grant.provider {
+                assert_eq!(*grant_fd, fd);
+                assert_eq!(arc.lock().ref_count.load(Ordering::Relaxed), 2); // 1 (creation) + 1 (mapping)
+            } else {
+                panic!("Invalid provider type for DmaBuf mapping");
+            }
+        }
+
+        // 5. Map the same DmaBuf at a different virtual address VADDR2
+        let vaddr2 = 0x6000_0000;
+        sys_dmabuf_map(
+            fd,
+            vaddr2,
+            crate::syscall::flag::MapFlags::PROT_READ | crate::syscall::flag::MapFlags::PROT_WRITE,
+        )
+        .unwrap();
+
+        // 6. Verify reference count updated
+        {
+            let current = crate::context::current();
+            let guard = current.read(token.token());
+            let addr_space = guard.addr_space.as_ref().unwrap();
+            let inner = addr_space.inner.read();
+
+            let requested = crate::paging::Page::containing_address(crate::paging::VirtualAddress::new(vaddr2));
+            let grant = inner.grants.get(&requested).unwrap();
+            if let crate::context::memory::Provider::DmaBuf { arc, .. } = &grant.provider {
+                assert_eq!(arc.lock().ref_count.load(Ordering::Relaxed), 3); // 1 (creation) + 2 (mappings)
+            } else {
+                panic!("Invalid provider type");
+            }
+        }
+
+        // 7. Unmap VADDR1 and VADDR2
+        sys_dmabuf_unmap(fd, vaddr1).unwrap();
+        sys_dmabuf_unmap(fd, vaddr2).unwrap();
+
+        // 8. Verify grants removed
+        {
+            let current = crate::context::current();
+            let guard = current.read(token.token());
+            let addr_space = guard.addr_space.as_ref().unwrap();
+            let inner = addr_space.inner.read();
+
+            let requested1 = crate::paging::Page::containing_address(crate::paging::VirtualAddress::new(vaddr1));
+            let requested2 = crate::paging::Page::containing_address(crate::paging::VirtualAddress::new(vaddr2));
+            assert!(inner.grants.get(&requested1).is_none());
+            assert!(inner.grants.get(&requested2).is_none());
+        }
+
+        // 9. Release the FD
+        sys_dmabuf_release(fd).unwrap();
+
+        // 10. Clean up global CONTEXTS map
+        {
+            let mut contexts = crate::context::list::contexts().write();
+            contexts.remove(&context_id);
+        }
+        let _ = context_ref;
+    }
 
     /// Verify that `DmaBuf::allocate` round-trips: size > 0 succeeds,
     /// page count matches, and refcount starts at 1.
     #[test]
     fn test_dmabuf_allocation_tracking() {
-        // We can't call the real physical allocator in unit tests, so we verify
-        // the logic paths compile and the arithmetic is correct.
         let page_count_4k = 1usize.div_ceil(PAGE_SIZE);
         assert_eq!(page_count_4k, 1);
 
@@ -328,6 +492,62 @@ mod tests {
 mod benchmarks {
     use super::*;
     use core::sync::atomic::Ordering;
+    use alloc::sync::Arc;
+
+    fn setup_mock_context() -> (Arc<crate::context::ContextLock>, usize) {
+        let mut token = unsafe { crate::sync::CleanLockToken::new() };
+        let addr_space = crate::context::memory::AddrSpace::new().unwrap();
+        let context_ref = Arc::new(crate::context::ContextLock::new(crate::context::Context::new(None).unwrap()));
+        let context_id = context_ref.read(token.token()).id;
+        {
+            let mut context = context_ref.write(token.token());
+            context.addr_space = Some(addr_space);
+        }
+        {
+            let mut contexts = crate::context::list::contexts().write();
+            contexts.insert(context_id, Arc::clone(&context_ref));
+        }
+        crate::percpu::PercpuBlock::current().context_id.set(context_id);
+        (context_ref, context_id)
+    }
+
+    #[test]
+    fn bench_dmabuf_map() {
+        let _guard = TEST_LOCK.lock();
+
+        crate::allocator::linked_list::init_mock_heap();
+        crate::memory::init_mock_allocator();
+        init();
+        let (context_ref, context_id) = setup_mock_context();
+        let fd = sys_dmabuf_create(PAGE_SIZE).unwrap();
+
+        let start = crate::time::monotonic();
+        let iterations = 100;
+        let base_vaddr = 0x7000_0000;
+        for i in 0..iterations {
+            let vaddr = base_vaddr + i * PAGE_SIZE;
+            sys_dmabuf_map(
+                fd,
+                vaddr,
+                crate::syscall::flag::MapFlags::PROT_READ | crate::syscall::flag::MapFlags::PROT_WRITE,
+            )
+            .unwrap();
+            sys_dmabuf_unmap(fd, vaddr).unwrap();
+        }
+        let end = crate::time::monotonic();
+        let elapsed_ns = end - start;
+        let ns_per_iter = elapsed_ns / iterations as u128;
+        
+        // Target: < 1 microsecond per 4KB page (1000 ns)
+        assert!(ns_per_iter < 1000, "Mapping latency too high: {} ns/page", ns_per_iter);
+        
+        sys_dmabuf_release(fd).unwrap();
+        {
+            let mut contexts = crate::context::list::contexts().write();
+            contexts.remove(&context_id);
+        }
+        let _ = context_ref;
+    }
 
     /// Simulated benchmark: measures FD allocation overhead (pure atomic operation).
     /// Real wall-clock benchmarking requires the full kernel runtime.

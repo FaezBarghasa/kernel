@@ -59,7 +59,7 @@ pub fn read_stack_ptr(addr: usize) -> Option<usize> {
         Some(*(addr as *const usize))
     }
 }
-
+#[cfg(not(test))]
 unsafe extern "C" {
     static __start_orc_unwind: u8;
     static __stop_orc_unwind: u8;
@@ -67,6 +67,7 @@ unsafe extern "C" {
     static __stop_orc_unwind_ip: u8;
 }
 
+#[cfg(not(test))]
 pub fn get_orc_unwind_slice() -> &'static [u8] {
     unsafe {
         let start = &__start_orc_unwind as *const u8;
@@ -76,11 +77,36 @@ pub fn get_orc_unwind_slice() -> &'static [u8] {
     }
 }
 
+#[cfg(not(test))]
 pub fn get_orc_unwind_ip_slice() -> &'static [i32] {
     unsafe {
         let start = &__start_orc_unwind_ip as *const u8 as *const i32;
         let stop = &__stop_orc_unwind_ip as *const u8 as *const i32;
         let len = stop.offset_from(start) as usize;
         core::slice::from_raw_parts(start, len)
+    }
+}
+
+#[cfg(test)]
+static mut MOCK_UNWIND: &[u8] = &[];
+
+#[cfg(test)]
+static mut MOCK_UNWIND_IP: &[i32] = &[];
+
+#[cfg(test)]
+pub fn get_orc_unwind_slice() -> &'static [u8] {
+    unsafe { MOCK_UNWIND }
+}
+
+#[cfg(test)]
+pub fn get_orc_unwind_ip_slice() -> &'static [i32] {
+    unsafe { MOCK_UNWIND_IP }
+}
+
+#[cfg(test)]
+pub fn set_mock_orc_data(unwind: &'static [u8], unwind_ip: &'static [i32]) {
+    unsafe {
+        MOCK_UNWIND = unwind;
+        MOCK_UNWIND_IP = unwind_ip;
     }
 }

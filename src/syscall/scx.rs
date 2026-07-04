@@ -3,9 +3,10 @@
 use alloc::string::String;
 use alloc::vec;
 use spin::Once;
+use zerocopy::{FromBytes, IntoBytes, Immutable};
 
-use crate::sched::scx_bridge::{ScxBridge, ScxStats};
-use crate::sched::scx_types::{ScxError, ScxPolicyInfo};
+use crate::sched::scx_bridge::{ScxBridge, ScxError, ScxStats};
+use crate::sched::scx_types::ScxPolicyInfo;
 use crate::syscall::error::{Error, EEXIST, EINVAL, ESRCH, EAGAIN};
 use crate::syscall::usercopy::{UserSliceRo, UserSliceWo};
 
@@ -21,12 +22,13 @@ pub fn get_scx_bridge() -> &'static ScxBridge {
     SCX_BRIDGE.call_once(|| ScxBridge::new(2048))
 }
 
+#[derive(FromBytes, IntoBytes, Immutable, Default)]
 #[repr(C)]
 struct RawPolicyInfo {
-    name_ptr: usize,
-    name_len: usize,
-    version_ptr: usize,
-    version_len: usize,
+    name_ptr: u64,
+    name_len: u64,
+    version_ptr: u64,
+    version_len: u64,
     pid: u64,
     timeout_ns: u64,
 }
@@ -57,35 +59,23 @@ pub fn handle_scx_syscall(
             let raw_info_slice = UserSliceRo::new(args[0], core::mem::size_of::<RawPolicyInfo>())
                 .map_err(|_| ScxError::InvalidPolicyConfig("Invalid pointer to policy info".into()))?;
 
-            let mut raw_info = RawPolicyInfo {
-                name_ptr: 0,
-                name_len: 0,
-                version_ptr: 0,
-                version_len: 0,
-                pid: 0,
-                timeout_ns: 0,
-            };
+            let mut raw_info = RawPolicyInfo::default();
+            raw_info_slice.copy_to_slice(raw_info.as_mut_bytes())
+                .map_err(|_| ScxError::InvalidPolicyConfig("Failed to copy policy info struct".into()))?;
 
-            unsafe {
-                let bytes = core::slice::from_raw_parts_mut(
-                    &mut raw_info as *mut RawPolicyInfo as *mut u8,
-                    core::mem::size_of::<RawPolicyInfo>(),
-                );
-                raw_info_slice.copy_to_slice(bytes)
-                    .map_err(|_| ScxError::InvalidPolicyConfig("Failed to copy policy info struct".into()))?;
-            }
-
-            let name_slice = UserSliceRo::new(raw_info.name_ptr, raw_info.name_len)
+            let name_len = raw_info.name_len as usize;
+            let name_slice = UserSliceRo::new(raw_info.name_ptr as usize, name_len)
                 .map_err(|_| ScxError::InvalidPolicyConfig("Invalid name pointer".into()))?;
-            let mut name_buf = vec![0u8; raw_info.name_len];
+            let mut name_buf = vec![0u8; name_len];
             name_slice.copy_to_slice(&mut name_buf)
                 .map_err(|_| ScxError::InvalidPolicyConfig("Failed to copy name string".into()))?;
             let name = String::from_utf8(name_buf)
                 .map_err(|_| ScxError::InvalidPolicyConfig("Name is not UTF-8".into()))?;
 
-            let version_slice = UserSliceRo::new(raw_info.version_ptr, raw_info.version_len)
+            let version_len = raw_info.version_len as usize;
+            let version_slice = UserSliceRo::new(raw_info.version_ptr as usize, version_len)
                 .map_err(|_| ScxError::InvalidPolicyConfig("Invalid version pointer".into()))?;
-            let mut version_buf = vec![0u8; raw_info.version_len];
+            let mut version_buf = vec![0u8; version_len];
             version_slice.copy_to_slice(&mut version_buf)
                 .map_err(|_| ScxError::InvalidPolicyConfig("Failed to copy version string".into()))?;
             let version = String::from_utf8(version_buf)
@@ -117,14 +107,7 @@ pub fn handle_scx_syscall(
             let stats_slice = UserSliceWo::new(args[0], core::mem::size_of::<ScxStats>())
                 .map_err(|_| ScxError::InvalidPolicyConfig("Invalid stats buffer pointer".into()))?;
 
-            let bytes = unsafe {
-                core::slice::from_raw_parts(
-                    &stats as *const ScxStats as *const u8,
-                    core::mem::size_of::<ScxStats>(),
-                )
-            };
-
-            stats_slice.copy_from_slice(bytes)
+            stats_slice.copy_from_slice(stats.as_bytes())
                 .map_err(|_| ScxError::InvalidPolicyConfig("Failed to copy stats to user-space".into()))?;
 
             Ok(core::mem::size_of::<ScxStats>())

@@ -5,11 +5,23 @@ use alloc::vec::Vec;
 use core::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use crossbeam_queue::ArrayQueue;
 use spin::Mutex;
+use zerocopy::{FromBytes, IntoBytes, Immutable};
 
-use crate::sched::scx_types::{ScxError, ScxOperation, ScxPolicyInfo, ScxRequest, ScxResponse, ScxTaskData};
+use crate::sched::scx_types::{ScxOperation, ScxPolicyInfo, ScxRequest, ScxResponse, ScxTaskData};
+
+/// SCX error types
+#[derive(Debug, Clone)]
+pub enum ScxError {
+    NoPolicyRegistered,
+    PolicyAlreadyRegistered,
+    InvalidPolicyConfig(alloc::string::String),
+    QueueFull,
+    ResponseQueueFull,
+}
 
 /// Watchdog statistics for SCX performance.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, FromBytes, IntoBytes, Immutable)]
+#[repr(C)]
 pub struct ScxStats {
     pub total_requests: u64,
     pub total_responses: u64,
@@ -217,6 +229,12 @@ impl ScxBridge {
     /// Returns current SCX statistics.
     pub fn get_stats(&self) -> ScxStats {
         self.stats.lock().clone()
+    }
+
+    /// Test-only helper to inject a pending request.
+    #[cfg(test)]
+    pub fn inject_pending_request(&self, id: u64, timestamp_ns: u64) {
+        self.pending_requests.lock().push((id, timestamp_ns));
     }
 
     /// Monitors SCX policy responsiveness and triggers fallback if needed.

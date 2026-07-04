@@ -128,3 +128,118 @@ pub fn unwind_stack(
 
     Ok(trace)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn init_mock_data(relative_pcs: &[isize], entries: &[OrcEntry]) -> usize {
+        let ip_vec = vec![0i32; relative_pcs.len()];
+        let leaked_ip: &'static mut [i32] = Box::leak(ip_vec.into_boxed_slice());
+        
+        let base_addr = leaked_ip.as_ptr() as usize;
+        for i in 0..relative_pcs.len() {
+            leaked_ip[i] = relative_pcs[i] as i32;
+        }
+        
+        let mut unwind_bytes = Vec::new();
+        for entry in entries {
+            unwind_bytes.extend_from_slice(&entry.sp_offset.to_ne_bytes());
+            unwind_bytes.extend_from_slice(&entry.fp_offset.to_ne_bytes());
+            unwind_bytes.push(entry.sp_reg);
+            unwind_bytes.push(entry.fp_reg);
+            unwind_bytes.push(entry.type_);
+        }
+        let leaked_unwind: &'static [u8] = Box::leak(unwind_bytes.into_boxed_slice());
+        
+        crate::arch::misc::set_mock_orc_data(leaked_unwind, leaked_ip);
+        base_addr
+    }
+
+    #[test]
+    fn test_lookup_orc_empty() {
+        crate::arch::misc::set_mock_orc_data(&[], &[]);
+        assert!(lookup_orc(0x1000).is_none());
+    }
+
+    #[test]
+    fn test_lookup_orc_basic() {
+        let relative_pcs = vec![10, 20, 30];
+        let entries = vec![
+            OrcEntry { sp_offset: 8, fp_offset: 0, sp_reg: 1, fp_reg: 0, type_: 1 },
+            OrcEntry { sp_offset: 16, fp_offset: 8, sp_reg: 1, fp_reg: 2, type_: 2 },
+            OrcEntry { sp_offset: 24, fp_offset: 16, sp_reg: 2, fp_reg: 2, type_: 3 },
+        ];
+        let base_addr = init_mock_data(&relative_pcs, &entries);
+
+        // entry_pc[0] = base_addr + 10
+        let e1 = lookup_orc(base_addr + 10).unwrap();
+        assert_eq!(e1.sp_offset, 8);
+        assert_eq!(e1.type_, 1);
+
+        // In between PCs
+        let e2 = lookup_orc(base_addr + 15).unwrap();
+        assert_eq!(e2.sp_offset, 8);
+
+        // entry_pc[1] = base_addr + 4 + 20 = base_addr + 24
+        let e3 = lookup_orc(base_addr + 24).unwrap();
+        assert_eq!(e3.sp_offset, 16);
+        assert_eq!(e3.type_, 2);
+
+        let e4 = lookup_orc(base_addr + 30).unwrap();
+        assert_eq!(e4.sp_offset, 16);
+
+        // entry_pc[2] = base_addr + 8 + 30 = base_addr + 38
+        let e5 = lookup_orc(base_addr + 38).unwrap();
+        assert_eq!(e5.sp_offset, 24);
+
+        // Below the first PC
+        assert!(lookup_orc(base_addr + 5).is_none());
+    }
+
+    #[test]
+    fn test_unwind_stack_success() {
+        let relative_pcs = vec![10, 20];
+        let entries = vec![
+            OrcEntry { sp_offset: 16, fp_offset: 0, sp_reg: 1, fp_reg: 0, type_: 1 },
+            OrcEntry { sp_offset: 16, fp_offset: 0, sp_reg: 1, fp_reg: 0, type_: 1 },
+        ];
+        let base_addr = init_mock_data(&relative_pcs, &entries);
+
+        let pc0 = base_addr + 10;
+        let pc1 = base_addr + 4 + 20;
+
+        // Prepare a mock stack: 16 words.
+        let mut mock_stack = [0usize; 16];
+        
+        let sp = mock_stack.as_ptr() as usize;
+        let stack_start = sp;
+        let stack_end = sp + 16 * 8;
+
+        // sp + 8 is mock_stack[1], which stores return address of func1 (pc1)
+        mock_stack[1] = pc1;
+        // next_sp is sp + 16 (mock_stack[2]).
+        // next frame's return address is at next_sp + 8 (mock_stack[3]), which stores 0 (terminate)
+        mock_stack[3] = 0;
+
+        let trace = unwind_stack(pc0, sp, 0, stack_start, stack_end).unwrap();
+        assert_eq!(trace, vec![pc0, pc1, 0]);
+    }
+
+    #[test]
+    fn test_unwind_stack_invalid_frame() {
+        let relative_pcs = vec![10];
+        let entries = vec![
+            OrcEntry { sp_offset: 16, fp_offset: 0, sp_reg: 1, fp_reg: 0, type_: 1 },
+        ];
+        let base_addr = init_mock_data(&relative_pcs, &entries);
+        let pc0 = base_addr + 10;
+
+        let mut mock_stack = [0usize; 16];
+        let sp = mock_stack.as_ptr() as usize;
+        
+        // Pass stack boundaries that make SP out of bounds immediately
+        let res = unwind_stack(pc0, sp, 0, sp + 8, sp + 64);
+        assert!(res.is_err());
+    }
+}

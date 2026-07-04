@@ -49,3 +49,18 @@ unsafe impl GlobalAlloc for Allocator {
         }
     }
 }
+
+#[cfg(test)]
+pub fn init_mock_heap() {
+    use core::cell::SyncUnsafeCell;
+    struct ForceSync<T>(T);
+    unsafe impl<T> Sync for ForceSync<T> {}
+    static HEAP_BUFFER: ForceSync<SyncUnsafeCell<[u8; 2 * 1024 * 1024]>> = ForceSync(SyncUnsafeCell::new([0; 2 * 1024 * 1024]));
+    unsafe {
+        let mut guard = HEAP.lock();
+        if guard.is_none() {
+            let ptr = HEAP_BUFFER.0.get() as *mut u8;
+            *guard = Some(linked_list_allocator::Heap::new(ptr, 2 * 1024 * 1024));
+        }
+    }
+}

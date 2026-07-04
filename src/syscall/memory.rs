@@ -23,3 +23,24 @@ pub fn sys_mlockall(flags: usize) -> Result<usize> {
 pub fn sys_munlockall() -> Result<usize> {
     munlockall_impl().map(|_| 0)
 }
+
+/// Create a new DMA buffer of the specified size.
+pub fn sys_dmabuf_create(size: usize) -> Result<usize> {
+    crate::memory::dmabuf::sys_dmabuf_create(size)
+}
+
+/// Map the specified DMA buffer into the current process's address space.
+pub fn sys_dmabuf_map(fd: usize, vaddr: usize, flags: usize) -> Result<usize> {
+    let map_flags = crate::syscall::flag::MapFlags::from_bits_retain(flags);
+    crate::memory::dmabuf::sys_dmabuf_map(fd, vaddr, map_flags).map(|_| 0)
+}
+
+/// Unmap the specified DMA buffer from the current process's address space.
+pub fn sys_dmabuf_unmap(fd: usize, vaddr: usize) -> Result<usize> {
+    crate::memory::dmabuf::sys_dmabuf_unmap(fd, vaddr).map(|_| 0)
+}
+
+/// Release the handle to the specified DMA buffer.
+pub fn sys_dmabuf_release(fd: usize) -> Result<usize> {
+    crate::memory::dmabuf::sys_dmabuf_release(fd).map(|_| 0)
+}

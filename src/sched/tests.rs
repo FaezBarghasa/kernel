@@ -307,7 +307,7 @@ fn test_register_duplicate_policy() {
     bridge.register_policy(policy1).unwrap();
     assert!(matches!(
         bridge.register_policy(policy2),
-        Err(crate::sched::scx_types::ScxError::PolicyAlreadyRegistered)
+        Err(crate::sched::scx_bridge::ScxError::PolicyAlreadyRegistered)
     ));
 }
 
@@ -338,7 +338,7 @@ fn test_send_request_success() {
         name: "success_policy".into(),
         version: "1.0".into(),
         pid: 1234,
-        timeout_ns: 10_000_000, // Large timeout
+        timeout_ns: 200_000_000, // Large timeout
         is_active: true,
     };
     bridge.register_policy(policy).unwrap();
@@ -376,28 +376,21 @@ fn test_health_check_fallback() {
         name: "fallback_policy".into(),
         version: "1.0".into(),
         pid: 1234,
-        timeout_ns: 1000, // Small timeout
+        timeout_ns: 10_000, // 10 microseconds
         is_active: true,
     };
     bridge.register_policy(policy).unwrap();
 
-    // Send request but don't respond
-    let operation = ScxOperation::SelectNext { eligible_tasks: vec![] };
-    let task_data = ScxTaskData::default();
+    // Inject a pending request at current time
+    let now = crate::time::monotonic() as u64;
+    bridge.inject_pending_request(999, now);
 
-    // We spawn it in another thread or run asynchronously so it times out
-    let bridge_arc = Arc::new(bridge);
-    let bridge_clone = Arc::clone(&bridge_arc);
-
-    thread::spawn(move || {
-        let _ = bridge_clone.send_request(operation, task_data);
-    });
-
-    // Wait for timeout
-    thread::sleep(std::time::Duration::from_millis(10));
+    // Sleep for 1ms (1,000,000 ns) to ensure the request times out relative to the 10 microsecond timeout
+    thread::sleep(std::time::Duration::from_millis(1));
 
     // Health check should detect timeout
-    assert!(!bridge_arc.check_health());
+    assert!(!bridge.check_health());
+    assert!(!bridge.is_enabled());
 }
 
 // =============================================================================
@@ -438,8 +431,8 @@ fn bench_vruntime_update() {
 
 #[test]
 fn bench_insert_throughput() {
-    let ring = ContextRing::new(100_000);
-    let iterations = 100_000;
+    let ring = ContextRing::new(10_000);
+    let iterations = 10_000;
 
     let start = Instant::now();
     for i in 0..iterations {

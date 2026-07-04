@@ -175,3 +175,84 @@ pub fn mglru_daemon() {
         crate::memory::yield_now();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_compress_decompress_zeros() {
+        let mut original = [0u8; PAGE_SIZE];
+        // Fill some parts with zeros and some with non-zeros
+        original[0..10].copy_from_slice(&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        original[10] = 42;
+        original[11] = 43;
+        original[12..300].fill(0);
+        original[300] = 99;
+
+        let compressed = compress_page(&original);
+        // Compressed should be smaller because of the zero runs
+        assert!(compressed.len() < PAGE_SIZE);
+
+        let mut decompressed = [0u8; PAGE_SIZE];
+        decompress_page(&compressed, &mut decompressed);
+
+        assert_eq!(original, decompressed);
+    }
+
+    #[test]
+    fn test_compress_decompress_no_zeros() {
+        let mut original = [0u8; PAGE_SIZE];
+        for i in 0..PAGE_SIZE {
+            original[i] = (i % 255 + 1) as u8; // No zeros
+        }
+
+        let compressed = compress_page(&original);
+        let mut decompressed = [0u8; PAGE_SIZE];
+        decompress_page(&compressed, &mut decompressed);
+
+        assert_eq!(original, decompressed);
+    }
+
+    #[test]
+    fn test_zram_pool_operations() {
+        let mut pool = ZramPool {
+            entries: BTreeMap::new(),
+            next_idx: 1,
+        };
+
+        let data1 = vec![1, 2, 3, 0, 0, 0, 4, 5];
+        let entry1 = ZramEntry {
+            compressed_data: data1.clone(),
+        };
+
+        let idx = pool.next_idx;
+        pool.entries.insert(idx, entry1);
+        pool.next_idx += 1;
+
+        assert_eq!(pool.entries.len(), 1);
+        assert_eq!(idx, 1);
+
+        let retrieved = pool.entries.remove(&idx).unwrap();
+        assert_eq!(retrieved.compressed_data, data1);
+        assert_eq!(pool.entries.len(), 0);
+    }
+
+    #[test]
+    fn test_page_generations_tracking() {
+        let mut generations = PAGE_GENERATIONS.lock();
+        generations.clear();
+
+        let key = (42, 0x1000);
+        assert_eq!(generations.get(&key), None);
+
+        generations.insert(key, 0);
+        assert_eq!(generations.get(&key), Some(&0));
+
+        generations.insert(key, 1);
+        assert_eq!(generations.get(&key), Some(&1));
+
+        generations.remove(&key);
+        assert_eq!(generations.get(&key), None);
+    }
+}

@@ -790,6 +790,21 @@ pub enum Provider {
     External { address: usize, size: usize },
     FmapBorrowed { file_ref: GrantFileRef },
     ZramSwapped { zram_idx: usize, flags: PageFlags<RmmA> },
+    DmaBuf {
+        fd: usize,
+        arc: Arc<spin::Mutex<crate::memory::dmabuf::DmaBuf>>,
+    },
+}
+
+impl Drop for Provider {
+    fn drop(&mut self) {
+        if let Provider::DmaBuf { fd, arc } = self {
+            let prev = arc.lock().ref_count.fetch_sub(1, core::sync::atomic::Ordering::Release);
+            if prev == 1 {
+                crate::memory::dmabuf::remove_from_registry(*fd);
+            }
+        }
+    }
 }
 
 pub struct BorrowedFmapSource<'a> {
