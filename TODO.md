@@ -304,7 +304,7 @@ This TODO list is divided into several sections:
 - [x] unimplemented!("AArch64Arch::init unimplemented");
 
 ### `../rmm/src/arch/emulate.rs`
-- [ ] unimplemented!("EmulateArch::invalidate not implemented");
+- [x] unimplemented!("EmulateArch::invalidate not implemented");
 
 ### `../rmm/src/arch/riscv64/sv39.rs`
 - [x] unimplemented!("RiscV64Sv39Arch::init unimplemented");
