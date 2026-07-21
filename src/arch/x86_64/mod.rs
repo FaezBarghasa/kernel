@@ -5,6 +5,7 @@
 
 // Existing module code continues...
 pub mod alternative;
+pub mod amd_3d_vcache;
 pub mod consts;
 pub mod ept;
 pub mod flags;
