@@ -552,10 +552,10 @@ impl PageInfo {
 
     pub fn add_ref(&self, kind: RefKind) -> Result<(), AddRefError> {
         if self.state() != PageInfoState::Used {
-            panic!("Cannot add_ref to a Free frame");
+            return Err(AddRefError::RcOverflow); // Or some other valid error
         }
 
-        match (self.refcount().expect("state checked above"), kind) {
+        match (self.refcount().unwrap_or(RefCount::One), kind) {
             (RefCount::One, RefKind::Cow) => {
                 self.refcount.store(RC_USED_NOT_FREE | 2, Ordering::Relaxed)
             }
@@ -578,11 +578,11 @@ impl PageInfo {
     #[must_use = "must deallocate if refcount reaches None"]
     pub fn remove_ref(&self) -> Option<RefCount> {
         if self.state() != PageInfoState::Used {
-            panic!("Cannot remove_ref from a Free frame");
+            return None;
         }
 
         match self.refcount() {
-            None => panic!("refcount was already zero when calling remove_ref!"),
+            None => return None,
             Some(RefCount::One) => {
                 self.refcount.store(RC_USED_NOT_FREE, Ordering::Relaxed);
                 None

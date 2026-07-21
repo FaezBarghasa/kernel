@@ -166,10 +166,11 @@ fn kmain(bootstrap: Bootstrap) -> ! {
             context.name.push_str("[kmglru_daemon]");
         }
         Err(err) => {
-            panic!("failed to spawn kmglru_daemon: {:?}", err);
+            log::error!("failed to spawn kmglru_daemon: {:?}", err);
+            loop { core::hint::spin_loop(); }
         }
     }
-    match context::spawn(false, owner.clone(), || crate::memory::mthp::mthp_daemon(), &mut token) {
+    match context::spawn(false, owner.clone(), || crate::memory::mthp::kmthp_daemon(), &mut token) {
         Ok(context_lock) => {
             let mut context = context_lock.write(token.token());
             context.status = context::Status::Runnable;
@@ -177,18 +178,20 @@ fn kmain(bootstrap: Bootstrap) -> ! {
             context.name.push_str("[kmthp_daemon]");
         }
         Err(err) => {
-            panic!("failed to spawn kmthp_daemon: {:?}", err);
+            log::error!("failed to spawn kmthp_daemon: {:?}", err);
+            loop { core::hint::spin_loop(); }
         }
     }
-    match context::spawn(true, owner, || userspace_init(), &mut token) {
+    match context::spawn(true, owner, userspace_init, &mut token) {
         Ok(context_lock) => {
             let mut context = context_lock.write(token.token());
             context.status = context::Status::Runnable;
             context.name.clear();
-            context.name.push_str("[bootstrap]");
+            context.name.push_str("[init]");
         }
         Err(err) => {
-            panic!("failed to spawn userspace_init: {:?}", err);
+            log::error!("failed to spawn userspace_init: {:?}", err);
+            loop { core::hint::spin_loop(); }
         }
     }
 
