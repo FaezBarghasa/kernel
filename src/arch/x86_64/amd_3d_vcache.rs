@@ -218,9 +218,6 @@ impl CmrTracker {
         let m = guard.get(&task_id).ok_or(CmrError::TaskNotFound)?;
 
         let retired = m.instructions_retired.load(Ordering::Acquire);
-        if retired == 0 {
-            return Err(CmrError::PmuOverflow);
-        }
         if retired < 1_000 {
             return Err(CmrError::InsufficientSamples);
         }

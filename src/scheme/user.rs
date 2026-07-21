@@ -103,6 +103,11 @@ enum ParsedCqe {
         tag: u32,
         num_fds: usize,
     },
+    RespondAndNotifyOnDetach {
+        tag: u32,
+        code: usize,
+        extra0: u8,
+    },
     ObtainFd {
         tag: u32,
         flags: FobtainFdFlags,
@@ -169,8 +174,16 @@ impl ParsedCqe {
         })
     }
     fn parse_cqe(cqe: &Cqe) -> Result<Self> {
+        let opcode_raw = cqe.flags & 0b111;
+        if opcode_raw == 5 {
+            return Ok(Self::RespondAndNotifyOnDetach {
+                tag: cqe.tag,
+                code: cqe.result as usize,
+                extra0: cqe.extra_raw[0],
+            });
+        }
         Ok(
-            match CqeOpcode::try_from_raw(cqe.flags & 0b111).ok_or(Error::new(EINVAL))? {
+            match CqeOpcode::try_from_raw(opcode_raw).ok_or(Error::new(EINVAL))? {
                 CqeOpcode::RespondRegular => Self::RegularResponse {
                     tag: cqe.tag,
                     code: cqe.result as usize,
@@ -969,6 +982,9 @@ impl UserInner {
         match *cqe {
             ParsedCqe::RegularResponse { tag, code, extra0 } => {
                 self.respond(tag, Response::Regular(code, extra0), token)?
+            }
+            ParsedCqe::RespondAndNotifyOnDetach { tag, code, extra0 } => {
+                self.respond(tag, Response::Regular(code, extra0 | 0x80), token)?
             }
             ParsedCqe::ResponseWithFd { tag, fd } => self.respond(
                 tag,
@@ -1862,6 +1878,13 @@ impl KernelScheme for UserScheme {
 
         event::trigger(inner.root_id, inner.handle_id, EVENT_READ, token);
 
+        Ok(())
+    }
+
+    fn detach(&self, id: usize, token: &mut CleanLockToken) -> Result<()> {
+        let inner = self.inner.upgrade().ok_or(Error::new(ENODEV))?;
+        let opcode: Opcode = unsafe { core::mem::transmute(34u8) };
+        inner.call(opcode, [id], &mut PageSpan::empty(), token)?;
         Ok(())
     }
     fn kdup(

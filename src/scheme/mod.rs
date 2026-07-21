@@ -170,6 +170,9 @@ pub trait KernelScheme: Send + Sync {
     fn close(&self, _file: usize, _token: &mut CleanLockToken) -> Result<()> {
         Err(Error::new(ENOSYS))
     }
+    fn detach(&self, _file: usize, _token: &mut CleanLockToken) -> Result<()> {
+        Err(Error::new(ENOSYS))
+    }
     fn kread(
         &self,
         _file: usize,
@@ -527,6 +530,9 @@ impl KernelScheme for GlobalSchemes {
     }
     fn close(&self, file: usize, token: &mut CleanLockToken) -> Result<()> {
         forward_scheme!(self, |s| s.close(file, token))
+    }
+    fn detach(&self, file: usize, token: &mut CleanLockToken) -> Result<()> {
+        forward_scheme!(self, |s| s.detach(file, token))
     }
     fn kread(
         &self,

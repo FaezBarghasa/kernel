@@ -6,6 +6,8 @@ pub mod model;
 pub mod mglru;
 pub mod mthp;
 pub mod dmabuf;
+pub mod encryption;
+pub mod cxl;
 
 use core::{
     cell::SyncUnsafeCell,

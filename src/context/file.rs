@@ -27,6 +27,7 @@ bitflags! {
     #[derive(Clone, Copy, Debug)]
     pub struct InternalFlags: u32 {
         const POSITIONED = 1;
+        const NOTIFY_ON_DETACH = 2;
     }
 }
 impl FileDescription {
@@ -43,18 +44,14 @@ impl FileDescription {
 }
 impl InternalFlags {
     pub fn from_extra0(fl: u8) -> Option<Self> {
-        Some(
-            NewFdFlags::from_bits(fl)?
-                .iter()
-                .map(|fd| {
-                    if fd == NewFdFlags::POSITIONED {
-                        Self::POSITIONED
-                    } else {
-                        Self::empty()
-                    }
-                })
-                .collect(),
-        )
+        let mut flags = Self::empty();
+        if fl & 0x01 != 0 {
+            flags |= Self::POSITIONED;
+        }
+        if fl & 0x80 != 0 {
+            flags |= Self::NOTIFY_ON_DETACH;
+        }
+        Some(flags)
     }
 }
 
@@ -86,6 +83,15 @@ impl FileDescription {
 
 impl FileDescriptor {
     pub fn close(self, token: &mut CleanLockToken) -> Result<()> {
+        if self.description.read().internal_flags.contains(InternalFlags::NOTIFY_ON_DETACH) {
+            let file = self.description.read();
+            let schemes_guard = scheme::schemes(&token.token());
+            if let Some(scheme) = schemes_guard.get(file.scheme) {
+                let scheme = scheme.clone();
+                drop(schemes_guard);
+                let _ = scheme.detach(file.number, token);
+            }
+        }
         if let Ok(file) = Arc::try_unwrap(self.description).map(RwLock::into_inner) {
             file.try_close(token)?;
         }

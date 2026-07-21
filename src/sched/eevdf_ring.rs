@@ -174,7 +174,7 @@ impl SchedulerContext {
 #[inline]
 pub fn calculate_vdeadline(vruntime: u64, slice_ns: u64, weight: u32) -> u64 {
     assert!(weight > 0, "weight must be non-zero");
-    let scaled = match slice_ns.checked_shl(10) {
+    let scaled = match slice_ns.checked_mul(1024) {
         Some(v) => v,
         None => u64::MAX,
     };
@@ -405,7 +405,7 @@ impl ContextRing {
                             .fetch_sub(w.min(self.total_weight.load(Ordering::Relaxed)),
                                        Ordering::Relaxed);
                         self.recompute_stats();
-                        return taken;
+                        return arc_swap::Guard::into_inner(taken);
                     }
                 }
             }

@@ -1,3 +1,7 @@
+//! # Time Management Subsystem
+//!
+//! Provides monotonic, realtime, and tickless timer services.
+
 use spin::Mutex;
 
 use crate::{
@@ -11,9 +15,10 @@ use crate::arch::x86_shared::device::hpet;
 
 pub use crate::stubs::time_helpers::TimeSpec;
 
+pub mod tickless;
+
 pub const NANOS_PER_SEC: u128 = 1_000_000_000;
 
-// TODO: seqlock?
 /// Kernel start time, measured in nanoseconds since Unix epoch
 pub static START: Mutex<u128> = Mutex::new(0);
 /// Kernel up time, measured in nanoseconds since `START_TIME`
@@ -67,12 +72,10 @@ pub fn set_next_timer_event(deadline: u64) {
     unsafe {
         match *active_timer {
             ActiveTimer::Pit => {
-                // PIT operates with a divisor. Calculate divisor from delta.
-                // 1.193182 MHz is PIT frequency.
                 let pit_frequency_hz = 1_193_182;
                 let nanoseconds_per_pit_tick = 1_000_000_000 / pit_frequency_hz;
                 let divisor = (delta / nanoseconds_per_pit_tick) as u16;
-                pit::oneshot(divisor.max(1)); // Divisor must be at least 1
+                pit::oneshot(divisor.max(1));
             }
             #[cfg(feature = "acpi")]
             ActiveTimer::Hpet => {
@@ -80,14 +83,13 @@ pub fn set_next_timer_event(deadline: u64) {
                 let hpet_period_fs = hpet_ref.get_period_femtoseconds();
                 let hpet_current_counter = hpet::read_main_counter();
 
-                // Convert delta (ns) to femtoseconds, then to HPET ticks
-                let delta_fs = delta as u128 * 1_000_000; // Convert ns to fs
+                let delta_fs = delta as u128 * 1_000_000;
                 let target_ticks = hpet_current_counter + (delta_fs / hpet_period_fs as u128) as u64;
 
                 hpet::set_comparator(hpet_ref, target_ticks);
             }
             ActiveTimer::None => {
-                warn!("No active timer to set event for!");
+                log::warn!("No active timer to set event for!");
             }
         }
     }
