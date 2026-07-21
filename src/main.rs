@@ -68,6 +68,7 @@ mod kaslr;
 mod log;
 mod memory;
 mod misc;
+mod safety;
 mod panic;
 mod percpu;
 mod profiling;

@@ -8,6 +8,7 @@ pub mod mthp;
 pub mod dmabuf;
 pub mod encryption;
 pub mod cxl;
+pub mod slab;
 
 use core::{
     cell::SyncUnsafeCell,
