@@ -7,7 +7,7 @@ use crate::{
 };
 
 pub use crate::stubs::topology::*;
-pub mod faez_governor;
+pub mod governor;
 #[cfg(target_arch = "x86_64")]
 pub use crate::arch::x86_64::amd_3d_vcache;
 

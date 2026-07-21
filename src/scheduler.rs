@@ -610,7 +610,7 @@ impl Scheduler {
             self.handle_current_context(&current_ctx_ref, token);
         }
 
-        crate::topology::faez_governor::monitor_and_scale(crate::cpu_id());
+        crate::topology::governor::monitor_and_scale(crate::cpu_id());
 
         // 1. Unconditionally try load balancing if the queue is empty
         if self.run_queue.len() == 0 {
