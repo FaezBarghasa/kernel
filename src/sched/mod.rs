@@ -5,6 +5,7 @@ pub mod eevdf_ring;
 pub mod scx_types;
 pub mod scx_bridge;
 pub mod sched_error;
+pub mod arinc653;
 
 #[cfg(test)]
 pub mod tests;
