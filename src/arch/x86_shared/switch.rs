@@ -67,8 +67,34 @@ pub unsafe fn switch_to(prev: *mut Context, next: *mut Context) {
 }
 
 #[cfg(target_arch = "x86")]
-pub unsafe fn switch_to(_prev: *mut Context, _next: *mut Context) {
-    unimplemented!("x86 32-bit switch_to not implemented in this update");
+pub unsafe fn switch_to(prev: *mut Context, next: *mut Context) {
+    use core::mem::offset_of;
+    let prev = &mut *prev;
+    let next = &mut *next;
+    let prev_arch = &mut prev.arch;
+    let next_arch = &mut next.arch;
+
+    asm!(
+        "mov [edi + {ebx_off}], ebx",
+        "mov [edi + {esi_off}], esi",
+        "mov [edi + {ebp_off}], ebp",
+        "mov [edi + {esp_off}], esp",
+
+        "mov ebx, [esi + {ebx_off}]",
+        "mov esi, [esi + {esi_off}]",
+        "mov ebp, [esi + {ebp_off}]",
+        "mov esp, [esi + {esp_off}]",
+
+        ebx_off = const offset_of!(ArchContext, ebx),
+        esi_off = const offset_of!(ArchContext, esi),
+        ebp_off = const offset_of!(ArchContext, ebp),
+        esp_off = const offset_of!(ArchContext, esp),
+
+        in("edi") prev_arch,
+        in("esi") next_arch,
+
+        options(preserves_flags)
+    );
 }
 
 pub unsafe fn switch_to_first(next: *mut crate::context::Context) {
