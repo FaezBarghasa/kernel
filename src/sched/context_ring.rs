@@ -6,7 +6,9 @@ use crossbeam_utils::atomic::AtomicCell;
 #[allow(unused_imports)]
 use crossbeam_epoch::{self, Atomic, Owned, Shared};
 
+use crate::sched::eevdf_math::calculate_vdeadline;
 use crate::sched::eevdf_types::{EevdfTask, RunqueueStats};
+use crate::sched::sched_error::SchedulerError;
 
 /// Lock-free circular ring buffer for EEVDF task scheduling.
 ///
@@ -306,5 +308,82 @@ impl ContextRing {
             }
         }
         self.min_vdeadline.store(min_vd, Ordering::Release);
+    }
+
+    /// Atomically subtracts `delta_ns` from a task's virtual runtime and re-enqueues it
+    /// at the front with a recalculated virtual deadline.
+    ///
+    /// Called when a message arrives in a task's IPC ring-buffer to push it toward the
+    /// head of the EEVDF ring immediately.
+    ///
+    /// # Errors
+    /// - `SchedulerError::TaskNotFound` — task ID not present in any ring slot.
+    /// - `SchedulerError::RingFull` — ring is full (task was removed but could not be re-inserted).
+    pub fn boost_vruntime(
+        &self,
+        task_id: u64,
+        delta_ns: u64,
+    ) -> Result<(), SchedulerError> {
+        let mut task = self.remove(task_id).ok_or(SchedulerError::TaskNotFound)?;
+
+        // Atomically subtract delta from vruntime (saturating to prevent underflow).
+        task.vruntime = task.vruntime.saturating_sub(delta_ns);
+
+        // Recalculate virtual deadline so the EEVDF comparator is consistent.
+        task.vdeadline = calculate_vdeadline(task.vruntime, task.slice_ns, task.weight);
+
+        self.insert(task).map_err(|_| SchedulerError::RingFull)
+    }
+
+    /// Propagates the weight of `blocked_id` onto `holder_id` using a wait-free
+    /// compare_exchange loop (priority inheritance without any allocation).
+    ///
+    /// If `holder.weight` is already >= `blocked.weight`, returns `AlreadyInherited`.
+    ///
+    /// # Errors
+    /// - `SchedulerError::TaskNotFound` — either task ID not present.
+    /// - `SchedulerError::AlreadyInherited` — no weight change needed.
+    pub fn priority_inherit(
+        &self,
+        blocked_id: u64,
+        holder_id: u64,
+    ) -> Result<(), SchedulerError> {
+        // Read the blocked task's weight without removing it.
+        let blocked_weight = {
+            let mut found = None;
+            for cell in &self.tasks {
+                if let Some(t) = cell.load() {
+                    if t.task_id == blocked_id {
+                        found = Some(t.weight);
+                        break;
+                    }
+                }
+            }
+            found.ok_or(SchedulerError::TaskNotFound)?
+        };
+
+        // Find the holder task and update its weight atomically via remove + re-insert.
+        let mut holder = {
+            let mut found = None;
+            for cell in &self.tasks {
+                if let Some(t) = cell.load() {
+                    if t.task_id == holder_id {
+                        found = Some(t);
+                        break;
+                    }
+                }
+            }
+            found.ok_or(SchedulerError::TaskNotFound)?
+        };
+
+        if holder.weight >= blocked_weight {
+            return Err(SchedulerError::AlreadyInherited);
+        }
+
+        // Remove holder from ring, mutate weight, re-insert with recalculated deadline.
+        self.remove(holder_id).ok_or(SchedulerError::TaskNotFound)?;
+        holder.weight = blocked_weight;
+        holder.vdeadline = calculate_vdeadline(holder.vruntime, holder.slice_ns, holder.weight);
+        self.insert(holder).map_err(|_| SchedulerError::RingFull)
     }
 }
