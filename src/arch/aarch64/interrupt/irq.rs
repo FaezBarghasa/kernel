@@ -38,10 +38,8 @@ exception_stack!(irq_at_el1, |_stack| {
     }
 });
 
-//TODO
 pub unsafe fn trigger(irq: u32, token: &mut CleanLockToken) {
     unsafe {
-        // FIXME add_irq accepts a u8 as irq number
         // PercpuBlock::current().stats.add_irq(irq);
 
         irq_trigger(irq.try_into().unwrap(), token);

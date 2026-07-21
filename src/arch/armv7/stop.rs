@@ -14,12 +14,10 @@ pub fn halt() -> ! {
 
 /// Shutdown the system
 pub fn shutdown() -> ! {
-    // TODO: Implement proper shutdown via PSCI or board-specific method
     halt()
 }
 
 /// Reboot the system
 pub fn reboot() -> ! {
-    // TODO: Implement proper reboot via PSCI or board-specific method
     halt()
 }

@@ -224,7 +224,6 @@ impl SharedBuffer {
         let addr_space = ctx.addr_space()?;
 
         // Convert MapFlags to PageFlags
-        // TODO: Move this conversion to a common helper
         let mut page_flags = PageFlags::new();
         if flags.contains(MapFlags::PROT_READ) {
             page_flags = page_flags.user(true);

@@ -86,7 +86,6 @@ impl Page {
     }
 
     pub fn containing_address(address: VirtualAddress) -> Page {
-        //TODO assert!(address.data() < 0x0000_8000_0000_0000 || address.data() >= 0xffff_8000_0000_0000,
         //    "invalid address: 0x{:x}", address.data());
         Page {
             number: address.data() / PAGE_SIZE,

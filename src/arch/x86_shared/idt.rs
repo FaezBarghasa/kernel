@@ -69,7 +69,6 @@ const BACKUP_STACK_SIZE: usize = PAGE_SIZE << 4;
 
 static INIT_BSP_IDT: SyncUnsafeCell<Idt> = SyncUnsafeCell::new(Idt::new());
 
-// TODO: VecMap?
 static IDTS: RwLock<HashMap<LogicalCpuId, &'static mut Idt>> =
     RwLock::new(HashMap::with_hasher(DefaultHashBuilder::new()));
 
@@ -238,7 +237,6 @@ fn init_generic(cpu_id: LogicalCpuId, idt: &mut Idt, backup_stack_end: usize) {
         // reserve bits 49:32, which are for the standard IRQs, and for the local apic timer and error.
         *current_reservations[1].get_mut() |= 0x0003_FFFF;
     } else {
-        // TODO: use_default_irqs! but also the legacy IRQs that are only needed on one CPU
         current_idt[49].set_func(irq::lapic_error);
 
         // reserve bit 49

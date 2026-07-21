@@ -141,7 +141,6 @@ impl InterruptController for Plic {
         *irq_idx += ndev;
 
         // route all interrupts to boot HART
-        // TODO spread irqs over all the cores when we have them?
         let hlic_ic_idx = hlic::irqchip_for_hart(BOOT_HART_ID.load(Ordering::Relaxed))
             .expect("Could not find HLIC irqchip for the boot hart while initing PLIC");
         self.context = desc

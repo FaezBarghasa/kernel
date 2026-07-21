@@ -21,7 +21,6 @@ pub fn signal_handler(token: &mut CleanLockToken) {
     )
     .and_then(|_| ptrace::next_breakpoint().map(|f| f.contains(PTRACE_FLAG_IGNORE)));*/
 
-    // TODO: thumbs_down
     let Some((thread_ctl, proc_ctl, st)) = context.sigcontrol() else {
         // Discard signal if sigcontrol is unset.
         trace!("no sigcontrol, returning");
@@ -33,7 +32,6 @@ pub fn signal_handler(token: &mut CleanLockToken) {
         // that, any detection of pending unblocked signals by the sender, will result in the
         // context being unblocked, and signals sent.
 
-        // TODO: prioritize signals over regular program execution
         return;
     }
     let control_flags =
@@ -77,7 +75,6 @@ pub fn excp_handler(excp: syscall::Exception) {
     let context = current.write(token.token());
 
     let Some(eh) = context.sig.as_ref().and_then(|s| s.excp_handler) else {
-        // TODO: Let procmgr print this?
         info!(
             "UNHANDLED EXCEPTION, CPU {}, PID {}, NAME {}, CONTEXT {current:p}",
             crate::cpu_id(),
@@ -85,14 +82,11 @@ pub fn excp_handler(excp: syscall::Exception) {
             context.name
         );
         drop(context);
-        // TODO: Allow exceptions to be caught by tracer etc, without necessarily exiting the
         // context (closing files, dropping AddrSpace, etc)
         crate::syscall::process::exit_this_context(Some(excp), &mut token);
     };
-    // TODO
     /*
     let Some(regs) = context.regs_mut() else {
-        // TODO: unhandled exception in this case too?
         return;
     };
     let old_ip = regs.instr_pointer();

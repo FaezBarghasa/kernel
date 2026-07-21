@@ -50,7 +50,6 @@ unsafe fn instr_data_abort_inner(
         let mut flags = GenericPfFlags::empty();
         flags.set(GenericPfFlags::PRESENT, !was_translation_fault);
 
-        // TODO: RMW instructions may "involve" writing to (possibly invalid) memory, but AArch64
         // doesn't appear to require that flag to be set if the read alone would trigger a fault.
         flags.set(
             GenericPfFlags::INVOLVED_WRITE,

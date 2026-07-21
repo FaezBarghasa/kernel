@@ -60,7 +60,6 @@ impl System76Ec {
         // Send command
         self.write(0, 4);
 
-        // TODO: timeout
         while self.read(0) != 0 {}
 
         // Clear length

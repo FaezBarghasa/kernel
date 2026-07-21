@@ -19,7 +19,6 @@ pub const PAGE_MASK: usize = RmmA::PAGE_OFFSET_MASK;
 #[cold]
 pub unsafe fn init() {
     // Assuming SBI already set up PMAs correctly for us
-    // TODO: detect Svpbmt present/enabled and override device memory with PBMT=IO
 }
 
 /// Page

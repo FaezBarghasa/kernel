@@ -43,7 +43,6 @@ pub unsafe fn init_early(dtb: &Fdt) {
                 }
                 Some(SerialKind::Pl011(serial_port))
             } else if compatible.contains("ns16550a") || compatible.contains("snps,dw-apb-uart") {
-                //TODO: get actual register size from device tree
                 let serial_port = uart_16550::SerialPort::<Mmio<u32>>::new(virt);
                 if !skip_init {
                     let _ = serial_port.init();
@@ -70,7 +69,6 @@ pub unsafe fn init_early(dtb: &Fdt) {
 
 pub unsafe fn init(fdt: &Fdt) {
     unsafe {
-        //TODO: find actual serial device, not just any PL011
         if let Some(node) = fdt.find_compatible(&["arm,pl011"]) {
             let irq = get_interrupt(fdt, &node, 0).unwrap();
             if let Some(ic_idx) = ic_for_chip(&fdt, &node) {
@@ -90,7 +88,6 @@ pub unsafe fn init(fdt: &Fdt) {
 }
 
 pub unsafe fn init_acpi(irq: u32) {
-    //TODO: what should chip index be?
     let virq = IRQ_CHIP.irq_chip_list.chips[0].ic.irq_to_virq(irq).unwrap();
     info!("serial_port virq = {}", virq);
     register_irq(virq as u32, Box::new(Com1Irq {}));

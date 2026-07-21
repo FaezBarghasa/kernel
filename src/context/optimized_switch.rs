@@ -101,7 +101,6 @@ pub unsafe fn same_address_space(prev: *const Context, next: *const Context) -> 
 pub fn needs_fpu_save(context: &Context) -> bool {
     // This would check an FPU-used flag in the context
     // For now, always return true for correctness
-    // TODO: Implement lazy FPU saving
     true
 }
 

@@ -62,7 +62,6 @@ pub(super) fn init(madt: Madt) {
                     ic: Box::new(gic),
                 };
                 unsafe { IRQ_CHIP.irq_chip_list.chips.push(chip) };
-                //TODO: support more GICCs
                 break;
             }
         }
@@ -74,7 +73,6 @@ pub(super) fn init(madt: Madt) {
                 let gic = GicV3 {
                     gic_dist_if,
                     gic_cpu_if,
-                    //TODO: get GICRs
                     gicrs: Vec::new(),
                     irq_range: (0, 0),
                 };
@@ -85,7 +83,6 @@ pub(super) fn init(madt: Madt) {
                     ic: Box::new(gic),
                 };
                 unsafe { IRQ_CHIP.irq_chip_list.chips.push(chip) };
-                //TODO: support more GICCs
                 break;
             }
         }

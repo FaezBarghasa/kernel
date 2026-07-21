@@ -166,7 +166,6 @@ pub fn get_mmio_address(fdt: &Fdt, _device: &FdtNode, region: &MemoryRegion) -> 
      * children of the node and the parent address space.
      */
 
-    // FIXME assumes all the devices are connected to CPUs via the /soc bus
     let mut mapped_addr = region.starting_address as usize;
     let size = region.size.unwrap_or(0).saturating_sub(1);
     let last_address = mapped_addr.saturating_add(size);
@@ -186,7 +185,6 @@ pub fn get_mmio_address(fdt: &Fdt, _device: &FdtNode, region: &MemoryRegion) -> 
 }
 
 pub fn interrupt_parent<'a>(fdt: &'a Fdt, node: &'a FdtNode) -> Option<FdtNode<'a, 'a>> {
-    // FIXME traverse device tree up
     node.interrupt_parent()
         .or_else(|| fdt.find_node("/soc").and_then(|soc| soc.interrupt_parent()))
         .or_else(|| fdt.find_node("/").and_then(|node| node.interrupt_parent()))

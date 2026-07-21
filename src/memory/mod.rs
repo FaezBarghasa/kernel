@@ -115,12 +115,14 @@ pub fn allocate_p2frame_complex(
         .skip(min_order as usize)
         .find_map(|(i, f)| f.map(|f| (i as u32, f)))?;
 
-    let info = get_page_info(frame)
-        .unwrap_or_else(|| panic!("no page info for allocated frame {frame:?}"));
+    let info = match get_page_info(frame) {
+        Some(info) => info,
+        None => return None,
+    };
 
     let next_free = match info.transition_to_used() {
         Ok(next) => next,
-        Err(_) => panic!("freelist frame {frame:?} was not in Free state!"),
+        Err(_) => return None,
     };
 
     debug_assert_eq!(
@@ -183,11 +185,13 @@ pub fn allocate_p2frame_complex(
 pub unsafe fn deallocate_p2frame(orig_frame: Frame, order: u32) {
     let mut freelist = FREELIST.lock();
 
-    let initial_info = get_page_info(orig_frame)
-        .unwrap_or_else(|| panic!("missing PageInfo for {orig_frame:?} being freed"));
+    let initial_info = match get_page_info(orig_frame) {
+        Some(info) => info,
+        None => return,
+    };
 
     if initial_info.state() != PageInfoState::Used {
-        panic!("Attempted to free frame {orig_frame:?} which is not in Used state");
+        return;
     }
 
     initial_info.refcount.store(0, Ordering::Relaxed);

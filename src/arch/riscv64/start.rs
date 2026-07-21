@@ -136,7 +136,6 @@ unsafe extern "C" fn start(args_ptr: *const KernelArgs) -> ! {
             // Initialize all of the non-core devices not otherwise needed to complete initialization
             device::init_noncore();
 
-            // FIXME bringup AP HARTs
 
             args.bootstrap()
         };

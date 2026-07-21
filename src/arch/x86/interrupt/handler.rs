@@ -161,7 +161,6 @@ impl InterruptStack {
         self.scratch.eax = all.eax;
         self.iret.eip = all.eip;
 
-        // FIXME: The interrupt stack on which this is called, is always from userspace, but make
         // the API safer.
         self.iret.esp = all.esp;
 
@@ -301,7 +300,6 @@ macro_rules! interrupt_stack {
                 // Enter kernel TLS segment
                 enter_gs!(),
 
-                // TODO: Map PTI
                 "call map\n",
 
                 // Call inner function with pointer to stack
@@ -310,7 +308,6 @@ macro_rules! interrupt_stack {
                 call {inner}
                 ",
 
-                // TODO: Unmap PTI
                 "call unmap\n",
 
                 // Exit kernel TLS segment
@@ -347,13 +344,11 @@ macro_rules! interrupt {
                 // Enter kernel TLS segment
                 enter_gs!(),
 
-                // TODO: Map PTI
                 "call map\n",
 
                 // Call inner function with pointer to stack
                 "call {inner}\n",
 
-                // TODO: Unmap PTI
                 "call unmap\n",
 
                 // Exit kernel TLS segment
@@ -395,7 +390,6 @@ macro_rules! interrupt_error {
                 // Put code in, it's now in eax
                 "push eax\n",
 
-                // TODO: Map PTI
                 "call map\n",
 
                 // Call inner function with pointer to stack
@@ -405,7 +399,6 @@ macro_rules! interrupt_error {
                 ",
                 // add esp, 4
 
-                // TODO: Unmap PTI (split "add esp, 8" into two "add esp, 4"s maybe?)
                 "call unmap\n",
 
                 // Pop previous esp and code
@@ -458,7 +451,6 @@ impl ArchIntCtx for InterruptStack {
 #[unsafe(naked)]
 pub unsafe extern "C" fn enter_usermode() {
     core::arch::naked_asm!(concat!(
-        // TODO: Unmap PTI
         "call unmap\n",
 
         // Exit kernel TLS segment

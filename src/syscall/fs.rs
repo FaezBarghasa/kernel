@@ -61,7 +61,6 @@ pub fn copy_path_to_buf(raw_path: UserSliceRo, max_len: usize) -> Result<String>
     String::from_utf8(path_buf).map_err(|_| Error::new(EINVAL))
     //core::str::from_utf8(&path_buf[..path_len]).map_err(|_| Error::new(EINVAL))
 }
-// TODO: Define elsewhere
 const PATH_MAX: usize = PAGE_SIZE;
 
 #[inline]
@@ -141,7 +140,6 @@ pub fn openat(
     let path_buf = copy_path_to_buf(raw_path, PATH_MAX)?;
 
     if is_legacy(&path_buf) {
-        // TODO: implement
         return Err(Error::new(EINVAL));
     }
 
@@ -345,7 +343,6 @@ pub fn call(
 ) -> Result<usize> {
     let mut meta = [0_u64; 3];
 
-    // TODO: bytemuck/plain
     let copied = metadata.copy_common_bytes_to_slice(unsafe {
         core::slice::from_raw_parts_mut(meta.as_mut_ptr().cast(), meta.len() * 8)
     })?;
@@ -418,7 +415,6 @@ fn fdwrite_inner(
     metadata: &[u64],
     token: &mut CleanLockToken,
 ) -> Result<usize> {
-    // TODO: Ensure deadlocks can't happen
     let (scheme, number, descs_to_send) = {
         let (scheme, number) = {
             let current_lock = context::current();
@@ -652,9 +648,7 @@ pub fn fstat(fd: FileHandle, user_buf: UserSliceWo, token: &mut CleanLockToken) 
     file_op_generic_ext(fd, token, |scheme, _, desc, token| {
         scheme.kfstat(desc.number, user_buf, token)?;
 
-        // TODO: Ensure only the kernel can access the stat when st_dev is set, or use another API
         // for retrieving the scheme ID from a file descriptor.
-        // TODO: Less hacky method.
         let st_dev = desc
             .scheme
             .get()
@@ -738,7 +732,6 @@ pub fn mremap(
     let requested_dst_base = Some(new_base).filter(|_| new_address != 0);
 
     if mremap_flags.contains(MremapFlags::KEEP_OLD) {
-        // TODO: This is a hack! Find a better interface for replacing this, perhaps a capability
         // for non-CoW-borrowed i.e. owned frames, that can be inserted into address spaces.
         if new_page_count != 1 {
             return Err(Error::new(EOPNOTSUPP));

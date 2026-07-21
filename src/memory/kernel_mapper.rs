@@ -8,14 +8,12 @@ const NO_PROCESSOR: u32 = !0;
 static LOCK_OWNER: AtomicU32 = AtomicU32::new(NO_PROCESSOR);
 static LOCK_COUNT: AtomicUsize = AtomicUsize::new(0);
 
-// TODO: Support, perhaps via const generics, embedding address checking in PageMapper, thereby
 // statically enforcing that the kernel mapper can only map things in the kernel half, and vice
 // versa.
 /// A guard to the global lock protecting the upper 128 TiB of kernel address space.
 ///
 /// NOTE: Use this with great care! Since heap allocations may also require this lock when the heap
 /// needs to be expended, it must not be held while memory allocations are done!
-// TODO: Make the lock finer-grained so that e.g. the heap part can be independent from e.g.
 // PHYS_PML4?
 pub struct KernelMapper {
     mapper: crate::paging::PageMapper,

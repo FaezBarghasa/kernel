@@ -76,7 +76,6 @@ unsafe extern "C" fn start(args_ptr: *const KernelArgs) -> ! {
             graphical_debug::init(args.env());
 
             // Get hardware descriptor data
-            //TODO: use env {DTB,RSDT}_{BASE,SIZE}?
             let hwdesc_data = if args.hwdesc_base != 0 {
                 Some(unsafe {
                     slice::from_raw_parts(

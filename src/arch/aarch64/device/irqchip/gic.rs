@@ -69,7 +69,6 @@ impl InterruptController for GenericInterruptController {
         _ic_idx: usize,
         _irq_idx: &mut usize,
     ) -> Result<()> {
-        // TODO: Parse FDT to find address
         Ok(())
     }
     fn irq_ack(&mut self) -> u32 {

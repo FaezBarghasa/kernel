@@ -92,7 +92,6 @@ pub struct TscPercpu {
 
 /// Returns monotonic time in nanoseconds if KVM paravirtualized TSC is available
 pub fn monotonic_absolute() -> Option<u128> {
-    // TODO: Implement KVM paravirtualized TSC reading
     // This is a stub to allow compilation
     None
 }

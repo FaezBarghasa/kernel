@@ -35,7 +35,6 @@ use super::{
 pub enum Status {
     Runnable,
 
-    // TODO: Rename to SoftBlocked and move status_reason to this variant.
     /// Not currently runnable, typically due1 to some blocking syscall, but it can be trivially
     /// unblocked by e.g. signals.
     Blocked,
@@ -66,7 +65,6 @@ pub enum HardBlockedReason {
     AwaitingMmap {
         file_ref: GrantFileRef,
     },
-    // TODO: PageFaultOom?
     NotYetStarted,
 }
 
@@ -116,10 +114,8 @@ pub struct Context {
     pub syscall_debug_info: crate::syscall::debug::SyscallDebugInfo,
 
     /// Head buffer to use when system call buffers are not page aligned
-    // TODO: Store in user memory?
     pub syscall_head: SyscallFrame,
     /// Tail buffer to use when system call buffers are not page aligned
-    // TODO: Store in user memory?
     pub syscall_tail: SyscallFrame,
     /// Context should wake up at specified time
     pub wake: Option<u128>,
@@ -144,10 +140,8 @@ pub struct Context {
     pub being_sigkilled: bool,
     pub fmap_ret: Option<Frame>,
 
-    // TODO: id can reappear after wraparound?
     pub owner_proc_id: Option<NonZeroUsize>,
 
-    // TODO: Temporary replacement for existing kernel logic, replace with capabilities!
     pub ens: SchemeNamespace,
     pub euid: u32,
     pub egid: u32,
@@ -302,7 +296,6 @@ impl Context {
     /// Unblock context, and return true if it was blocked before being marked runnable
     pub fn unblock(&mut self) -> bool {
         if self.unblock_no_ipi() {
-            // TODO: Only send IPI if currently running?
             if let Some(cpu_id) = self.cpu_id {
                 if cpu_id != crate::cpu_id() {
                     // Send IPI if not on current CPU
@@ -387,7 +380,6 @@ impl Context {
     }
 
     /// Remove a file
-    // TODO: adjust files vector to smaller size if possible
     pub fn remove_file(&self, i: FileHandle) -> Option<FileDescriptor> {
         self.files.write().remove_file(i)
     }
@@ -415,7 +407,6 @@ impl Context {
         };
 
         if self.is_current_context() {
-            // TODO: Share more code with context::arch::switch_to.
             let this_percpu = PercpuBlock::current();
 
             if let Some(ref prev_addrsp) = self.addr_space {
@@ -605,7 +596,6 @@ impl Drop for BorrowedHtBuf {
         let Some(inner) = self.inner.take() else {
             return;
         };
-        //TODO: do not allow drop so lock token can be passed in
         let mut token = unsafe { CleanLockToken::new() };
         let mut context = context.write(token.token());
         {
@@ -890,7 +880,6 @@ impl FdTbl {
         Ok(files)
     }
 
-    // TODO: Faster, cleaner mechanism to get descriptor
     // Find a file descriptor by scheme id and number.
     pub fn find_by_scheme(
         &self,

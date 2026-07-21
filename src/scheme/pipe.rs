@@ -19,7 +19,6 @@ use super::{CallerCtx, GlobalSchemes, KernelScheme, OpenResult, StrOrBytes};
 
 static PIPE_NEXT_ID: AtomicUsize = AtomicUsize::new(0);
 
-// TODO: SLOB?
 static PIPES: RwLock<L1, HashMap<usize, Arc<Pipe>>> =
     RwLock::new(HashMap::with_hasher(DefaultHashBuilder::new()));
 
@@ -305,7 +304,6 @@ impl KernelScheme for PipeScheme {
 
             let mut bytes_written = 0;
 
-            // TODO: Modify VecDeque so that the unwritten portions can be accessed directly?
             for (idx, chunk) in src_buf.in_variable_chunks(TMPBUF_SIZE).enumerate() {
                 let chunk_byte_count = match chunk.copy_common_bytes_to_slice(&mut tmp_buf) {
                     Ok(c) => c,
@@ -333,7 +331,6 @@ impl KernelScheme for PipeScheme {
         }
     }
     fn kfpath(&self, id: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
-        //TODO: construct useful path?
         buf.copy_common_bytes_from_slice("/scheme/pipe/".as_bytes())
     }
     fn kfstat(&self, _id: usize, buf: UserSliceWo, _token: &mut CleanLockToken) -> Result<()> {

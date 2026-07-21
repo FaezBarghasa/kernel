@@ -138,14 +138,12 @@ pub unsafe extern "C" fn syscall_instruction_entry() {
     push_scratch!(),
     push_preserved!(),
 
-    // TODO: Map PTI
     "call map;",
 
     // Call inner funtion
     "mov rdi, rsp;",
     "call syscall_instruction;",
 
-    // TODO: Unmap PTI
     "call unmap;",
 
     "
@@ -160,7 +158,6 @@ pub unsafe extern "C" fn syscall_instruction_entry() {
     // Restore user GSBASE by swapping GSBASE and KGSBASE.
     "swapgs;",
 
-    // TODO: Should we unconditionally jump or avoid jumping, to hint to the branch predictor that
     // singlestep is NOT set?
     //
     // It appears Intel CPUs assume (previously unknown) forward conditional branches to not be
@@ -171,7 +168,6 @@ pub unsafe extern "C" fn syscall_instruction_entry() {
     // instruction, whereas debuggers expect the iretq behavior of returning to after the
     // instruction.
 
-    // TODO: Which one is faster?
     //      bt DWORD PTR [rsp + 16], 8
     //  or,
     //      bt BYTE PTR [rsp + 17], 0
@@ -229,6 +225,5 @@ pub unsafe extern "C" fn syscall_instruction_entry() {
     );
 }
 unsafe extern "C" {
-    // TODO: macro?
     pub fn enter_usermode();
 }

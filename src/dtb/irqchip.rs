@@ -123,7 +123,6 @@ impl IrqChipList {
                 if let Some(parent) = node.interrupt_parent()
                     && let Some(intr_data) = node.property("interrupts")
                 {
-                    // FIXME use interrupts() helper when fixed (see gh#12)
                     let mut intr_data = intr_data
                         .value
                         .as_chunks::<4>()
@@ -149,7 +148,6 @@ impl IrqChipList {
                     }
                     debug!("interrupts end");
                 } else if let Some(intr_data) = node.property("interrupts-extended") {
-                    // FIXME use the helper when fixed (see gh#37)
                     // Shouldn't matter much since ARM seems to not use extended interrupt and
                     // RISC-V seems to not use 3-sized interrupt addresses
                     let mut intr_data = intr_data
@@ -266,7 +264,6 @@ impl IrqChipList {
 }
 
 pub struct IrqChipCore {
-    //TODO: support multi level interrupt constrollers
     pub irq_chip_list: IrqChipList,
     pub irq_desc: [IrqDesc; 1024],
 }

@@ -66,7 +66,6 @@ impl Hpet {
     }
 }
 
-//TODO: x86 use assumes only one HPET and only one GenericAddressStructure
 #[cfg(target_arch = "x86")]
 impl Hpet {
     pub unsafe fn map(&self) {

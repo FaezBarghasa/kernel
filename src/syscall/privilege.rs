@@ -14,7 +14,6 @@ pub fn mkns(mut user_buf: UserSliceRo, token: &mut CleanLockToken) -> Result<usi
         (cx.euid, cx.ens)
     };
 
-    // TODO: Lift this restriction later?
     if uid != 0 {
         return Err(Error::new(EACCES));
     }
@@ -30,7 +29,6 @@ pub fn mkns(mut user_buf: UserSliceRo, token: &mut CleanLockToken) -> Result<usi
 
         let raw_path = UserSlice::new(ptr, len)?;
 
-        // TODO: Max scheme size limit?
         let max_len = 256;
 
         names.push(copy_path_to_buf(raw_path, max_len)?.into_boxed_str());

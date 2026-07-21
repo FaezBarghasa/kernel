@@ -85,7 +85,6 @@ impl Spcr {
                         };
                         let serial_port = uart_pl011::SerialPort::new(virt.data(), false);
                         *COM1.lock() = SerialKind::Pl011(serial_port);
-                        //TODO: enable IRQ on more platforms and interrupt types
                         if (spcr.interrupt_type & INTERRUPT_TYPE_GIC) == INTERRUPT_TYPE_GIC {
                             #[cfg(target_arch = "aarch64")]
                             unsafe {
@@ -99,7 +98,6 @@ impl Spcr {
                         );
                     }
                 }
-                //TODO: support more types!
                 unsupported => {
                     warn!(
                         "SPCR revision {} unsupported interface type {}",
@@ -109,7 +107,6 @@ impl Spcr {
             }
         } else if spcr.header.revision == 1 {
             match spcr.interface_type {
-                //TODO: support more types!
                 unsupported => {
                     warn!("SPCR revision 1 unsupported interface type {}", unsupported);
                 }

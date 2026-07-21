@@ -93,7 +93,6 @@ pub fn syscall(number: usize, a: usize, b: usize, c: usize, d: usize, e: usize, 
                 .map_err(Error::from)
         }
 
-        // TODO: Uncomment when SYS_MLOCKALL and SYS_MUNLOCKALL are added to redox_syscall crate
         // number::SYS_MLOCKALL => memory::sys_mlockall(a),
         // number::SYS_MUNLOCKALL => memory::sys_munlockall(),
         _ => {

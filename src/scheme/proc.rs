@@ -137,7 +137,6 @@ enum ContextHandle {
         new_ft: Arc<spin::RwLock<FdTbl>>,
     },
 
-    // TODO: Remove this once openat is implemented, or allow openat-via-dup via e.g. the top-level
     // directory.
     OpenViaDup,
     SchedAffinity,
@@ -383,7 +382,6 @@ impl KernelScheme for ProcScheme {
         HANDLES.write(token.token()).insert(
             id,
             Handle {
-                // TODO: placeholder
                 context: context::current(),
                 kind: ContextHandle::Authority,
             },
@@ -483,7 +481,6 @@ impl KernelScheme for ProcScheme {
 
                 let mut notify_files = Vec::new();
 
-                // TODO: Validate flags
                 let result_base = if consume {
                     dst_addr_space.acquire_write().r#move(
                         Some((addrspace, &mut *src_addr_space)),
@@ -534,7 +531,6 @@ impl KernelScheme for ProcScheme {
                     PAGE_SIZE => sig_proc,
                     _ => return Err(Error::new(EINVAL)),
                 };
-                // TODO: Allocated or AllocatedShared?
                 let addrsp = AddrSpace::current(token)?;
                 let page = addrsp.acquire_write().mmap(
                     None,
@@ -583,7 +579,6 @@ impl KernelScheme for ProcScheme {
         metadata: &[u64],
         token: &mut CleanLockToken,
     ) -> Result<usize> {
-        // TODO: simplify
         let handle = {
             let mut handles = HANDLES.write(token.token());
             let handle = handles.get_mut(&id).ok_or(Error::new(EBADF))?;
@@ -615,7 +610,6 @@ impl KernelScheme for ProcScheme {
         _stored_flags: u32,
         token: &mut CleanLockToken,
     ) -> Result<usize> {
-        // TODO: offset
 
         // Don't hold a global lock during the context switch later on
         let handle = {
@@ -629,7 +623,6 @@ impl KernelScheme for ProcScheme {
     }
 
     fn kfpath(&self, id: usize, buf: UserSliceWo, token: &mut CleanLockToken) -> Result<usize> {
-        //TODO: construct useful path?
         buf.copy_common_bytes_from_slice("/scheme/kernel.proc/".as_bytes())
     }
 
@@ -725,7 +718,6 @@ impl KernelScheme for ProcScheme {
                         },
                     context,
                 } => {
-                    // TODO: Maybe allow userspace to either copy or transfer recently dupped file
                     // descriptors between file tables.
                     if buf != b"copy" {
                         return Err(Error::new(EINVAL));
@@ -752,7 +744,6 @@ impl KernelScheme for ProcScheme {
                     const GRANT_FD_PREFIX: &[u8] = b"grant-fd-";
 
                     let kind = match buf {
-                        // TODO: Better way to obtain new empty address spaces, perhaps using SYS_OPEN. But
                         // in that case, what scheme?
                         b"empty" => ContextHandle::AddrSpace {
                             addrspace: AddrSpaceWrapper::new()?,
@@ -1096,7 +1087,6 @@ impl ContextHandle {
                     ContextVerb::try_from_raw(user_data).ok_or(Error::new(EINVAL))?;
 
                 match context_verb {
-                    // TODO: lwp_park/lwp_unpark for bypassing procmgr?
                     ContextVerb::Unstop | ContextVerb::Stop if !privileged => {
                         Err(Error::new(EPERM))
                     }
@@ -1113,7 +1103,6 @@ impl ContextHandle {
                         guard.status = Status::HardBlocked {
                             reason: HardBlockedReason::Stopped,
                         };
-                        // TODO: wait for context to be switched away from, and/or IPI?
                         Ok(size_of::<usize>())
                     }
                     ContextVerb::Unstop => {
@@ -1360,7 +1349,6 @@ impl ContextHandle {
                 buf.copy_common_bytes_from_slice(&data)
             }
 
-            // TODO: Find a better way to switch address spaces, since they also require switching
             // the instruction and stack pointer. Maybe remove `<pid>/regs` altogether and replace it
             // with `<pid>/ctx`
             _ => Err(Error::new(EBADF)),

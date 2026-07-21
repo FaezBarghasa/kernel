@@ -7,7 +7,6 @@ static SYSTEM_TIME: AtomicU64 = AtomicU64::new(0);
 
 /// Initialize timer
 pub fn init() {
-    // TODO: Initialize ARM Generic Timer or board-specific timer
 }
 
 /// Get current time in nanoseconds

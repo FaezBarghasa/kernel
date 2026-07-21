@@ -27,7 +27,6 @@ use super::{CallerCtx, KernelScheme, OpenResult};
 
 pub struct MemoryScheme;
 
-// FIXME: Use crate that autogenerates conversion functions.
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum HandleTy {
@@ -87,7 +86,6 @@ impl MemoryScheme {
         let mut notify_files = Vec::new();
 
         if is_phys_contiguous && map.flags.contains(MapFlags::MAP_SHARED) {
-            // FIXME: Should this be supported?
             return Err(Error::new(EOPNOTSUPP));
         }
 
@@ -123,7 +121,6 @@ impl MemoryScheme {
         memory_type: MemoryType,
         token: &mut CleanLockToken,
     ) -> Result<usize> {
-        // FIXME: Check physical_address against the real MAXPHYADDR.
         let end = 1 << 52;
         if (physical_address.saturating_add(size) as u64) > end || physical_address % PAGE_SIZE != 0
         {
@@ -224,7 +221,6 @@ impl KernelScheme for MemoryScheme {
             .collect::<Option<HandleFlags>>()
             .ok_or(Error::new(ENOENT))?;
 
-        // FIXME: Support arches with other default memory types?
         if ctx.uid != 0
             && (!flags.is_empty()
                 || !matches!(

@@ -35,7 +35,6 @@ pub(super) fn init(madt: Madt) {
     let trampoline_frame = Frame::containing(PhysicalAddress::new(TRAMPOLINE));
     let trampoline_page = Page::containing_address(VirtualAddress::new(TRAMPOLINE));
     let (result, page_table_physaddr) = unsafe {
-        //TODO: do not have writable and executable!
         let mut mapper = KernelMapper::lock();
 
         let result = mapper
@@ -100,7 +99,6 @@ pub(super) fn init(madt: Madt) {
                     ap_page_table.write(page_table_physaddr as u64);
                     ap_code.write(kstart_ap as u64);
 
-                    // TODO: Is this necessary (this fence)?
                     core::arch::asm!("");
                 };
                 AP_READY.store(false, Ordering::SeqCst);

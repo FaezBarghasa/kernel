@@ -17,8 +17,6 @@ pub fn monotonic_absolute() -> u128 {
 fn hpet_or_pit() -> u128 {
     #[cfg(feature = "acpi")]
     if let Some(ref hpet) = *crate::acpi::ACPI_TABLE.hpet.read() {
-        //TODO: handle rollover?
-        //TODO: improve performance
 
         // Current count
         let counter = unsafe { hpet.read_u64(hpet::MAIN_COUNTER_OFFSET) };

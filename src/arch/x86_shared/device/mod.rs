@@ -38,7 +38,6 @@ unsafe fn init_hpet_one_shot() -> bool {
         match ACPI_TABLE.hpet.write().take() {
             Some(hpet) => {
                 if cfg!(target_arch = "x86") {
-                    //TODO: fix HPET on i686
                     warn!("HPET found but implemented on i686");
                     return false;
                 }

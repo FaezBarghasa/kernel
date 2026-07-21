@@ -19,7 +19,6 @@ pub fn init(env: &[u8]) {
     let mut height = 0;
     let mut stride = 0;
 
-    //TODO: should errors be reported?
     for line in str::from_utf8(env).unwrap_or("").lines() {
         let mut parts = line.splitn(2, '=');
         let name = parts.next().unwrap_or("");

@@ -163,7 +163,6 @@ impl InterruptController for Bcm2835ArmInterruptController {
     }
 
     fn irq_ack(&mut self) -> u32 {
-        //TODO: support smp self.read(LOCAL_IRQ_PENDING + 4 * cpu)
         let sources = unsafe { self.read(PENDING_0) };
         let pending_num = ffs(sources) - 1;
         let fast_irq = [

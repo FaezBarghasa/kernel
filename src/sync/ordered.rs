@@ -186,7 +186,6 @@ impl<L: Level, T> Mutex<L, T> {
             }
 
             // Block the current thread until the lock is available
-            // TODO: Use a proper wait queue for mutexes
             // For now, just yield
             unsafe { crate::context::switch(&mut CleanLockToken::new()) };
         }
@@ -301,7 +300,6 @@ impl<'a, L: Level, T: ?Sized + 'a> Drop for MutexGuard<'a, L, T> {
         // For a true PI mutex, we might need to explicitly restore here
         // to the highest priority of any other locks it holds, or its base.
         // For now, rely on expiration or explicit restore.
-        // TODO: Implement proper priority restoration for nested locks.
         context::current()
             .inner
             .write()

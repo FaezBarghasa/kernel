@@ -59,7 +59,6 @@ fn map_interrupt(irq: u32) -> u32 {
 
 impl Clint {
     pub fn new(freq: usize, node: &FdtNode) -> Self {
-        // TODO IPI
         // let reg = clint_node.reg().unwrap().next().unwrap();
         // reg.starting_address.add(crate::PHYS_OFFSET) as *mut u8;
         // reg.size.unwrap();
@@ -91,7 +90,6 @@ impl Clint {
                     .expect("Couldn't find HLIC in irqchip list for CLINT")
             };
 
-            // FIXME dirty hack map M-mode interrupts (handled by SBI) to S-mode interrupts we get from SBI
             // Why aren't S-mode interrupts in the DTB already?
             let irq0 = IrqCell::L1(map_interrupt(irq0));
             let irq1 = IrqCell::L1(map_interrupt(irq1));

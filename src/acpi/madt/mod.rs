@@ -131,7 +131,6 @@ pub struct MadtGicc {
     pub processor_power_efficiency_class: u8,
     _reserved2: u8,
     pub spe_overflow_interrupt: u16,
-    //TODO: optional field introduced in ACPI 6.5: pub trbe_interrupt: u16,
 }
 
 /// MADT GICD

@@ -154,7 +154,8 @@ fn kmain(bootstrap: Bootstrap) -> ! {
             context.name.push_str("[kmain_reaper]");
         }
         Err(err) => {
-            panic!("failed to spawn kmain_reaper: {:?}", err);
+            log::error!("failed to spawn kmain_reaper: {:?}", err);
+            loop { core::hint::spin_loop(); }
         }
     }
     match context::spawn(false, owner.clone(), || crate::memory::mglru::mglru_daemon(), &mut token) {

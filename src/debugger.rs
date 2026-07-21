@@ -99,7 +99,6 @@ pub unsafe fn debugger(target_id: Option<*const ContextLock>, token: &mut CleanL
                         info.provider,
                     );
 
-                    // FIXME riscv64 implementation
 
                     #[cfg(target_arch = "x86")]
                     println!(
@@ -128,7 +127,6 @@ pub unsafe fn debugger(target_id: Option<*const ContextLock>, token: &mut CleanL
             #[cfg(target_arch = "aarch64")]
             dump_stack(&*context, regs.sp_el0);
 
-            // FIXME riscv64 implementation
 
             #[cfg(target_arch = "x86")]
             dump_stack(&*context, regs.esp);

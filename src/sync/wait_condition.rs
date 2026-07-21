@@ -159,7 +159,6 @@ impl WaitCondition {
 
 impl Drop for WaitCondition {
     fn drop(&mut self) {
-        //TODO: drop violates lock tokens
         unsafe {
             let mut token = CleanLockToken::new();
             self.notify_signal(&mut token);

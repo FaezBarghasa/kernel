@@ -63,7 +63,6 @@ impl Grant {
         self.phys.as_ref().map(|f| f.get())
     }
     pub fn grant_flags(&self) -> MapFlags {
-        // TODO: reconstruct MapFlags from PageFlags
         let mut flags = MapFlags::empty();
         if self.flags.has_write() {
             flags |= MapFlags::PROT_WRITE;
@@ -117,7 +116,6 @@ impl Grant {
                 .map_phys(span.base.start_address(), frames.base(), flags)
                 .ok_or(Error::new(ENOMEM))?
                 .flush();
-            // TODO: Zero memory (requires mapping?)
             // For now assuming allocator zeroes or we can access via phys map
             // But existing behavior likely maps then zeroes.
         }

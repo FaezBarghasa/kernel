@@ -10,7 +10,6 @@ static mut GICC_BASE: usize = 0;
 
 /// Initialize GIC
 pub unsafe fn init() {
-    // TODO: Get addresses from device tree
     // For now, use common Raspberry Pi 2 addresses
     GICD_BASE = 0x3F00B000;
     GICC_BASE = 0x3F00C000;

@@ -21,7 +21,6 @@ pub enum SerialKind {
 impl SerialKind {
     #[cfg(target_arch = "aarch64")]
     pub fn enable_irq(&mut self) {
-        //TODO: implement for NS16550
         match self {
             Self::NotPresent => {}
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -33,7 +32,6 @@ impl SerialKind {
     }
 
     pub fn receive(&mut self, token: &mut CleanLockToken) {
-        //TODO: make PL011 receive work the same way as NS16550
         match self {
             Self::NotPresent => {}
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]

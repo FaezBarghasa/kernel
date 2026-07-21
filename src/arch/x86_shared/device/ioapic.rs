@@ -404,7 +404,6 @@ pub unsafe fn init(active_table: &mut KernelMapper) {
 
         // tell the firmware that we're using APIC rather than the default 8259 PIC.
 
-        // FIXME: With ACPI moved to userspace, we should instead allow userspace to check whether the
         // IOAPIC has been initialized, and then subsequently let some ACPI driver call the AML from
         // userspace.
 

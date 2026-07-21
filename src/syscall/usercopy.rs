@@ -130,7 +130,6 @@ impl<const WRITE: bool> UserSlice<true, WRITE> {
             .copy_to_slice(&mut slice[..min])?;
         Ok(min)
     }
-    // TODO: Merge int IO functions?
     pub fn read_usize(self) -> Result<usize> {
         let mut ret = 0_usize.to_ne_bytes();
         self.limit(core::mem::size_of::<usize>())
@@ -255,7 +254,6 @@ impl Buffer<'static> for UserSliceWo {
         self.copy_exactly(src)
     }
     fn zero_out(self) -> Result<()> {
-        // TODO: Implement this. Don't need to as long as the header size is constant, for now.
         Ok(())
     }
 }

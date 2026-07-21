@@ -55,7 +55,6 @@ pub struct UserInner {
     context: Weak<ContextLock>,
     todo: OptimizedWaitQueue<Sqe>,
 
-    // FIXME: custom packed radix tree data structure
     states: Mutex<Slab<State>>,
 
     unmounting: AtomicBool,
@@ -247,7 +246,6 @@ impl UserInner {
         // Tell the scheme handler to read
         event::trigger(self.root_id, self.handle_id, EVENT_READ, token);
 
-        //TODO: wait for all todo and done to be processed?
         Ok(())
     }
 
@@ -257,7 +255,6 @@ impl UserInner {
             states.insert(State::Placeholder)
         };
 
-        // TODO: implement blocking?
         u32::try_from(idx).map_err(|_| Error::new(EAGAIN))
     }
 
@@ -403,7 +400,6 @@ impl UserInner {
                             drop(states);
                             maybe_eintr?;
 
-                            // TODO: Is this too dangerous when the states lock is held?
                             self.todo.send(
                                 Sqe {
                                     opcode: Opcode::Cancel as u8,
@@ -503,11 +499,9 @@ impl UserInner {
         })
     }
 
-    // TODO: Use an address space Arc over a context Arc. While contexts which share address spaces
     // still can access borrowed scheme pages, it would both be cleaner and would handle the case
     // where the initial context is closed.
     /// Capture a buffer owned by userspace, mapping it contiguously onto scheme memory.
-    // TODO: Hypothetical accept_head_leak, accept_tail_leak options might be useful for
     // libc-controlled buffer pools.
     fn capture_inner<const READ: bool, const WRITE: bool>(
         context_weak: &Weak<ContextLock>,
@@ -587,7 +581,6 @@ impl UserInner {
             .ok_or(Error::new(ENOMEM))?;
 
         let head = if !head_part_of_buf.is_empty() {
-            // FIXME: Signal context can probably recursively use head/tail.
             let mut array = BorrowedHtBuf::head(token)?;
             let frame = array.frame();
 
@@ -682,7 +675,6 @@ impl UserInner {
         let tail = if !tail_part_of_buf.is_empty() {
             let tail_dst_page = first_middle_dst_page.next_by(middle_page_count);
 
-            // FIXME: Signal context can probably recursively use head/tail.
             let mut array = BorrowedHtBuf::tail(token)?;
             let frame = array.frame();
 
@@ -692,7 +684,6 @@ impl UserInner {
 
                 for b in to_zero.iter_mut() { *b = 0u8; }
 
-                // FIXME: remove reinterpret_unchecked
                 tail_part_of_buf
                     .reinterpret_unchecked::<true, false>()
                     .copy_to_slice(to_copy)?;
@@ -1019,7 +1010,6 @@ impl UserInner {
                     }
                 };
 
-                // FIXME: Description can leak if there is no additional file table space.
                 if flags.contains(FobtainFdFlags::MANUAL_FD) {
                     context::current().read(token.token()).insert_file(
                         FileHandle::from(dst_fd_or_ptr),
@@ -1140,7 +1130,6 @@ impl UserInner {
                             *code = Error::mux(Err(Error::new(EINTR)));
                         }
 
-                        // TODO: Require ECANCELED?
                         if let Response::Regular(ref mut code, _) = response
                             && !canceling
                             && *code == Error::mux(Err(Error::new(EINTR)))
@@ -1187,7 +1176,6 @@ impl UserInner {
     }
 
     pub fn fevent(&self, flags: EventFlags) -> Result<EventFlags> {
-        // TODO: Should the root scheme also suppress events if `flags` does not contain
         // `EVENT_READ`?
         Ok(if self.todo.is_currently_empty() {
             EventFlags::empty()
@@ -1282,7 +1270,6 @@ impl UserInner {
             token,
         )?;
 
-        // TODO: I've previously tested that this works, but because the scheme trait all of
         // Redox's schemes currently rely on doesn't allow one-way messages, there's no current
         // code using it.
 
@@ -1574,7 +1561,6 @@ impl<const READ: bool, const WRITE: bool> CaptureGuard<READ, WRITE> {
 struct CopyInfo<const READ: bool, const WRITE: bool> {
     src: Option<BorrowedHtBuf>,
 
-    // TODO
     dst: Option<UserSlice<true, true>>,
 }
 impl<const READ: bool, const WRITE: bool> CaptureGuard<READ, WRITE> {
@@ -1588,7 +1574,6 @@ impl<const READ: bool, const WRITE: bool> CaptureGuard<READ, WRITE> {
             return Ok(());
         }
 
-        // TODO: Encode src and dst better using const generics.
         if let CopyInfo {
             src: Some(ref src),
             dst: Some(ref mut dst),
@@ -2049,7 +2034,6 @@ impl KernelScheme for UserScheme {
     ) -> Result<usize> {
         let inner = self.inner.upgrade().ok_or(Error::new(ENODEV))?;
         let mut address = inner.capture_user(buf, token)?;
-        // TODO: Support passing the 16-byte record_len of the last dent, to make it possible to
         // iterate backwards without first interating forward? The last entry will contain the
         // opaque id to pass to the next getdents. Since this field is small, this would fit in the
         // extra_raw field of `Cqe`s.
@@ -2273,7 +2257,6 @@ impl<const N: usize> Args for [usize; N] {
     }
 }
 
-// TODO: Find a better way to do authentication. No scheme call currently uses arg 5 but this will
 // likely change. Ideally this mechanism would also allow the scheme to query the supplementary
 // group list.
 fn uid_gid_hack_merge([uid, gid]: [u32; 2]) -> u64 {

@@ -85,7 +85,6 @@ impl super::Context {
     }
 
     pub fn set_fx_regs(&mut self, mut _new: FloatRegisters) {
-        // FIXME: Implement floating point support
     }
 
     pub fn current_syscall(&self) -> Option<[usize; 6]> {
@@ -143,7 +142,6 @@ pub unsafe fn empty_cr3() -> rmm::PhysicalAddress {
 /// Switch to the next context by restoring its stack and registers
 pub unsafe fn switch_to(prev: &mut super::Context, next: &mut super::Context) {
     unsafe {
-        // FIXME floating point
         PercpuBlock::current()
             .new_addrsp_tmp
             .set(next.addr_space.clone());

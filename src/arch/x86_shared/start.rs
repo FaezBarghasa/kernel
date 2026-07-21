@@ -192,7 +192,6 @@ pub struct KernelArgsAp {
     pub idt_ptr: *mut idt::Idt,
 }
 
-// FIXME use extern "custom"
 unsafe extern "C" {
     pub fn kstart_ap();
 }

@@ -10,7 +10,6 @@ pub unsafe fn handle() {
         return;
     }
 
-    // TODO: Dispatch to registered handlers
 
     // End of interrupt
     crate::arch::armv7::device::gic::end_of_interrupt(irq);

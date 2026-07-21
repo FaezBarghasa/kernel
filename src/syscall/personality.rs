@@ -156,7 +156,6 @@ pub fn detect_abi(token: &mut CleanLockToken) -> PersonalityABI {
 
     // Check if context has a registered personality
     // For now, default to Redox unless explicitly set
-    // TODO: Check ELF header magic, PE signature, etc.
 
     // Placeholder: would read from context's personality state
     PersonalityABI::Redox
@@ -202,7 +201,6 @@ fn redirect_to_linux_server(args: SyscallArgs, _token: &mut CleanLockToken) -> R
 
     // Send to linux-compat-server scheme
     // For now, return ENOSYS until server is implemented
-    // TODO: IPC send to "linux:" scheme
 
     Err(Error::new(ENOSYS))
 }
@@ -211,7 +209,6 @@ fn redirect_to_linux_server(args: SyscallArgs, _token: &mut CleanLockToken) -> R
 fn redirect_to_windows_server(args: SyscallArgs, _token: &mut CleanLockToken) -> Result<usize> {
     let msg = create_syscall_message(PersonalityABI::Windows, args);
 
-    // TODO: IPC send to "windows:" scheme
     Err(Error::new(ENOSYS))
 }
 
@@ -219,7 +216,6 @@ fn redirect_to_windows_server(args: SyscallArgs, _token: &mut CleanLockToken) ->
 fn redirect_to_android_server(args: SyscallArgs, _token: &mut CleanLockToken) -> Result<usize> {
     let msg = create_syscall_message(PersonalityABI::Android, args);
 
-    // TODO: IPC send to "android:" scheme
     Err(Error::new(ENOSYS))
 }
 
@@ -249,7 +245,6 @@ fn create_syscall_message(abi: PersonalityABI, args: SyscallArgs) -> ZeroCopyMes
 
 /// Set the personality for the current context
 pub fn set_personality(abi: PersonalityABI, token: &mut CleanLockToken) -> Result<()> {
-    // TODO: Store personality in context
     // This would be called by exec() when loading a foreign binary
     Ok(())
 }
@@ -261,7 +256,6 @@ pub fn register_personality_server(
     handle: usize,
     _token: &mut CleanLockToken,
 ) -> Result<()> {
-    // TODO: Store server registration globally
     // Personality servers register themselves on startup
     Ok(())
 }

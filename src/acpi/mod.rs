@@ -138,7 +138,6 @@ pub unsafe fn init(already_supplied_rsdp: Option<*const u8>) {
                 return;
             };
 
-            // TODO: Don't touch ACPI tables in kernel?
 
             for sdt in rxsdt.iter() {
                 get_sdt(sdt, &mut KernelMapper::lock());
@@ -153,14 +152,11 @@ pub unsafe fn init(already_supplied_rsdp: Option<*const u8>) {
                 }
             }
 
-            // TODO: Enumerate processors in userspace, and then provide an ACPI-independent interface
             // to initialize enumerated processors to userspace?
             Madt::init();
-            //TODO: support this on any arch
             // SPCR must be initialized after MADT for interrupt controllers
             #[cfg(target_arch = "aarch64")]
             spcr::Spcr::init();
-            // TODO: Let userspace setup HPET, and then provide an interface to specify which timer to
             // use?
             Hpet::init();
             #[cfg(target_arch = "aarch64")]
@@ -214,7 +210,6 @@ pub fn get_sdt_signature(sdt: &'static Sdt) -> SdtSignature {
 
 pub fn aml_tables() -> impl Iterator<Item = &'static Sdt> {
     let mut sdts = find_sdt("SSDT");
-    // TODO: DSDT is pointed to by FADT, not in RSDT/XSDT usually?
     // But sometimes it is mapped.
     // For now we just return SSDTs as they are the dynamic ones.
     sdts.into_iter()

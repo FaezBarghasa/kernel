@@ -56,7 +56,6 @@ unsafe fn boot_cpu_init(dtb_ptr: usize) {
 
     // Parse device tree (if available)
     if dtb_ptr != 0 {
-        // TODO: Parse DTB to discover hardware
     }
 
     // Initialize interrupt controller

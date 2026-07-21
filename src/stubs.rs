@@ -163,7 +163,6 @@ pub mod context_helpers {
             );
 
             // For now, panic on exceptions
-            // TODO: Implement proper exception handling (signals, etc.)
             panic!("Unhandled CPU exception: {:?}", exception);
         }
     }

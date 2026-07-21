@@ -205,7 +205,6 @@ impl InterruptStack {
         self.registers.x1 = all.x1;
     }
 
-    //TODO
     pub fn is_singlestep(&self) -> bool {
         false
     }

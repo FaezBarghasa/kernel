@@ -75,7 +75,6 @@ pub fn register_kstop(token: &mut CleanLockToken) -> bool {
         return false;
     }
 
-    // TODO: Context switch directly to the waiting context, to avoid annoying timeouts.
     true
 }
 
@@ -170,7 +169,6 @@ impl KernelScheme for AcpiScheme {
             HandleKind::TopLevel => 0,
         })
     }
-    // TODO
     fn fevent(
         &self,
         id: usize,

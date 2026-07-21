@@ -20,7 +20,6 @@ pub struct GicV3 {
     pub gic_dist_if: GicDistIf,
     pub gic_cpu_if: GicV3CpuIf,
     pub gicrs: Vec<(usize, usize)>,
-    //TODO: GICC, GICH, GICV?
     pub irq_range: (usize, usize),
 }
 
@@ -40,7 +39,6 @@ impl GicV3 {
         };
 
         // Clear current registers
-        //TODO: deinit?
         self.gic_dist_if.address = 0;
         self.gicrs.clear();
 
@@ -163,7 +161,6 @@ impl GicV3CpuIf {
         // Aff3[55:48], Aff2[39:32], Aff1[23:16]
 
         // Simplified: We assume Aff0 is the target_cpu and others are 0 for now.
-        // TODO: Proper MPIDR based affinity mapping.
 
         // IRQ ID is the IPI kind (0 or 1).
 

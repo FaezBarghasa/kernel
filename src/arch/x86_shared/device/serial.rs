@@ -14,7 +14,6 @@ pub unsafe fn init() {
     super::system76_ec::init();
 
     if cfg!(not(feature = "serial_debug")) {
-        // FIXME remove serial_debug feature once ACPI SPCR is respected on UEFI boots.
         return;
     }
 
@@ -27,12 +26,10 @@ pub unsafe fn init() {
         *COM2.lock() = SerialKind::Ns16550Pio(com2);
     }
 
-    // FIXME remove explicit LPSS handling once ACPI SPCR is supported
     if cfg!(not(feature = "lpss_debug")) {
         return;
     }
 
-    // TODO: Make this configurable
     let address = crate::PHYS_OFFSET + 0xFE032000;
 
     {

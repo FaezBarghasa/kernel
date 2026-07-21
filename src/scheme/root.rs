@@ -62,7 +62,6 @@ impl KernelScheme for RootScheme {
     ) -> Result<OpenResult> {
         let path = path.trim_start_matches('/');
 
-        //TODO: Make this follow standards for flags and errors
         if flags & O_CREAT == O_CREAT {
             if ctx.uid != 0 {
                 return Err(Error::new(EACCES));
@@ -98,7 +97,6 @@ impl KernelScheme for RootScheme {
                         let inner = Arc::new(UserInner::new(
                             self.scheme_id,
                             scheme_id,
-                            // TODO: This is a hack, but eventually the legacy interface will be
                             // removed.
                             v2,
                             new_close,

@@ -26,7 +26,6 @@ pub fn ipi(kind: IpiKind, _target: IpiTarget) {
     }
 
     unsafe {
-        // TODO: Map IpiTarget to SGI target mask (CPUIDs)
         // For now we assume a broadcast or specific implementation in the driver
         IRQ_CHIP.send_sgi(kind as u32, u32::MAX);
     }

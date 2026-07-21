@@ -21,8 +21,6 @@ const STORE_PAGE_FAULT: usize = 15;
 use super::InterruptStack;
 
 #[unsafe(naked)]
-// FIXME use extern "custom"
-// FIXME use align(4)
 pub unsafe extern "C" fn exception_handler() {
     unsafe {
         naked_asm!(
@@ -147,7 +145,6 @@ unsafe fn handle_system_exception(scause: usize, regs: &InterruptStack) {
 unsafe fn handle_interrupt(interrupt: usize) {
     unsafe {
         let mut token = CleanLockToken::new();
-        // FIXME retrieve from percpu area
         // For now all the interrupts go to boot hart so this suffices...
         let hart: usize = BOOT_HART_ID.load(Ordering::Relaxed);
         irqchip::hlic::interrupt(hart, interrupt, &mut token);
@@ -185,7 +182,6 @@ unsafe fn handle_user_exception(scause: usize, regs: &mut InterruptStack) {
         );
         regs.dump();
 
-        // TODO
         /*
         let signal = match scause {
             0 | 4 | 6 | 18 | 19 => SIGBUS, // misaligned / machine check
@@ -223,7 +219,6 @@ unsafe fn page_fault(scause: usize, regs: &mut InterruptStack, user_mode: bool) 
             GenericPfFlags::INSTR_NOT_DATA,
             scause == INSTRUCTION_PAGE_FAULT,
         );
-        // FIXME can these conditions be distinguished? Should they be?
         generic_flags.set(GenericPfFlags::INVL, false);
         generic_flags.set(GenericPfFlags::PRESENT, false);
 
