@@ -357,6 +357,11 @@ impl<L: Level, T> RwLock<L, T> {
         self.inner.into_inner()
     }
 
+    /// Returns a mutable reference to the underlying data.
+    pub fn get_mut(&mut self) -> &mut T {
+        self.inner.get_mut()
+    }
+
     /// Attempts to acquire write access without blocking.
     pub fn try_write<'a, LP: Lower<L> + 'a>(
         &'a self,

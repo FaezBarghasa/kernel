@@ -339,12 +339,13 @@ mod tests {
     fn setup_mock_context() -> (Arc<crate::context::ContextLock>, usize) {
         let mut token = unsafe { crate::sync::CleanLockToken::new() };
         let addr_space = crate::context::memory::AddrSpace::new().unwrap();
-        let context_ref = Arc::new(crate::context::ContextLock::new(crate::context::Context::new(None).unwrap()));
-        let context_id = context_ref.read(token.token()).id;
-        {
-            let mut context = context_ref.write(token.token());
+        let mut context_ref = Arc::new(crate::context::ContextLock::new(crate::context::Context::new(None).unwrap()));
+        let context_id = {
+            let context_lock = Arc::get_mut(&mut context_ref).unwrap();
+            let context = context_lock.get_mut();
             context.addr_space = Some(addr_space);
-        }
+            context.id
+        };
         {
             let mut contexts = crate::context::list::contexts().write();
             contexts.insert(context_id, Arc::clone(&context_ref));
@@ -365,10 +366,6 @@ mod tests {
         let (context_ref, context_id) = setup_mock_context();
         let mut token = unsafe { crate::sync::CleanLockToken::new() };
         
-        std::println!("SET CONTEXT ID: {}", context_id);
-        std::println!("PERCPU CONTEXT ID: {}", crate::percpu::PercpuBlock::current().context_id.get());
-        std::println!("CONTEXT LIST HAS ID? {}", crate::context::list::contexts().read().contains_key(&context_id));
-
         // 2. Create a DmaBuf of size 4096 (1 page)
         let fd = sys_dmabuf_create(PAGE_SIZE).unwrap();
 
@@ -497,12 +494,13 @@ mod benchmarks {
     fn setup_mock_context() -> (Arc<crate::context::ContextLock>, usize) {
         let mut token = unsafe { crate::sync::CleanLockToken::new() };
         let addr_space = crate::context::memory::AddrSpace::new().unwrap();
-        let context_ref = Arc::new(crate::context::ContextLock::new(crate::context::Context::new(None).unwrap()));
-        let context_id = context_ref.read(token.token()).id;
-        {
-            let mut context = context_ref.write(token.token());
+        let mut context_ref = Arc::new(crate::context::ContextLock::new(crate::context::Context::new(None).unwrap()));
+        let context_id = {
+            let context_lock = Arc::get_mut(&mut context_ref).unwrap();
+            let context = context_lock.get_mut();
             context.addr_space = Some(addr_space);
-        }
+            context.id
+        };
         {
             let mut contexts = crate::context::list::contexts().write();
             contexts.insert(context_id, Arc::clone(&context_ref));
