@@ -18,9 +18,7 @@
 /// Panics if `weight` is zero.
 #[inline]
 pub fn calculate_vdeadline(vruntime: u64, slice_ns: u64, weight: u32) -> u64 {
-    if weight == 0 {
-        panic!("weight cannot be zero");
-    }
+    let weight = weight.max(1);
     let term = match slice_ns.checked_mul(1024) {
         Some(scaled) => scaled / weight as u64,
         None => u64::MAX,
@@ -37,14 +35,9 @@ pub fn calculate_vdeadline(vruntime: u64, slice_ns: u64, weight: u32) -> u64 {
 ///
 /// # Returns
 /// Updated virtual runtime
-///
-/// # Panics
-/// Panics if `weight` is zero.
 #[inline]
 pub fn update_vruntime(vruntime: u64, delta_ns: u64, weight: u32) -> u64 {
-    if weight == 0 {
-        panic!("weight cannot be zero");
-    }
+    let weight = weight.max(1);
     let term = match delta_ns.checked_mul(1024) {
         Some(scaled) => scaled / weight as u64,
         None => u64::MAX,

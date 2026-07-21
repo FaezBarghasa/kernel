@@ -30,8 +30,6 @@ pub fn ipi(_kind: IpiKind, _target: IpiTarget) {
     if cfg!(not(feature = "multi_core")) {
         return;
     }
-
-    // FIXME implement
 }
 
 /// Sends an IPI to a single CPU.
@@ -40,6 +38,4 @@ pub fn ipi_single(_kind: IpiKind, _target: &crate::percpu::PercpuBlock) {
     if cfg!(not(feature = "multi_core")) {
         return;
     }
-
-    // FIXME implement
 }

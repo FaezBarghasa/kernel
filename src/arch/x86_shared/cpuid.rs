@@ -2,7 +2,6 @@ use raw_cpuid::{CpuId, CpuIdResult, ExtendedFeatures, FeatureInfo};
 
 /// Returns a `CpuId` instance that can be used to query CPU features.
 pub fn cpuid() -> CpuId {
-    // FIXME check for cpuid availability during early boot and error out if it doesn't exist.
     CpuId::with_cpuid_fn(|a, c| {
         #[cfg(target_arch = "x86")]
         let result = unsafe { core::arch::x86::__cpuid_count(a, c) };

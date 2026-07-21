@@ -66,10 +66,9 @@ const PATH_MAX: usize = PAGE_SIZE;
 
 #[inline]
 fn is_legacy(path_buf: &String) -> bool {
-    // FIXME remove entries from this list as the respective programs get updated
     path_buf.starts_with(':')
-        || path_buf == "null:" // FIXME Remove exception at next rustc update (rust#138457)
-        || path_buf == "sys:exe" // FIXME Remove exception at next rustc update (rust#138457)
+        || path_buf == "null:"
+        || path_buf == "sys:exe"
         || path_buf.starts_with("orbital:")
 }
 
@@ -81,21 +80,12 @@ pub fn open(raw_path: UserSliceRo, flags: usize, token: &mut CleanLockToken) -> 
         (cx.pid, cx.euid, cx.egid, cx.ens)
     };
 
-    // TODO: BorrowedHtBuf!
-
-    /*
-    let mut path_buf = BorrowedHtBuf::head()?;
-    let path = path_buf.use_for_string(raw_path)?;
-    */
     let path_buf = copy_path_to_buf(raw_path, PATH_MAX)?;
 
     // Display a deprecation warning for any usage of the legacy scheme syntax (scheme:/path)
-    // FIXME remove entries from this list as the respective programs get updated
     if path_buf.contains(':') && !is_legacy(&path_buf) {
         let name = context::current().read(token.token()).name;
-        if path_buf == "event:" || path_buf.starts_with("time:") {
-            // FIXME winit issues
-        } else {
+        if path_buf != "event:" && !path_buf.starts_with("time:") {
             println!("deprecated: legacy path {:?} used by {}", path_buf, name);
         }
     }

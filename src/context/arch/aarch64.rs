@@ -137,18 +137,10 @@ impl Context {
 
 impl super::Context {
     pub fn get_fx_regs(&self) -> FloatRegisters {
-        if !self.arch.fx_loadable {
-            panic!("TODO: make get_fx_regs always work");
-        }
-
         unsafe { ptr::read(self.kfx.as_ptr() as *const FloatRegisters) }
     }
 
     pub fn set_fx_regs(&mut self, new: FloatRegisters) {
-        if !self.arch.fx_loadable {
-            panic!("TODO: make set_fx_regs always work");
-        }
-
         unsafe {
             ptr::write(self.kfx.as_mut_ptr() as *mut FloatRegisters, new);
         }

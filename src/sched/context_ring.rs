@@ -44,9 +44,7 @@ impl ContextRing {
     /// # Panics
     /// Panics if capacity is 0 or greater than 10,000
     pub fn new(capacity: usize) -> Self {
-        if capacity == 0 || capacity > 10_000 {
-            panic!("capacity must be between 1 and 10,000");
-        }
+        let capacity = capacity.clamp(1, 10_000);
         let mut tasks = Vec::with_capacity(capacity);
         for _ in 0..capacity {
             tasks.push(AtomicCell::new(None));
