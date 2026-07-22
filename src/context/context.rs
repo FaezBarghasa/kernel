@@ -139,6 +139,8 @@ pub struct Context {
     pub userspace: bool,
     pub being_sigkilled: bool,
     pub fmap_ret: Option<Frame>,
+    /// Set if the FPU has been used in this context's current timeslice
+    pub fpu_used: bool,
 
     pub owner_proc_id: Option<NonZeroUsize>,
 
@@ -224,11 +226,12 @@ impl Context {
             being_sigkilled: false,
             owner_proc_id,
 
-            ens: 0.into(),
+            ens: SchemeNamespace::from(1),
             euid: 0,
             egid: 0,
             pid: 0,
             capabilities: Capabilities::empty(),
+            fpu_used: false,
 
             priority: priority_tracker,
             virtual_deadline: 0,

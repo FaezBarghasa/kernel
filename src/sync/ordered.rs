@@ -131,7 +131,7 @@ impl<L: Level, T> Mutex<L, T> {
     /// An RAII guard is returned to allow scoped unlock of the lock. When the guard goes out of scope, the mutex will be unlocked.
     pub fn lock<'a, LP: Lower<L> + 'a>(
         &'a self,
-        mut lock_token: LockToken<'a, LP>,
+        lock_token: LockToken<'a, LP>,
     ) -> MutexGuard<'a, L, T> {
         let current_context_ref = context::current();
 

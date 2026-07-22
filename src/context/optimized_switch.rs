@@ -99,9 +99,8 @@ pub unsafe fn same_address_space(prev: *const Context, next: *const Context) -> 
 /// Lazy FPU state saving: only save if the context actually used FPU
 #[inline]
 pub fn needs_fpu_save(context: &Context) -> bool {
-    // This would check an FPU-used flag in the context
-    // For now, always return true for correctness
-    true
+    // FPU is only saved if it was used in this timeslice
+    context.fpu_used
 }
 
 /// Optimized context switch wrapper
