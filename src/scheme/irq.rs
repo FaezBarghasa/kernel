@@ -9,7 +9,7 @@ use core::{
 
 use alloc::{string::String, vec::Vec};
 
-use hashbrown::{hash_map::DefaultHashBuilder, HashMap};
+use hashbrown::{DefaultHashBuilder, HashMap};
 use spin::{Mutex, Once};
 use syscall::dirent::{DirEntry, DirentBuf, DirentKind};
 

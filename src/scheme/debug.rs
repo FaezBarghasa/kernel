@@ -13,7 +13,7 @@ use crate::{
         usercopy::{UserSliceRo, UserSliceWo},
     },
 };
-use hashbrown::{hash_map::DefaultHashBuilder, HashMap};
+use hashbrown::{DefaultHashBuilder, HashMap};
 
 static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
 
