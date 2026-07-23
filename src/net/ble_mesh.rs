@@ -88,7 +88,7 @@ impl BleMeshStaticRing {
             return false;
         }
 
-        let mut lock = self.packets.lock();
+        let lock = self.packets.lock();
         let tail_idx = self.tail.load(Ordering::Acquire);
         lock[tail_idx] = pdu;
 
@@ -104,7 +104,7 @@ impl BleMeshStaticRing {
             return None;
         }
 
-        let mut lock = self.packets.lock();
+        let lock = self.packets.lock();
         let head_idx = self.head.load(Ordering::Acquire);
         let pdu = lock[head_idx];
 
