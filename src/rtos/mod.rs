@@ -7,6 +7,9 @@
 //! allocations (`alloc::alloc::alloc`) are completely avoided.
 //! All primitives are defined statically at compile-time using `const fn` and fixed-size arrays.
 
+pub mod executor;
+pub mod stack_guard;
+
 use core::cell::UnsafeCell;
 use core::mem::MaybeUninit;
 use core::sync::atomic::{AtomicUsize, Ordering};

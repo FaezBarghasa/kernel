@@ -97,6 +97,7 @@ pub mod binder;
 pub mod aio;
 pub mod linker;
 pub mod rtos;
+pub mod isolation;
 
 #[cfg_attr(not(test), global_allocator)]
 static ALLOCATOR: allocator::Allocator = allocator::Allocator;
