@@ -487,3 +487,130 @@ fn bench_select_next_performance() {
     println!("select_next with 10k tasks: {:?} per operation", per_op);
     assert!(per_op.as_nanos() < 200, "Should complete in < 200ns");
 }
+
+// =============================================================================
+// Phase 7 & 8 Automotive ASIL-D & MCU Unit Tests
+// =============================================================================
+
+#[test]
+fn test_arinc653_tdma_and_asil_preemption() {
+    use crate::sched::arinc653::{Arinc653Scheduler, AsilLevel, MinorFrame, SpatialRegion};
+
+    let sched = Arinc653Scheduler::new();
+    let frames = vec![
+        MinorFrame { partition_id: 1, duration_ns: 5_000_000, asil_level: AsilLevel::AsilD },
+        MinorFrame { partition_id: 2, duration_ns: 2_000_000, asil_level: AsilLevel::QM },
+    ];
+
+    sched.configure_schedule(frames);
+
+    let active = sched.get_active_partition().unwrap();
+    assert_eq!(active.partition_id, 1);
+    assert_eq!(active.asil_level, AsilLevel::AsilD);
+
+    // Non-safety task attempting to run in ASIL-D window should be preempted
+    assert!(sched.should_preempt_task(AsilLevel::QM, 1000));
+    // ASIL-D safety task in ASIL-D window is protected within duration
+    assert!(!sched.should_preempt_task(AsilLevel::AsilD, 1000));
+
+    // Advance window
+    sched.advance_minor_frame(5_000_000);
+    let active2 = sched.get_active_partition().unwrap();
+    assert_eq!(active2.partition_id, 2);
+
+    // Spatial region boundary check
+    sched.register_spatial_region(1, SpatialRegion { start_address: 0x1000, size_bytes: 0x1000, is_read_only: false });
+    assert!(sched.validate_spatial_partition_access(1, 0x1000, 0x100, true));
+    assert!(!sched.validate_spatial_partition_access(1, 0x2500, 0x100, false));
+}
+
+#[test]
+fn test_gptp_delay_and_offset_math() {
+    use crate::net::gptp::{GptpEngine, GptpRole, PtpTimestamp};
+
+    let engine = GptpEngine::new(GptpRole::Slave);
+
+    let t1 = PtpTimestamp::from_nanoseconds(1000);
+    let t2 = PtpTimestamp::from_nanoseconds(2000);
+    let t3 = PtpTimestamp::from_nanoseconds(3000);
+    let t4 = PtpTimestamp::from_nanoseconds(4200);
+
+    // Delay = ((4200 - 1000) - (3000 - 2000)) / 2 = (3200 - 1000) / 2 = 1100 ns
+    let delay = engine.calculate_peer_delay(t1, t2, t3, t4);
+    assert_eq!(delay, 1100);
+
+    // Offset = (2000 - 1000) - 1100 = 1000 - 1100 = -100 ns
+    let offset = engine.calculate_clock_offset(t1, t2, delay);
+    assert_eq!(offset, -100);
+
+    let synchronized = engine.synchronize_local_time(5000);
+    assert_eq!(synchronized, 4900);
+    assert!(engine.is_synchronized());
+}
+
+#[test]
+fn test_fault_inject_and_watchdog_recovery() {
+    use crate::safety::fault_inject::{FaultInjectEngine, FaultType};
+
+    let engine = FaultInjectEngine::new();
+    engine.set_simulation_active(true);
+
+    assert!(engine.inject_fault(FaultType::MemoryBitFlip, 1, 1000));
+
+    let mut mem_buf = [0xFFu8; 4];
+    assert!(engine.simulate_memory_bit_flip(&mut mem_buf, 0));
+    assert_eq!(mem_buf[0], 0xFE);
+
+    // Recovery within 10 ms (5 ms elapsed = 5_000_000 ns)
+    let recovered_in_time = engine.record_watchdog_recovery(1000, 5_001_000);
+    assert!(recovered_in_time);
+    assert!(engine.verify_adjacent_partitions_healthy(1));
+}
+
+#[test]
+fn test_static_slab_allocator() {
+    use crate::memory::slab::StaticSlabPool;
+
+    let pool = StaticSlabPool::<64>::new();
+    let slot0 = pool.allocate_slot().unwrap();
+    let slot1 = pool.allocate_slot().unwrap();
+
+    assert_eq!(slot0, 0);
+    assert_eq!(slot1, 1);
+    assert_eq!(pool.active_allocations.load(Ordering::Relaxed), 2);
+
+    assert!(pool.deallocate_slot(slot0));
+    assert_eq!(pool.active_allocations.load(Ordering::Relaxed), 1);
+}
+
+#[test]
+fn test_ble_mesh_routing() {
+    use crate::net::ble_mesh::{BleMeshEngine, BleMeshPdu, MeshAddress};
+
+    let engine = BleMeshEngine::new(0x0001);
+
+    let payload = [1u8, 2u8, 3u8];
+    let tx_pdu = engine.transmit_pdu(MeshAddress(0x0002), 5, &payload).unwrap();
+    assert_eq!(tx_pdu.seq_number, 1);
+    assert_eq!(tx_pdu.ttl, 5);
+
+    let incoming = BleMeshPdu {
+        iv_index: 0,
+        nid: 1,
+        ttl: 4,
+        seq_number: 10,
+        src_address: MeshAddress(0x0003),
+        dst_address: MeshAddress(0x0004),
+        payload_len: 3,
+        payload: [1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    };
+
+    assert!(engine.process_incoming_pdu(incoming));
+
+    // Replay attack packet with lower seq_number should be dropped
+    let replay_pdu = BleMeshPdu {
+        seq_number: 5,
+        ..incoming
+    };
+    assert!(!engine.process_incoming_pdu(replay_pdu));
+}
