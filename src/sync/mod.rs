@@ -20,6 +20,7 @@ mod wait_queue;
 mod lockfree_queue;
 mod optimized_wait_queue;
 mod priority;
+pub mod soft_lock;
 
 // Re-export ordered lock types
 pub use ordered::{

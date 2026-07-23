@@ -79,6 +79,23 @@ pub trait ExtSchedulerOps: Send + Sync {
     fn select_next(&self, cpu_id: LogicalCpuId) -> Option<ContextRef>;
 }
 
+/// Hardware-Accelerated RTIC Scheduler Integration Hooks (Phase 1.2)
+pub trait RticSchedulerOps: Send + Sync {
+    /// Maps an RTIC task directly to a hardware interrupt vector.
+    fn bind_interrupt(&self, task_id: usize, irq_vector: u32);
+    
+    /// Returns the current Stack Resource Policy (SRP) priority ceiling.
+    fn get_srp_ceiling(&self) -> u8;
+    
+    /// Raises the SRP priority ceiling to acquire a shared resource.
+    fn raise_srp_ceiling(&self, new_ceiling: u8) -> u8;
+    
+    /// Restores the SRP priority ceiling after releasing a resource.
+    fn restore_srp_ceiling(&self, old_ceiling: u8);
+}
+
+pub static RTIC_SCHEDULER: RwLock<Option<Arc<dyn RticSchedulerOps>>> = RwLock::new(None);
+
 pub static EXT_SCHEDULER: RwLock<Option<Arc<dyn ExtSchedulerOps>>> = RwLock::new(None);
 
 pub struct IpcScheduler {
