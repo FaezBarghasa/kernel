@@ -71,6 +71,7 @@ pub enum SchedPolicy {
     Idle = 5,
     Interactive = 6,
     Deadline = 7,
+    Gaming = 8,
 }
 
 pub trait ExtSchedulerOps: Send + Sync {
