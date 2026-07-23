@@ -1,85 +1,44 @@
 # RedoxOS Kernel TODO List
 
-This document tracks the tasks required to fix the current build state, address missing features, and complete the ongoing IPC and context switch optimizations.
+This document tracks active pending tasks, refactoring items, and unresolved code TODOs/FIXMEs.
 
 ## Overview
 
-This TODO list is divided into several sections:
+This list contains remaining pending work:
 
-- **Immediate Compilation Fixes**: Critical issues that are currently preventing the kernel from building successfully.
-- **Configuration & Dependencies**: Tasks related to `Cargo.toml` and dependency management.
-- **Refactoring & Cleanup**: General code quality improvements.
-- **IPC & Context Switch Optimization**: Ongoing work to improve kernel performance.
-- **TODOs and FIXMEs from code**: A collection of smaller tasks and fixes extracted from comments in the source code.
-- **Unimplemented code**: A list of functions and features that are yet to be implemented.
-
-## Immediate Compilation Fixes
-
-### `src/sync/mod.rs`
-
-- [x] **Resolve duplicate definitions**: `CleanLockToken` and `OptimizedWaitQueue` are defined multiple times. Check for conflicting `pub use` statements or duplicate module declarations.
-- [x] **Remove unused imports**: Clean up unused imports like `ArcRwLockWriteGuard`, `Higher`, `L3`, etc.
-
-### `src/context/memory.rs`
-
-- [x] **Fix `grant_flags`**: Resolve duplicate definition error.
-- [x] **Fix `TlbShootdownActions`**: The type is missing from `crate::paging`. It needs to be defined or imported correctly.
-- [x] **Fix Type Mismatches**: Address errors where `&PageTable` is expected but `PageTable` is found.
-
-### `src/syscall/mod.rs`
-
-- [x] **Restore Syscalls**: Uncomment `SYS_MLOCK` and `SYS_MUNLOCK` handlers once the `redox_syscall` crate is updated to include these constants.
-
-### `src/syscall/process.rs`
-
-- [x] **Fix `ContextRef` usage**: It is being used as a function or tuple struct constructor, but it is likely a type alias.
-
-### `src/panic.rs`
-
-- [x] **Resolve `panic_impl` conflict**: There is a duplicate `panic_impl` lang item. This is likely due to a dependency (like `parking_lot`) pulling in `std`.
-  - *Action*: Update `Cargo.toml` to ensure `parking_lot` uses `default-features = false` or does not enable the `std` feature. (Resolved by disabling `parking_lot`).
-
-### `src/scheme/`
-
-- [ ] **`src/scheme/user.rs`**: Fix missing `empty()` method for `PageSpan`.
-- [ ] **`src/scheme/user.rs`**: Fix missing methods in `AddrSpaceInner` (e.g., `mmap`, `mmap_anywhere`).
-- [ ] **`src/scheme/ring.rs`**: Fix missing `tracker` field in `RwLockReadGuard`.
-- [ ] **`src/scheme/ring.rs`**: Fix missing `cq_mask` field in `IpcRing`.
-
-## Configuration & Dependencies
-
-### `Cargo.toml`
-
-- [x] **Add Missing Features**: The compiler is warning about unexpected `cfg` conditions. Add the following to `[features]` or configure `check-cfg`:
-  - `dtb`
-  - `sys_fdstat`
-  - `qemu_debug`
-  - `lpss_debug`
-  - `system76_ec_debug`
-  - `x86_kvm_pv`
-  - `pti`
-- [x] **`parking_lot`**: Verify `no_std` compatibility settings.
+- **Refactoring & Cleanup**: Open code quality items.
+- **TODOs and FIXMEs from code**: Collection of uncompleted tasks from comments in source code.
+- **Mainstream Redox OS Perspective**: High-level roadmap goals and current focus areas of the upstream project.
 
 ## Refactoring & Cleanup
 
-- [x] **Unused Imports**: Remove unused imports across the codebase as indicated by compiler warnings.
-- [ ] **Dead Code**: Address `dead_code` warnings.
-- [x] **Documentation**: Add missing documentation for public items, especially in the `syscall` module.
+- [ ] **Dead Code**: Address `dead_code` warnings across modules.
 
-## IPC & Context Switch Optimization (Ongoing)
+## Mainstream Redox OS Perspective (Remote)
 
-- [x] **Lock-Free Queue**: Continue implementation and verification of `src/sync/lockfree_queue.rs` (Replaced with Mutex for stability).
-- [x] **Optimized Wait Queue**: Finalize `OptimizedWaitQueue` implementation in `src/sync/optimized_wait_queue.rs` and ensure safety comments are accurate (Fixed race condition).
-- [x] **Priority Inheritance**: Implement Priority Inheritance and Dynamic Boosting in `src/sync/priority.rs`.
-- [x] **Context Switch**: Optimize the context switch path in `src/context/optimized_switch.rs` (Implemented logic, stats, and portability).
+This section captures the high-level roadmap and focus areas of the mainstream Redox OS project and its core developers.
 
-## New Implementations
+### System & Architecture
+- [ ] **Sandboxing by Default**: Move towards capability-based security where applications only have access to necessary resources.
+- [ ] **Self-Hosting**: Continue progress toward compiling the entirety of Redox OS from within Redox OS itself.
+- [ ] **Linux Driver Emulation**: Implement strategies like running a stripped-down Linux kernel in QEMU to provide legacy hardware support without porting thousands of drivers manually.
+- [ ] **Stability & Maturation**: Transition from pre-stable experimental phases to a stable general-purpose microkernel operating system.
 
-- [x] **RISC-V Stubs**: Implemented `kstop`/`kreset`.
-- [x] **AArch64 GIC**: Implemented GICv2 support.
-- [x] **KPTI**: Implemented KPTI hooks for x86_64.
-- [x] **ACPI**: Added FADT parsing and AML tables iterator.
-- [x] **Stress Tests**: Added kernel stress test suite (`stress_test` feature).
+### Desktop & Applications
+- [ ] **Ecosystem Expansion**: Port more common user-space applications and environments to native Redox.
+- [ ] **Orbital Windowing System**: Refine and stabilize the native GUI.
+- [ ] **Wayland Support**: Improve compatibility to run Wayland-based applications directly on Redox OS.
+
+### Hardware Compatibility
+- [ ] **Real Hardware Booting**: Improve the boot process robustness across varying physical hardware, ensuring failures in specific drivers do not halt the entire system.
+- [ ] **Hardware Enablement**: Continued work on essential drivers (e.g., networking, storage, USB, audio) and resolving regressions on bare metal.
+
+### Upstream Alignment & Personal Integration Roadmap
+- [ ] **Bring Forks Up to Date**: Add the official `redox-os` upstream remote to local forks (e.g., `orbital`, `redoxfs`), fetch, resolve merge conflicts, and push to GitHub.
+- [ ] **Transition to Contributor**: Tackle "good first issues" on the official GitLab to establish a contribution history.
+- [ ] **Upstream `rmm` Crate**: Initiate discussions with Redox maintainers on Matrix to propose integrating the isolated `rmm` abstractions into the core project.
+- [ ] **Submit Mobile Shell PR**: Once `orbital` is synced, submit a Merge Request for the "mobile shell" feature with clear documentation of its benefits.
+- [ ] **Build Public Presence**: Document the learning/contribution journey via blog posts, participate in community channels, and help mentor newcomers.
 
 ## TODOs and FIXMEs from code
 
@@ -117,7 +76,6 @@ This TODO list is divided into several sections:
 - [ ] TODO: Use this throughout the code
 
 ### `../rmm/src/main.rs`
-- [x] TODO: Allow allocations up to maximum pageable size
 - [ ] TODO: This causes fragmentation, since neighbors are not identified
 - [ ] TODO: remainders less than PAGE_SIZE will be lost
 
@@ -155,7 +113,6 @@ This TODO list is divided into several sections:
 - [ ] TODO: support this on any arch
 - [ ] TODO: Let userspace setup HPET, and then provide an interface to specify which timer
 - [ ] TODO: Enumerate processors in userspace, and then provide an ACPI-independent interfa
-- [x] TODO: Don't touch ACPI tables in kernel? (Iterator provided)
 
 ### `src/acpi/rsdp.rs`
 - [ ] TODO: Validate
@@ -171,7 +128,6 @@ This TODO list is divided into several sections:
 
 ### `src/arch/aarch64/device/irqchip/irq_bcm2835.rs`
 - [ ] TODO: support smp self.read(LOCAL_IRQ_PENDING + 4 * cpu)
-- [x] TODO: check bank && irq
 
 ### `src/arch/aarch64/device/serial.rs`
 - [ ] TODO: what should chip index be?
@@ -185,9 +141,6 @@ This TODO list is divided into several sections:
 ### `src/arch/aarch64/interrupt/irq.rs`
 - [ ] TODO
 - [ ] FIXME add_irq accepts a u8 as irq number
-
-### `src/arch/aarch64/ipi.rs`
-- [x] FIXME implement
 
 ### `src/arch/aarch64/paging/mapper.rs`
 - [ ] TODO: Push to TLB "mailbox" or tell it to reload CR3 if there are too many entries.
@@ -222,9 +175,6 @@ This TODO list is divided into several sections:
 ### `src/arch/riscv64/interrupt/handler.rs`
 - [ ] TODO
 
-### `src/arch/riscv64/ipi.rs`
-- [ ] FIXME implement
-
 ### `src/arch/riscv64/paging/mapper.rs`
 - [ ] TODO: Push to TLB "mailbox" or tell it to reload CR3 if there are too many entries.
 - [ ] TODO: cpu id
@@ -236,17 +186,12 @@ This TODO list is divided into several sections:
 - [ ] FIXME bringup AP HARTs
 
 ### `src/arch/x86/interrupt/handler.rs`
-- [x] TODO: Unmap PTI (split "add esp, 8" into two "add esp, 4"s maybe?)
 - [ ] FIXME: The interrupt stack on which this is called, is always from userspace, but make
-- [x] TODO: Unmap PTI
-- [x] TODO: Map PTI
 
 ### `src/arch/x86_64/interrupt/syscall.rs`
 - [ ] TODO: Should we unconditionally jump or avoid jumping, to hint to the branch predictor that
-- [x] TODO: Map PTI
 - [ ] TODO: Which one is faster?
 - [ ] TODO: macro?
-- [x] TODO: Unmap PTI
 
 ### `src/arch/x86_shared/cpuid.rs`
 - [ ] FIXME check for cpuid availability during early boot and error out if it doesn't exist.
@@ -294,47 +239,3 @@ This TODO list is divided into several sections:
 ### `src/dtb/mod.rs`
 - [ ] FIXME assumes all the devices are connected to CPUs via the /soc bus
 - [ ] FIXME traverse device tree up
-
-## Unimplemented code
-
-### `../rmm/src/allocator/frame/bump.rs`
-- [x] unimplemented!("BumpAllocator::free not implemented");
-
-### `../rmm/src/arch/aarch64.rs`
-- [x] unimplemented!("AArch64Arch::init unimplemented");
-
-### `../rmm/src/arch/emulate.rs`
-- [x] unimplemented!("EmulateArch::invalidate not implemented");
-
-### `../rmm/src/arch/riscv64/sv39.rs`
-- [x] unimplemented!("RiscV64Sv39Arch::init unimplemented");
-
-### `../rmm/src/arch/riscv64/sv48.rs`
-- [x] unimplemented!("RiscV64Sv48Arch::init unimplemented");
-
-### `../rmm/src/arch/x86.rs`
-- [x] unimplemented!("X86Arch::init unimplemented");
-
-### `../rmm/src/arch/x86_64.rs`
-- [x] unimplemented!("X8664Arch::init unimplemented");
-
-### `src/arch/aarch64/device/irqchip/null.rs`
-- [x] unimplemented!()
-
-### `src/arch/riscv64/device/cpu/mod.rs`
-- [x] unimplemented!()
-
-### `src/arch/riscv64/rmm.rs`
-- [x] unimplemented!()
-
-### `src/arch/riscv64/stop.rs`
-- [x] unimplemented!()
-
-### `src/arch/x86_shared/interrupt/irq.rs`
-- [x] IrqMethod::Apic => Ok(Vec::from(&b"(not implemented for APIC yet)"[..])),
-
-### `src/context/arch/riscv64.rs`
-- [x] unimplemented!()
-
-### `src/scheme/proc.rs`
-- [x] todo!(),
