@@ -1,9 +1,11 @@
+pub mod eevdf;
 pub mod eevdf_types;
 pub mod eevdf_math;
 pub mod context_ring;
 pub mod eevdf_ring;
 pub mod scx_types;
 pub mod scx_bridge;
+pub mod scx;
 pub mod sched_error;
 pub mod arinc653;
 

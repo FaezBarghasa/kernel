@@ -53,6 +53,7 @@ mod alternative;
 mod context;
 mod cpu_set;
 mod cpu_stats;
+pub mod debug;
 #[cfg(feature = "debugger")]
 mod debugger;
 mod devices;
@@ -73,6 +74,7 @@ pub mod net;
 mod safety;
 mod panic;
 mod percpu;
+pub mod power;
 mod profiling;
 mod ptrace;
 mod scheduler;
