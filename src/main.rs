@@ -92,6 +92,10 @@ mod syscall;
 mod tests;
 mod time;
 mod topology;
+pub mod ntsync;
+pub mod binder;
+pub mod aio;
+pub mod linker;
 
 #[cfg_attr(not(test), global_allocator)]
 static ALLOCATOR: allocator::Allocator = allocator::Allocator;
