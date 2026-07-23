@@ -81,20 +81,7 @@ impl WorkloadGovernor {
     }
 
     fn enter_c_state_idle(&self) {
-        #[cfg(target_arch = "x86_64")]
-        {
-            // Trigger C-state low power transition (mwait/hlt)
-            unsafe {
-                core::arch::x86_64::_mm_pause();
-            }
-        }
-        #[cfg(target_arch = "aarch64")]
-        {
-            // Trigger low power transition (wfi)
-            unsafe {
-                core::arch::aarch64::__wfi();
-            }
-        }
+        core::hint::spin_loop();
     }
 }
 
