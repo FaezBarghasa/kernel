@@ -21,6 +21,9 @@ pub use crate::arch::x86_shared::*;
 
 // Placeholder for other initialization functions
 
+
+pub(super) mod cache_info;
+
 // Define usercopy symbols required by src/memory/mod.rs
 // Since we use a Rust implementation for copy_to/from_user, these are dummy labels.
 #[cfg(not(test))]

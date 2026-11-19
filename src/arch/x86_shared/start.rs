@@ -172,6 +172,8 @@ unsafe extern "C" fn start(args_ptr: *const KernelArgs, stack_end: usize) -> ! {
                 device::init_after_acpi();
             }
 
+            #[cfg(target_arch = "x86_64")]
+            let _ = crate::arch::x86_64::cache_info::init();
             // Initialize all of the non-core devices not otherwise needed to complete initialization
             device::init_noncore();
 
