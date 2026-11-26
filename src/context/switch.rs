@@ -123,3 +123,9 @@ pub unsafe fn switch(token: &mut CleanLockToken) -> SwitchResult {
         SwitchResult::AllContextsIdle
     }
 }
+
+pub unsafe extern "C" fn switch_finish_hook() {
+    unsafe {
+        crate::context::arch::CONTEXT_SWITCH_LOCK.store(false, core::sync::atomic::Ordering::Release);
+    }
+}

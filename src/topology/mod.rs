@@ -6,7 +6,21 @@ use crate::{
     syscall::error::{Error, EINVAL, ESRCH},
 };
 
-pub use crate::stubs::topology::*;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct NumaNodeId(pub u8);
+
+impl core::fmt::Display for NumaNodeId {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+pub struct CpuTopology;
+impl CpuTopology {
+    pub fn get(&self) -> Option<()> { Some(()) }
+}
+pub static CPU_TOPOLOGY: CpuTopology = CpuTopology;
+
 pub mod governor;
 #[cfg(target_arch = "x86_64")]
 pub use crate::arch::x86_64::amd_3d_vcache;

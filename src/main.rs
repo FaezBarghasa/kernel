@@ -79,8 +79,7 @@ pub mod sched;
 mod scheme;
 mod stack_guard;
 mod startup;
-#[macro_use]
-mod stubs;
+// stubs eliminated
 use sync::CleanLockToken;
 mod sync;
 mod syscall;

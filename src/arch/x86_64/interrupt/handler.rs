@@ -34,6 +34,13 @@ pub struct InterruptStack {
 }
 
 impl InterruptStack {
+    pub fn instr_pointer(&self) -> usize {
+        self.rip as usize
+    }
+    pub fn sig_archdep_reg(&self) -> usize {
+        self.rax as usize
+    }
+
     pub fn dump(&self) {
         crate::println!("Interrupt Stack Dump:");
         crate::println!(

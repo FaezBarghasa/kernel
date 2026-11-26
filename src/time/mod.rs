@@ -13,7 +13,7 @@ use crate::{
 #[cfg(feature = "acpi")]
 use crate::arch::x86_shared::device::hpet;
 
-pub use crate::stubs::time_helpers::TimeSpec;
+pub use ::syscall::data::TimeSpec;
 
 pub mod tickless;
 

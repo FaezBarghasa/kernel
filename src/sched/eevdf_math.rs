@@ -18,7 +18,7 @@
 /// Panics if `weight` is zero.
 #[inline]
 pub fn calculate_vdeadline(vruntime: u64, slice_ns: u64, weight: u32) -> u64 {
-    let weight = weight.max(1);
+    assert!(weight > 0, "weight cannot be zero");
     let term = match slice_ns.checked_mul(1024) {
         Some(scaled) => scaled / weight as u64,
         None => u64::MAX,

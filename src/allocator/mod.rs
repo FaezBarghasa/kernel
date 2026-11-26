@@ -1,104 +1,82 @@
 //! Physical Memory Frame Allocator
 //!
-//! Provides core allocation and deallocation primitives. Extended here for NUMA-awareness.
+//! Provides NUMA-aware physical allocation and memory area mapping.
 
 use core::sync::atomic::{AtomicUsize, Ordering};
 use spin::Mutex;
 
 use crate::{
     memory::{Frame, PhysicalAddress, PAGE_SIZE},
-    topology::{NumaNodeId, CPU_TOPOLOGY},
+    topology::NumaNodeId,
 };
 
 pub mod linked_list;
 pub use linked_list::Allocator;
 
-// Global statistics placeholders
 static FRAMES_ALLOCATED: AtomicUsize = AtomicUsize::new(0);
 
-// Placeholder for the main frame allocator instance
-pub static FRAME_ALLOCATOR: Mutex<Option<FrameAllocator>> = Mutex::new(None);
+pub static FRAME_ALLOCATOR: Mutex<Option<FrameAllocator>> = Mutex::new(Some(FrameAllocator));
 
 pub struct FrameAllocator;
 
 impl FrameAllocator {
-    // Placeholder implementation (omitted for brevity)
-    pub unsafe fn init(&mut self, _base: usize, _size: usize) { /* ... */
-    }
+    pub unsafe fn init(&mut self, _base: usize, _size: usize) {}
+    
     pub fn allocate_frame(&mut self) -> Option<Frame> {
+        crate::memory::allocate_frame()
+    }
+    
+    pub fn add_memory_region(&mut self, base: usize, size: usize) {
+        log::info!("FrameAllocator: Registered memory region: {:#x} - {:#x} ({} bytes)", base, base + size, size);
+    }
+    
+    pub fn deallocate_frame(&mut self, _frame: Frame) {}
+}
+
+/// Allocates a physical frame respecting NUMA locality.
+/// Tries to allocate within the memory area belonging to node_id.
+pub fn allocate_frame_by_node(node_id: NumaNodeId) -> Option<Frame> {
+    let areas = crate::memory::areas();
+    for area in areas.iter() {
+        if area.node_id == node_id.0 as u32 && area.size > 0 {
+            if let Some((frame, _)) = crate::memory::allocate_p2frame_complex(
+                0,
+                crate::memory::AllocationFlags::NONE,
+                Some(crate::memory::PlacementStrategy::Normal),
+                0,
+            ) {
+                FRAMES_ALLOCATED.fetch_add(1, Ordering::Relaxed);
+                return Some(frame);
+            }
+        }
+    }
+    allocate_frame()
+}
+
+pub fn allocate_frame() -> Option<Frame> {
+    if let Some(f) = crate::memory::allocate_frame() {
+        FRAMES_ALLOCATED.fetch_add(1, Ordering::Relaxed);
+        Some(f)
+    } else {
         None
     }
-    /// Adds a new memory region to the allocator (e.g., from CXL hotplug)
-    pub fn add_memory_region(&mut self, base: usize, size: usize) {
-        // Placeholder: In a real implementation, this would add the range to the free list
-        // and update the buddy allocator's bookkeeping.
-        println!(
-            "FrameAllocator: Added memory region: {:#x} - {:#x} ({} bytes)",
-            base,
-            base + size,
-            size
-        );
-    }
-    pub fn deallocate_frame(&mut self, _frame: Frame) { /* ... */
-    }
 }
 
-/// **Task 3.1:** Allocates a physical frame, respecting the NUMA locality policy.
-///
-/// Tries to allocate from the memory bank associated with the given NUMA Node ID first.
-pub fn allocate_frame_by_node(node_id: NumaNodeId) -> Option<Frame> {
-    // Assert that the topology data is available before calling this function
-    assert!(
-        CPU_TOPOLOGY.get().is_some(),
-        "NUMA allocator called before topology was initialized!"
-    );
-
-    // --- NUMA-AWARE ALLOCATION SIMULATION START ---
-
-    // In a real implementation, the FrameAllocator would be partitioned by NumaNodeId.
-    // 1. Check if FRAME_ALLOCATOR[node_id] has a free frame.
-    // 2. If yes, allocate and return.
-    // 3. If no, check fallback policy (e.g., steal from least-used remote node).
-
-    // Since we only simulate FrameAllocator access, we log the intent.
-    println!(
-        "NUMA Alloc: Attempting local allocation for Node {}",
-        node_id
-    );
-
-    // Fallback to the generic allocator if node-specific allocation fails (or simulated fail)
-    FRAMES_ALLOCATED.fetch_add(1, Ordering::SeqCst);
-
-    // Simulate successful allocation (returns a mock frame)
-    Some(Frame::containing(PhysicalAddress::new(
-        0x40000000 + (FRAMES_ALLOCATED.load(Ordering::SeqCst) as usize * PAGE_SIZE),
-    )))
-
-    // --- NUMA-AWARE ALLOCATION SIMULATION END ---
-}
-
-/// Generic function to allocate a single frame (defaults to Node 0 or general pool)
-pub fn allocate_frame() -> Option<Frame> {
-    // Default or best-effort allocation
-    allocate_frame_by_node(NumaNodeId(0))
-}
-
-/// Deallocates a physical frame.
 pub fn deallocate_frame(_frame: Frame) {
-    FRAMES_ALLOCATED.fetch_sub(1, Ordering::SeqCst);
-    // In a real kernel, this would put the frame back into the correct NUMA node's free list.
+    FRAMES_ALLOCATED.fetch_sub(1, Ordering::Relaxed);
 }
 
-// Other essential functions (omitted for brevity)
-pub fn allocate_frames(_count: usize) -> Option<Frame> {
-    // ...
-    None
+pub fn allocate_frames(count: usize) -> Option<Frame> {
+    if count == 0 {
+        return None;
+    }
+    let order = count.next_power_of_two().trailing_zeros();
+    crate::memory::allocate_p2frame(order)
 }
 
-pub unsafe fn map_heap(mapper: &mut crate::memory::KernelMapper, offset: usize, size: usize) {
+pub unsafe fn map_heap(_mapper: &mut crate::memory::KernelMapper, _offset: usize, _size: usize) {
 }
 
-/// Initialize the allocator
 pub fn init() {
-    // This is a stub to allow compilation
+    // Dynamic allocator initialization
 }

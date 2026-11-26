@@ -1147,7 +1147,7 @@ impl ContextHandle {
                                     }
                                 }
                             }
-                            crate::syscall::exit_this_context(0);
+                            crate::syscall::process::exit_this_context(None, token);
                         } else {
                             let mut ctxt = context.write(token.token());
                             //trace!("FORCEKILL NONSELF={} {}, SELF={}", ctxt.debug_id, ctxt.pid, context::current().read().debug_id);

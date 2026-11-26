@@ -16,7 +16,36 @@
 //! - `personality`: Foreign ABI detection and syscall redirection.
 
 pub use self::debug::*;
-pub use crate::stubs::syscall_helpers::*;
+pub use self::usercopy::validate_region;
+pub use self::process::exit_this_context;
+pub use self::fs::copy_path_to_buf;
+
+#[macro_export]
+macro_rules! ptrace_event {
+    ($cause:expr) => {
+        $crate::syscall::data::PtraceEvent {
+            cause: $cause,
+            a: 0,
+            b: 0,
+            c: 0,
+            d: 0,
+            e: 0,
+            f: 0,
+        }
+    };
+    ($cause:expr, $a:expr) => {
+        $crate::syscall::data::PtraceEvent {
+            cause: $cause,
+            a: $a,
+            b: 0,
+            c: 0,
+            d: 0,
+            e: 0,
+            f: 0,
+        }
+    };
+}
+pub use ptrace_event;
 pub use ::syscall::{
     data, error, flag, flag::EventFlags, io, number, EnvRegisters, FloatRegisters, IntRegisters,
 };
