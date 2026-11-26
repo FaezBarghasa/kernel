@@ -22,7 +22,7 @@ pub unsafe fn init() {
         local_apic::init(&mut KernelMapper::lock());
 
         // Run here for the side-effect of printing if KVM was used to avoid interleaved logs.
-        #[cfg(feature = "x86_kvm_pv")]
+        
         tsc::get_kvm_support();
     }
 }
@@ -62,7 +62,7 @@ pub unsafe fn init_noncore() {
     unsafe {
         debug!("Initializing system timer");
 
-        #[cfg(feature = "x86_kvm_pv")]
+        
         if tsc::init() {
             debug!("TSC used as system clock source");
         }
@@ -83,14 +83,14 @@ pub unsafe fn init_ap() {
     unsafe {
         local_apic::init_ap();
 
-        #[cfg(feature = "x86_kvm_pv")]
+        
         tsc::init();
     }
 }
 
 pub struct ArchPercpuMisc {
     pub apic_id_opt: Cell<Option<local_apic::ApicId>>,
-    #[cfg(feature = "x86_kvm_pv")]
+    
     pub tsc_info: tsc::TscPercpu,
 }
 
@@ -98,8 +98,8 @@ impl ArchPercpuMisc {
     pub const fn default() -> Self {
         Self {
             apic_id_opt: Cell::new(None),
-            #[cfg(feature = "x86_kvm_pv")]
-            tsc_info: tsc::TscPercpu::default(),
+            
+            tsc_info: tsc::TscPercpu::new(),
         }
     }
 }
