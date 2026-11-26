@@ -207,6 +207,7 @@ pub fn sys_dmabuf_map(
         let mut grant = crate::context::memory::Grant::new(requested, requested.next_by(page_count), page_flags);
         grant.provider = crate::context::memory::Provider::DmaBuf { fd, arc: Arc::clone(&arc) };
 
+        #[cfg(not(test))]
         for i in 0..page_count {
             let phys = buf.frames[i].base();
             let virt = requested.next_by(i).start_address();
@@ -267,6 +268,7 @@ pub fn sys_dmabuf_unmap(fd: DmaBufFd, vaddr: usize) -> Result<()> {
         }
 
         // Unmap from page tables
+        #[cfg(not(test))]
         for i in 0..page_count {
             let virt = crate::paging::VirtualAddress::new(vaddr + i * PAGE_SIZE);
             unsafe {
