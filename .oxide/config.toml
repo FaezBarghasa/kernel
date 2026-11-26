@@ -1,0 +1,41 @@
+version = 1
+
+[project]
+name = "kernel"
+
+[index]
+ignore = [
+    ".git",
+    "target",
+    "node_modules",
+    "dist",
+    "build",
+    ".venv",
+    "__pycache__",
+    "*.lock",
+]
+max_file_kb = 512
+chunk_max_tokens = 1024
+outline_max_tokens = 1024
+
+[embedding]
+model = "qwen3-embedding-0.6b"
+file = "Qwen3-Embedding-0.6B-Q4_K_M.gguf"
+device = "auto"
+max_seq_len = 1024
+batch_size = 32
+
+[storage]
+engine = "surrealdb"
+mode = "embedded"
+path = "project.db"
+
+[updates]
+auto_migrate = true
+backup_before_migrate = true
+read_only_if_newer_schema = true
+
+[privacy]
+store_raw_chunks = true
+store_global_memory = false
+store_agent_transcripts = false

@@ -1,0 +1,37 @@
+{
+  "app": "oxide-embed",
+  "kind": "project-memory",
+  "project_id": "01a0bd64-bbf3-7214-875c-323ac69beb0e",
+  "project_name": "kernel",
+  "schema_version": 1,
+  "min_supported_schema_version": 1,
+  "created_by": {
+    "oxide_embed_version": "0.3.0",
+    "timestamp": "2026-09-20T05:58:10.675392912Z"
+  },
+  "updated_by": {
+    "oxide_embed_version": "0.3.0",
+    "timestamp": "2026-09-20T05:58:10.675413096Z"
+  },
+  "storage": {
+    "engine": "surrealdb",
+    "mode": "embedded",
+    "path": "project.db"
+  },
+  "embedding": {
+    "model": "qwen3-embedding-0.6b",
+    "file": "Qwen3-Embedding-0.6B-Q4_K_M.gguf",
+    "dimension": 1024,
+    "quantization": "q4_k_m",
+    "pooling": "LastToken",
+    "normalized": true,
+    "vector_set_id": "eafbd9f1d27ab281d80f17b67c7f1bc492b336ca81a960e09660608c941e3036"
+  },
+  "features": {
+    "tree_sitter": true,
+    "symbol_graph": false,
+    "token_stats": true,
+    "secrets_scan": false,
+    "egress_scan": false
+  }
+}

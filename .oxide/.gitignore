@@ -1,0 +1,4 @@
+project.db/
+cache/
+logs/
+runtime/
