@@ -237,7 +237,7 @@ impl VmInstance {
         }
         self.vcpus.insert(vcpu_id, VcpuState::new());
 
-        #[cfg(target_arch = "x86_64")]
+        #[cfg(all(target_arch = "x86_64", not(test)))]
         if self.vmx.is_none() && self.svm.is_none() {
             // Try VMX first; fall back to SVM.
             if let Ok(mut vmx) = unsafe { Vmx::new() } {

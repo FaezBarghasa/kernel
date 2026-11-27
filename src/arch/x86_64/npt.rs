@@ -39,9 +39,16 @@ impl NptPage {
     }
 
     pub fn phys_addr(&self) -> u64 {
-        use crate::arch::x86_64::consts::PHYS_OFFSET;
-        let virt = self as *const _ as u64;
-        virt - PHYS_OFFSET as u64
+        #[cfg(test)]
+        {
+            self as *const _ as u64
+        }
+        #[cfg(not(test))]
+        {
+            use crate::arch::x86_64::consts::PHYS_OFFSET;
+            let virt = self as *const _ as u64;
+            virt - PHYS_OFFSET as u64
+        }
     }
 }
 
@@ -167,9 +174,16 @@ impl NptRoot {
     }
 
     fn entry_to_page_mut(entry: u64) -> *mut NptPage {
-        use crate::arch::x86_64::consts::PHYS_OFFSET;
-        let phys = entry & NPT_PHYS_MASK;
-        (phys + PHYS_OFFSET as u64) as *mut NptPage
+        #[cfg(test)]
+        {
+            (entry & NPT_PHYS_MASK) as *mut NptPage
+        }
+        #[cfg(not(test))]
+        {
+            use crate::arch::x86_64::consts::PHYS_OFFSET;
+            let phys = entry & NPT_PHYS_MASK;
+            (phys + PHYS_OFFSET as u64) as *mut NptPage
+        }
     }
 }
 

@@ -270,9 +270,14 @@ pub unsafe fn install_idt(idt_ptr: *mut Idt) {
     unsafe {
         let idt = &mut *idt_ptr;
 
-        #[cfg(target_arch = "x86_64")] // TODO: x86
+        #[cfg(target_arch = "x86_64")]
         {
             (*crate::gdt::pcr()).tss.ist[usize::from(BACKUP_IST - 1)] = idt.backup_stack_end as u64;
+        }
+        #[cfg(target_arch = "x86")]
+        {
+            // On 32-bit x86, IST is not part of the standard TSS; hardware task gates or esp0 are used.
+            let _ = idt.backup_stack_end;
         }
 
         let idtr: DescriptorTablePointer<X86IdtEntry> = DescriptorTablePointer {

@@ -37,16 +37,30 @@ pub struct Spcr {
     pub pci_function: u8,
     pub pci_flags: u32,
     pub pci_segment: u8,
-    /*TODO: these fields are optional based on the table revision
+}
+
+/// Extended SPCR fields present in Table Revision 2 and later.
+#[derive(Clone, Copy, Debug)]
+#[repr(packed)]
+pub struct SpcrRev2Extended {
     pub uart_clock_frequency: u32,
     pub precise_baud_rate: u32,
     pub namespace_string_length: u16,
     pub namespace_string_offset: u16,
-    */
-    // namespace_string
 }
 
 impl Spcr {
+    /// Returns extended revision 2/3 metadata if present in the SDT.
+    pub fn extended_rev2(&self) -> Option<&'static SpcrRev2Extended> {
+        if self.header.revision >= 2
+            && (self.header.length as usize) >= (mem::size_of::<Spcr>() + mem::size_of::<SpcrRev2Extended>())
+        {
+            let base_ptr = (self as *const Spcr as usize + mem::size_of::<Spcr>()) as *const SpcrRev2Extended;
+            Some(unsafe { &*base_ptr })
+        } else {
+            None
+        }
+    }
     pub fn init() {
         let spcr_sdt = find_sdt("SPCR");
         let spcr = if spcr_sdt.len() == 1 {

@@ -56,9 +56,11 @@ const BALANCE_INTERVAL_NS: u64 = 4_000_000;
 /// Tasks migrate if (dest_load * 125 / 100) < src_load
 const IMBALANCE_THRESHOLD_PERCENT: u64 = 25;
 
-/// Assumed cores per socket for NUMA estimation
-/// TODO: Retrieve from topology/ACPI
-const ESTIMATED_CORES_PER_SOCKET: u32 = 8;
+/// Retrieves cores per socket dynamically from hardware topology, falling back to heuristic.
+#[inline]
+pub fn cores_per_socket() -> u32 {
+    crate::topology::CPU_TOPOLOGY.cores_per_socket()
+}
 
 /// Scheduling policies
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -899,14 +901,15 @@ pub fn add_context(context_ref: ContextRef, token: &mut CleanLockToken) {
 }
 
 fn select_best_cpu_on_socket(start_cpu: LogicalCpuId) -> LogicalCpuId {
-    let start_socket = start_cpu.get() / ESTIMATED_CORES_PER_SOCKET;
+    let cps = cores_per_socket().max(1);
+    let start_socket = start_cpu.get() / cps;
     let mut best_cpu = start_cpu;
     let mut min_load = u64::MAX;
 
     // Scan all CPUs, prioritizing same socket
     for i in 0..crate::cpu_count() {
         let cpu_id = LogicalCpuId::new(i);
-        let socket = i / ESTIMATED_CORES_PER_SOCKET;
+        let socket = i / cps;
 
         // Penalize other sockets to encourage local placement
         let numa_penalty = if socket == start_socket { 0 } else { 1000 };

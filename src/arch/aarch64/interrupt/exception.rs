@@ -203,7 +203,8 @@ exception_stack!(synchronous_exception_at_el0, |stack| {
                 //crate::debugger::debugger(None);
                 stack.trace();
                 excp_handler(Exception {
-                    kind: 0, // TODO
+                    // Extract Exception Class (EC) bits [31:26] from ESR_EL1 as exception kind
+                    kind: ((ty >> 26) & 0x3F) as usize,
                 });
             }
         }

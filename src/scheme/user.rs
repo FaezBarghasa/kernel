@@ -646,10 +646,7 @@ impl UserInner {
                     let eager = true;
 
                     // It doesn't make sense to allow a context, that has borrowed non-RAM physical
-                    // memory, to DIRECTLY do scheme calls onto that memory.
-                    //
-                    // (TODO: Maybe there are some niche use cases for that, possibly PCI transfer
-                    // BARs, but it doesn't make sense yet.)
+                    // memory, to DIRECTLY do scheme calls onto that memory (e.g. PCI transfer BARs).
                     let allow_phys = false;
 
                     // Deny any attempts by the scheme, to unmap these temporary pages. The only way to
@@ -1849,6 +1846,8 @@ impl KernelScheme for UserScheme {
             return Ok(());
         }
 
+        let caller = context::current().read(token.token()).id as u64;
+
         inner.todo.send(
             Sqe {
                 opcode: Opcode::CloseMsg as u8,
@@ -1856,7 +1855,7 @@ impl KernelScheme for UserScheme {
                 _rsvd: 0,
                 tag: 0,
                 args: [id as u64, 0, 0, 0, 0, 0],
-                caller: 0, // TODO?
+                caller,
             },
             token,
         );

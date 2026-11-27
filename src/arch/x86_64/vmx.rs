@@ -20,7 +20,7 @@ use core::arch::asm;
 use crate::{
     arch::x86_64::ept::{EptRoot, EPT_RWX},
     scheme::vmm::{MemoryRegion, VcpuState, VmExitReason},
-    syscall::error::{Error, Result, EINVAL, EIO},
+    syscall::error::{Error, Result, EINVAL, EIO, ENODEV},
 };
 
 // ─── MSR addresses ────────────────────────────────────────────────────────────
@@ -587,6 +587,23 @@ impl Vmx {
     /// # Safety
     /// Must be called on an x86_64 CPU that supports VMX.
     pub unsafe fn new() -> Result<Self> {
+        let vmx_support: u32;
+        unsafe {
+            asm!(
+                "push rbx",
+                "mov eax, 1",
+                "cpuid",
+                "pop rbx",
+                out("eax") _,
+                out("ecx") vmx_support,
+                out("edx") _,
+                options(nostack, nomem)
+            );
+        }
+        if vmx_support & (1 << 5) == 0 {
+            return Err(Error::new(ENODEV));
+        }
+
         let vmxon_region = unsafe { VmxRegion::new() };
         let vmcs_region = unsafe { VmxRegion::new() };
         Ok(Self {

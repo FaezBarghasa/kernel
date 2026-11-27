@@ -146,9 +146,14 @@ impl MemoryScheme {
                     // Default
                     MemoryType::Writeback => (),
 
-                    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))] // FIXME: AARCH64
+                    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
                     MemoryType::WriteCombining => {
                         page_flags = page_flags.custom_flag(EntryFlags::HUGE_PAGE.bits(), true)
+                    }
+
+                    #[cfg(target_arch = "aarch64")]
+                    MemoryType::WriteCombining => {
+                        page_flags = page_flags.custom_flag(EntryFlags::WRITE_COMBINING.bits(), true)
                     }
 
                     MemoryType::Uncacheable => {

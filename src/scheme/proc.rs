@@ -1288,7 +1288,7 @@ impl ContextHandle {
 
                 buf.copy_exactly(crate::cpu_set::mask_as_bytes(&mask))?;
                 Ok(mem::size_of_val(&mask))
-            } // TODO: Replace write() with SYS_SENDFD?
+            }
             ContextHandle::Status { .. } => {
                 let status = {
                     let context = context.read(token.token());

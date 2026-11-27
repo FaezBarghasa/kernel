@@ -5,5 +5,6 @@ bitflags! {
     pub struct EntryFlags: usize {
         const NO_CACHE = 1 << 2;
         const DEV_MEM = 2 << 2;
+        const WRITE_COMBINING = 1 << 2; // Normal uncached in MAIR index 1
     }
 }

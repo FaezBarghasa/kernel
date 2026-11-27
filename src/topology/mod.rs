@@ -18,6 +18,26 @@ impl core::fmt::Display for NumaNodeId {
 pub struct CpuTopology;
 impl CpuTopology {
     pub fn get(&self) -> Option<()> { Some(()) }
+
+    /// Returns the detected or estimated number of physical/logical cores per socket.
+    pub fn cores_per_socket(&self) -> u32 {
+        #[cfg(target_arch = "x86_64")]
+        {
+            if let Ok(top) = crate::arch::x86_64::amd_3d_vcache::parse_cpu_topology() {
+                let total = top.cache_rich_ccx.len() + top.frequency_rich_ccx.len();
+                if total > 0 {
+                    return total as u32;
+                }
+            }
+        }
+        let total_cpus = crate::cpu_count();
+        if total_cpus > 0 {
+            // Heuristic fallback: socket bound up to 8 cores per socket or total count
+            total_cpus.min(8)
+        } else {
+            8
+        }
+    }
 }
 pub static CPU_TOPOLOGY: CpuTopology = CpuTopology;
 

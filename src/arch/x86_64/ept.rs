@@ -48,10 +48,17 @@ impl EptPage {
     pub fn phys_addr(&self) -> u64 {
         // In Redox the kernel physmap is at PHYS_OFFSET; kernel virtual = physical + PHYS_OFFSET.
         // Box<EptPage> is allocated in kernel heap which is in the physmap region.
-        // We subtract PHYS_OFFSET to get the physical address.
-        use crate::arch::x86_64::consts::PHYS_OFFSET;
-        let virt = self as *const _ as u64;
-        virt - PHYS_OFFSET as u64
+        // In test mode on host, return the virtual address directly to avoid subtraction underflow.
+        #[cfg(test)]
+        {
+            self as *const _ as u64
+        }
+        #[cfg(not(test))]
+        {
+            use crate::arch::x86_64::consts::PHYS_OFFSET;
+            let virt = self as *const _ as u64;
+            virt - PHYS_OFFSET as u64
+        }
     }
 }
 
@@ -190,9 +197,16 @@ impl EptRoot {
     }
 
     fn entry_to_page_mut(entry: u64) -> *mut EptPage {
-        use crate::arch::x86_64::consts::PHYS_OFFSET;
-        let phys = entry & EPT_PHYS_MASK;
-        (phys + PHYS_OFFSET as u64) as *mut EptPage
+        #[cfg(test)]
+        {
+            (entry & EPT_PHYS_MASK) as *mut EptPage
+        }
+        #[cfg(not(test))]
+        {
+            use crate::arch::x86_64::consts::PHYS_OFFSET;
+            let phys = entry & EPT_PHYS_MASK;
+            (phys + PHYS_OFFSET as u64) as *mut EptPage
+        }
     }
 }
 

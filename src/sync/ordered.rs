@@ -300,11 +300,13 @@ impl<'a, L: Level, T: ?Sized + 'a> Drop for MutexGuard<'a, L, T> {
         // For a true PI mutex, we might need to explicitly restore here
         // to the highest priority of any other locks it holds, or its base.
         // For now, rely on expiration or explicit restore.
-        context::current()
-            .inner
-            .write()
-            .priority
-            .restore_priority(self.mutex as *const _ as *const () as usize);
+        let cur = context::current();
+        if !core::ptr::eq(self.mutex as *const _ as *const (), Arc::as_ptr(&cur) as *const ()) {
+            cur.inner
+                .write()
+                .priority
+                .restore_priority(self.mutex as *const _ as *const () as usize);
+        }
     }
 }
 
@@ -566,11 +568,13 @@ impl<L: Level, T> core::ops::DerefMut for RwLockWriteGuard<'_, L, T> {
 impl<'a, L: Level, T> Drop for RwLockWriteGuard<'a, L, T> {
     fn drop(&mut self) {
         *self.rwlock.writer_holder.lock() = None;
-        context::current()
-            .inner
-            .write()
-            .priority
-            .restore_priority(self.rwlock as *const _ as *const () as usize);
+        let cur = context::current();
+        if !core::ptr::eq(self.rwlock as *const _ as *const (), Arc::as_ptr(&cur) as *const ()) {
+            cur.inner
+                .write()
+                .priority
+                .restore_priority(self.rwlock as *const _ as *const () as usize);
+        }
     }
 }
 
@@ -604,11 +608,13 @@ impl<'a, L: Level, T> Drop for RwLockReadGuard<'a, L, T> {
             .reader_holders
             .lock()
             .retain(|ctx| !Arc::ptr_eq(ctx, &current_context_ref));
-        context::current()
-            .inner
-            .write()
-            .priority
-            .restore_priority(self.rwlock as *const _ as *const () as usize);
+        let cur = context::current();
+        if !core::ptr::eq(self.rwlock as *const _ as *const (), Arc::as_ptr(&cur) as *const ()) {
+            cur.inner
+                .write()
+                .priority
+                .restore_priority(self.rwlock as *const _ as *const () as usize);
+        }
     }
 }
 

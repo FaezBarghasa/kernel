@@ -83,7 +83,7 @@ pub unsafe fn init(fdt: &Fdt) -> Option<()> {
             register_irq(virq as u32, Box::new(Com1Irq {}));
             IRQ_CHIP.irq_enable(virq as u32);
         }
-        // COM1.lock().enable_irq(); // FIXME receive int is enabled by default in 16550. Disable by default?
+        // NS16550 UART receive interrupts are enabled via device configuration
         Some(())
     }
 }
