@@ -1,8 +1,11 @@
 use core::{
     cell::SyncUnsafeCell,
     ptr::{read_volatile, write_volatile},
+    sync::atomic::{AtomicU64, Ordering},
 };
 use x86::msr::*;
+
+static PREV_DEADLINE: AtomicU64 = AtomicU64::new(0);
 
 use crate::{
     ipi::IpiKind,
@@ -326,7 +329,13 @@ impl LocalApic {
             if mode == LvtTimerMode::TscDeadline as u32 {
                 // TSC Deadline: write absolute TSC value
                 let current_tsc = tsc_read();
-                let deadline = current_tsc.wrapping_add(ticks);
+                let prev = PREV_DEADLINE.load(Ordering::Relaxed);
+                let deadline = if prev != 0 && prev.wrapping_add(ticks) > current_tsc {
+                    prev.wrapping_add(ticks)
+                } else {
+                    current_tsc.wrapping_add(ticks)
+                };
+                PREV_DEADLINE.store(deadline, Ordering::Relaxed);
 
                 // IA32_TSC_DEADLINE = 0x6E0
                 const IA32_TSC_DEADLINE: u32 = 0x6E0;
